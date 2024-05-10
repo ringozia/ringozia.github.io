@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>倒计时抽奖游戏</title>
+<title>抽奖倒计时</title>
 <style>
     body {
         font-family: 'Open Sans', sans-serif;
@@ -60,7 +60,7 @@
 <body>
 
 <div class="lottery-container">
-    <h1 class="lottery-title">倒计时抽奖游戏</h1>
+    <h1 class="lottery-title">抽奖倒计时</h1>
     <div class="timer" id="timer">10</div>
     <div class="score" id="score">积分: 0</div>
     <div class="lottery-result" id="lotteryResult"></div>
@@ -77,7 +77,7 @@
         var points = Math.floor(Math.random() * 10) + 1; // 1-10分
         score += points;
         document.getElementById("score").textContent = "积分: " + score;
-        document.getElementById("lotteryResult").textContent = "本次获得积分: " + points;
+        document.getElementById("lotteryResult").textContent = "上次获得积分: " + points;
     }
 
     function startCountdown() {
