@@ -1,112 +1,145 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>抽奖倒计时</title>
+<title>井字棋游戏 - 人机对战</title>
 <style>
+    /* CSS样式 */
     body {
-        font-family: 'Open Sans', sans-serif;
-        background-color: #e0e0e0;
+        font-family: Arial, sans-serif;
+        text-align: center;
+    }
+    #game-board {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        width: 200px;
+        height: 200px;
+        margin: 20px auto;
+    }
+    .cell {
         display: flex;
         justify-content: center;
         align-items: center;
-        height: 100vh;
-        margin: 0;
+        font-size: 2em;
+        width: 60px;
+        height: 60px;
+        border: 1px solid #000;
+        cursor: pointer;
     }
-    .lottery-container {
-        background-color: #ffffff;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        padding: 40px;
-        border-radius: 10px;
-        text-align: center;
-    }
-    .lottery-title {
-        color: #333333;
-        margin: 0 0 20px;
-        font-size: 2.5em;
-    }
-    .timer,
-    .score {
-        font-size: 1.2em;
-        font-weight: bold;
-        margin-bottom: 15px;
-        color: #ff5722;
-    }
-    .lottery-result {
+    .cell.x::after { content: 'X'; }
+    .cell.o::after { content: 'O'; }
+    #score {
+        font-size: 1.5em;
         margin-bottom: 20px;
-        font-size: 1em;
-        color: #555;
     }
-    .lottery-button {
+    button {
         padding: 10px 20px;
         font-size: 1em;
-        background-color: #4caf50;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        outline: none;
-        transition: background-color 0.3s ease;
-    }
-    .lottery-button:hover {
-        background-color: #45a049;
-    }
-    .lottery-button:active {
-        background-color: #3e8e41;
     }
 </style>
 </head>
 <body>
 
-<div class="lottery-container">
-    <h1 class="lottery-title">抽奖倒计时</h1>
-    <div class="timer" id="timer">10</div>
-    <div class="score" id="score">积分: 0</div>
-    <div class="lottery-result" id="lotteryResult"></div>
-    <button id="controlButton" class="lottery-button" onclick="toggleLottery()">停止抽奖</button>
-</div>
+<div id="score">玩家积分: 0</div>
+<div id="game-board"></div>
+<button id="restart">重新开始</button>
 
 <script>
-    var timer = 10;
-    var countdown;
-    var score = 0;
-    var isRunning = true;
+// JavaScript逻辑
+const board = Array(9).fill(null);
+let currentPlayer = 'X';
+let score = 0;
+const winningCombinations = [
+    [0, 1, 2], [3, 4, 5], [6, 7, 8],
+    [0, 3, 6], [1, 4, 7], [2, 5, 8],
+    [0, 4, 8], [2, 4, 6]
+];
 
-    function draw() {
-        var points = Math.floor(Math.random() * 10) + 1; // 1-10分
-        score += points;
-        document.getElementById("score").textContent = "积分: " + score;
-        document.getElementById("lotteryResult").textContent = "上次获得积分: " + points;
+function renderBoard() {
+    const boardElement = document.getElementById('game-board');
+    boardElement.innerHTML = '';
+    for (let i = 0; i < 9; i++) {
+        const cell = document.createElement('div');
+        cell.classList.add('cell', board[i] ? board[i] : '');
+        cell.onclick = () => playMove(i);
+        boardElement.appendChild(cell);
+    }
+}
+
+function playMove(index) {
+    if (board[index] !== null) return; // 已占用，不能下
+
+    board[index] = currentPlayer;
+    renderBoard();
+
+    if (checkWin(index)) {
+        alert(`${currentPlayer} 赢了！`);
+        updateScore();
+        resetGame();
+    } else {
+        switchPlayer();
+        if (currentPlayer === 'O') {
+            playComputerMove();
+        }
+    }
+}
+
+function checkWin(index) {
+    for (let combo of winningCombinations) {
+        if (combo.every(i => board[i] === currentPlayer)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function playComputerMove() {
+    const emptyCells = [];
+    for (let i = 0; i < 9; i++) {
+        if (board[i] === null) {
+            emptyCells.push(i);
+        }
     }
 
-    function startCountdown() {
-        if (isRunning) {
-            document.getElementById("timer").textContent = timer;
-            timer--;
-            if (timer < 0) {
-                timer = 10;
-                draw();
+    // 随机选择一个空位置
+    let moveIndex = Math.floor(Math.random() * emptyCells.length);
+
+    // 偶尔“聪明”一下，检查是否能赢
+    if (Math.random() < 0.1) {
+        for (let combo of winningCombinations) {
+            const missingIndex = combo.find(i => board[i] === null);
+            if (missingIndex !== undefined && emptyCells.includes(missingIndex)) {
+                moveIndex = emptyCells.indexOf(missingIndex);
+                break;
             }
-            countdown = setTimeout(startCountdown, 1000);
         }
     }
 
-    function toggleLottery() {
-        isRunning = !isRunning;
-        var button = document.getElementById("controlButton");
-        button.textContent = isRunning ? "停止抽奖" : "继续抽奖";
-        if (isRunning) {
-            startCountdown();
-        } else {
-            clearTimeout(countdown);
-        }
-    }
+    playMove(emptyCells[moveIndex]);
+}
 
-    // 页面加载完成后自动开始倒计时
-    window.onload = function() {
-        startCountdown();
-    };
+function switchPlayer() {
+    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+}
+
+function updateScore() {
+    score += currentPlayer === 'X' ? 10 : 0; // 假设玩家总是X
+    document.getElementById('score').textContent = `玩家积分: ${score}`;
+}
+
+function resetGame() {
+    board.fill(null);
+    currentPlayer = 'X';
+    renderBoard();
+    document.getElementById('restart').disabled = true;
+}
+
+// 初始渲染和绑定重新开始按钮
+renderBoard();
+document.getElementById('restart').addEventListener('click', resetGame);
+
 </script>
 
 </body>
