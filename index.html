@@ -1,1 +1,113 @@
-<p>我的第一个网页啊啊啊啊啊啊啊啊啊啊啊</p>
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>倒计时抽奖游戏</title>
+<style>
+    body {
+        font-family: 'Open Sans', sans-serif;
+        background-color: #e0e0e0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    .lottery-container {
+        background-color: #ffffff;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        padding: 40px;
+        border-radius: 10px;
+        text-align: center;
+    }
+    .lottery-title {
+        color: #333333;
+        margin: 0 0 20px;
+        font-size: 2.5em;
+    }
+    .timer,
+    .score {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 15px;
+        color: #ff5722;
+    }
+    .lottery-result {
+        margin-bottom: 20px;
+        font-size: 1em;
+        color: #555;
+    }
+    .lottery-button {
+        padding: 10px 20px;
+        font-size: 1em;
+        background-color: #4caf50;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        outline: none;
+        transition: background-color 0.3s ease;
+    }
+    .lottery-button:hover {
+        background-color: #45a049;
+    }
+    .lottery-button:active {
+        background-color: #3e8e41;
+    }
+</style>
+</head>
+<body>
+
+<div class="lottery-container">
+    <h1 class="lottery-title">倒计时抽奖游戏</h1>
+    <div class="timer" id="timer">10</div>
+    <div class="score" id="score">积分: 0</div>
+    <div class="lottery-result" id="lotteryResult"></div>
+    <button id="controlButton" class="lottery-button" onclick="toggleLottery()">停止抽奖</button>
+</div>
+
+<script>
+    var timer = 10;
+    var countdown;
+    var score = 0;
+    var isRunning = true;
+
+    function draw() {
+        var points = Math.floor(Math.random() * 10) + 1; // 1-10分
+        score += points;
+        document.getElementById("score").textContent = "积分: " + score;
+        document.getElementById("lotteryResult").textContent = "本次获得积分: " + points;
+    }
+
+    function startCountdown() {
+        if (isRunning) {
+            document.getElementById("timer").textContent = timer;
+            timer--;
+            if (timer < 0) {
+                timer = 10;
+                draw();
+            }
+            countdown = setTimeout(startCountdown, 1000);
+        }
+    }
+
+    function toggleLottery() {
+        isRunning = !isRunning;
+        var button = document.getElementById("controlButton");
+        button.textContent = isRunning ? "停止抽奖" : "继续抽奖";
+        if (isRunning) {
+            startCountdown();
+        } else {
+            clearTimeout(countdown);
+        }
+    }
+
+    // 页面加载完成后自动开始倒计时
+    window.onload = function() {
+        startCountdown();
+    };
+</script>
+
+</body>
+</html>
