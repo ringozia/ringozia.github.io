@@ -1,145 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>井字棋游戏 - 人机对战</title>
-<style>
-    /* CSS样式 */
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-    }
-    #game-board {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 10px;
-        width: 200px;
-        height: 200px;
-        margin: 20px auto;
-    }
-    .cell {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: 2em;
-        width: 60px;
-        height: 60px;
-        border: 1px solid #000;
-        cursor: pointer;
-    }
-    .cell.x::after { content: 'X'; }
-    .cell.o::after { content: 'O'; }
-    #score {
-        font-size: 1.5em;
-        margin-bottom: 20px;
-    }
-    button {
-        padding: 10px 20px;
-        font-size: 1em;
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>按钮示例</title>
+    <style>
+        /* 简单的样式，使页面更美观 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #666;
+        }
+        button {
+            margin-top: 10px;
+            padding: 5px 10px;
+        }
+    </style>
 </head>
 <body>
 
-<div id="score">玩家积分: 0</div>
-<div id="game-board"></div>
-<button id="restart">重新开始</button>
+<h1>大标题</h1>
+
+<p>这是正文内容。</p>
+
+<!-- 创建三个按钮 -->
+<button onclick="showAlert('按钮1')">按钮1</button>
+<button onclick="showAlert('按钮2')">按钮2</button>
+<button onclick="showAlert('按钮3')">按钮3</button>
 
 <script>
-// JavaScript逻辑
-const board = Array(9).fill(null);
-let currentPlayer = 'X';
-let score = 0;
-const winningCombinations = [
-    [0, 1, 2], [3, 4, 5], [6, 7, 8],
-    [0, 3, 6], [1, 4, 7], [2, 5, 8],
-    [0, 4, 8], [2, 4, 6]
-];
-
-function renderBoard() {
-    const boardElement = document.getElementById('game-board');
-    boardElement.innerHTML = '';
-    for (let i = 0; i < 9; i++) {
-        const cell = document.createElement('div');
-        cell.classList.add('cell', board[i] ? board[i] : '');
-        cell.onclick = () => playMove(i);
-        boardElement.appendChild(cell);
+    // JavaScript函数，用于显示弹出框
+    function showAlert(buttonName) {
+        alert('hello from ' + buttonName);
     }
-}
-
-function playMove(index) {
-    if (board[index] !== null) return; // 已占用，不能下
-
-    board[index] = currentPlayer;
-    renderBoard();
-
-    if (checkWin(index)) {
-        alert(`${currentPlayer} 赢了！`);
-        updateScore();
-        resetGame();
-    } else {
-        switchPlayer();
-        if (currentPlayer === 'O') {
-            playComputerMove();
-        }
-    }
-}
-
-function checkWin(index) {
-    for (let combo of winningCombinations) {
-        if (combo.every(i => board[i] === currentPlayer)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-function playComputerMove() {
-    const emptyCells = [];
-    for (let i = 0; i < 9; i++) {
-        if (board[i] === null) {
-            emptyCells.push(i);
-        }
-    }
-
-    // 随机选择一个空位置
-    let moveIndex = Math.floor(Math.random() * emptyCells.length);
-
-    // 偶尔“聪明”一下，检查是否能赢
-    if (Math.random() < 0.1) {
-        for (let combo of winningCombinations) {
-            const missingIndex = combo.find(i => board[i] === null);
-            if (missingIndex !== undefined && emptyCells.includes(missingIndex)) {
-                moveIndex = emptyCells.indexOf(missingIndex);
-                break;
-            }
-        }
-    }
-
-    playMove(emptyCells[moveIndex]);
-}
-
-function switchPlayer() {
-    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-}
-
-function updateScore() {
-    score += currentPlayer === 'X' ? 10 : 0; // 假设玩家总是X
-    document.getElementById('score').textContent = `玩家积分: ${score}`;
-}
-
-function resetGame() {
-    board.fill(null);
-    currentPlayer = 'X';
-    renderBoard();
-    document.getElementById('restart').disabled = true;
-}
-
-// 初始渲染和绑定重新开始按钮
-renderBoard();
-document.getElementById('restart').addEventListener('click', resetGame);
-
 </script>
 
 </body>
