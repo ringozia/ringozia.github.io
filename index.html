@@ -1,44 +1,130 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>按钮示例</title>
-    <style>
-        /* 简单的样式，使页面更美观 */
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        h1 {
-            color: #333;
-        }
-        p {
-            color: #666;
-        }
-        button {
-            margin-top: 10px;
-            padding: 5px 10px;
-        }
-    </style>
-</head>
-<body>
+不要放过这个娜娜
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+<meta charset="UTF-8">  
+<meta name="viewport" content="width=device-width, initial-scale=1.0">  
+<title>轮播图效果</title>  
+<style>  
+/* CSS部分 */  
+.carousel {  
+  position: relative;  
+  overflow: hidden;  
+  width: 100%;  
+}  
+  
+.carousel-track {  
+  display: flex;  
+  transition: transform 0.5s ease;  
+}  
+  
+.carousel-slide {  
+  min-width: 100%;  
+  display: flex;  
+  justify-content: center;  
+  align-items: center;  
+}  
+  
+.carousel-slide img {  
+  max-width: 100%;  
+  height: auto;  
+}  
+  
+.carousel-prev, .carousel-next {  
+  position: absolute;  
+  top: 50%;  
+  transform: translateY(-50%);  
+  background: none;  
+  border: none;  
+  cursor: pointer;  
+  font-size: 2em;  
+}  
+  
+.carousel-prev { left: 10px; }  
+.carousel-next { right: 10px; }  
+  
+.carousel-buttons {  
+  margin-top: 20px;  
+  text-align: center;  
+}  
+  
+.card {  
+  margin-top: 20px;  
+  text-align: center;  
+}  
+</style>  
+</head>  
+<body>  
+  
+<!-- HTML部分 -->  
+<div class="carousel">  
+  <div class="carousel-track" id="carouselTrack">  
+    <div class="carousel-slide"><img src="http://nwzimg.wezhan.cn/contents/sitefiles2063/10316798/images/43528469.jpg" alt="Image 1"></div>  
+    <div class="carousel-slide"><img src="http://nwzimg.wezhan.cn/contents/sitefiles2063/10316798/images/43528469.jpg" alt="Image 2"></div>  
+    <div class="carousel-slide"><img src="http://nwzimg.wezhan.cn/contents/sitefiles2063/10316798/images/43528469.jpg" alt="Image 3"></div>  
+    <!-- 添加更多轮播图图片 -->  
+  </div>  
+  <button class="carousel-prev" onclick="prevSlide()">←</button>  
+  <button class="carousel-next" onclick="nextSlide()">→</button>  
+</div>  
+  
 
-<h1>大标题</h1>
 
-<p>这是正文内容。</p>
 
-<!-- 创建三个按钮 -->
-<button onclick="showAlert('按钮1')">按钮1</button>
-<button onclick="showAlert('按钮2')">按钮2</button>
-<button onclick="showAlert('按钮3')">按钮3</button>
 
-<script>
-    // JavaScript函数，用于显示弹出框
-    function showAlert(buttonName) {
-        alert('hello from ' + buttonName);
-    }
-</script>
-
-</body>
+<div class="card">  
+  <button onclick="goToSlide(0)">图片1</button>  
+  <button onclick="goToSlide(1)">图片2</button>  
+  <button onclick="goToSlide(2)">图片3</button>  
+  <!-- 添加更多底部切换按钮 -->  
+</div>  
+  
+<div class="card">  
+  <button>按钮1</button>  
+  <button>按钮2</button>  
+  <button>按钮3</button>  
+</div>  
+  
+<!-- JavaScript部分 -->  
+<script>  
+let currentSlide = 0;  
+const slides = document.querySelectorAll('.carousel-slide');  
+const totalSlides = slides.length;  
+  
+function nextSlide() {  
+  currentSlide = (currentSlide + 1) % totalSlides;  
+  showSlide(currentSlide);  
+}  
+  
+function prevSlide() {  
+  currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;  
+  showSlide(currentSlide);  
+}  
+  
+function goToSlide(n) {  
+  currentSlide = n;  
+  showSlide(currentSlide);  
+}  
+  
+function showSlide(n) {  
+  const track = document.getElementById('carouselTrack');  
+  track.style.transform = `translateX(-${n * 100}%)`;  
+}  
+  
+// 自动切换功能  
+function autoSlide() {  
+  setInterval(nextSlide, 3000); // 每3秒切换一次  
+}  
+  
+// 初始化轮播图  
+window.onload = function() {  
+  showSlide(currentSlide);  
+  autoSlide();  
+};  
+  
+// 拖动翻页功能（此处省略了实现代码）  
+  
+</script>  
+  
+</body>  
 </html>
