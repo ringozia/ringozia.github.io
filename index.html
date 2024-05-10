@@ -1,12 +1,10 @@
-不要放过这个娜娜
-<!DOCTYPE html>  
-<html lang="en">  
-<head>  
-<meta charset="UTF-8">  
-<meta name="viewport" content="width=device-width, initial-scale=1.0">  
-<title>轮播图效果</title>  
-<style>  
-/* CSS部分 */  
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>
+  轮播图效果
+</title>
+<style>
+  /* CSS部分 */  
 .carousel {  
   position: relative;  
   overflow: hidden;  
@@ -51,45 +49,72 @@
 .card {  
   margin-top: 20px;  
   text-align: center;  
-}  
-</style>  
-</head>  
-<body>  
-  
-<!-- HTML部分 -->  
-<div class="carousel">  
-  <div class="carousel-track" id="carouselTrack">  
-    <div class="carousel-slide"><img src="https://tg-image.com/file/de2bd4a0721aababe1369.jpg" alt="Image 1"></div>  
-    <div class="carousel-slide"><img src="https://tg-image.com/file/a2b2b535e4e808d86c69b.jpg" alt="Image 2"></div>  
-    <div class="carousel-slide"><img src="https://tg-image.com/file/b264c695b220c9fa370aa.jpg" alt="Image 3"></div>  
-    <div class="carousel-slide"><img src="https://tg-image.com/file/0240af90bb24cb866957e.jpg" alt="Image 3"></div>  
-
-    <!-- 添加更多轮播图图片 -->  
-  </div>  
-  <button class="carousel-prev" onclick="prevSlide()">←</button>  
-  <button class="carousel-next" onclick="nextSlide()">→</button>  
-</div>  
-  
-
-
-
-
-<div class="card">  
-  <button onclick="goToSlide(0)">图片1</button>  
-  <button onclick="goToSlide(1)">图片2</button>  
-  <button onclick="goToSlide(2)">图片3</button>  
-  <!-- 添加更多底部切换按钮 -->  
-</div>  
-  
-<div class="card">  
-  <button>按钮1</button>  
-  <button>按钮2</button>  
-  <button>按钮3</button>  
-</div>  
-  
-<!-- JavaScript部分 -->  
-<script>  
-let currentSlide = 0;  
+}
+</style>
+<div class="carousel">
+  <div class="carousel-track" id="carouselTrack">
+    <div class="carousel-slide">
+      <img src="https://tg-image.com/file/de2bd4a0721aababe1369.jpg" alt="Image 1">
+    </div>
+    <div class="carousel-slide">
+      <img src="https://tg-image.com/file/a2b2b535e4e808d86c69b.jpg" alt="Image 2">
+    </div>
+    <div class="carousel-slide">
+      <img src="https://tg-image.com/file/b264c695b220c9fa370aa.jpg" alt="Image 3">
+    </div>
+    <div class="carousel-slide">
+      <img src="https://tg-image.com/file/0240af90bb24cb866957e.jpg" alt="Image 3">
+    </div>
+  </div>
+  <button class="carousel-prev" onclick="prevSlide()">
+    ←
+  </button>
+  <button class="carousel-next" onclick="nextSlide()">
+    →
+  </button>
+</div>
+<div class="card">
+  <button onclick="goToSlide(0)">
+    图片1
+  </button>
+  <button onclick="goToSlide(1)">
+    图片2
+  </button>
+  <button onclick="goToSlide(2)">
+    图片3
+  </button>
+</div>
+<div class="card">
+  <button>
+    按钮1
+  </button>
+  <button>
+    按钮2
+  </button>
+  <button>
+    按钮3
+  </button>
+</div>
+<div class="container">
+  <div class="card text-center">
+    <div class="card-header">
+      Card Header
+    </div>
+    <div class="card-body">
+      <h5 class="card-title">
+        Card title
+      </h5>
+      <p class="card-text">
+        Some quick example text to build on the card title and make up the bulk of the card's content.
+      </p>
+    </div>
+    <div class="card-footer text-muted">
+      2 days ago
+    </div>
+  </div>
+</div>
+<script>
+  let currentSlide = 0;  
 const slides = document.querySelectorAll('.carousel-slide');  
 const totalSlides = slides.length;  
   
@@ -124,9 +149,5 @@ window.onload = function() {
   autoSlide();  
 };  
   
-// 拖动翻页功能（此处省略了实现代码）  
-  
-</script>  
-  
-</body>  
-</html>
+// 拖动翻页功能（此处省略了实现代码）
+</script>
