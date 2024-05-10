@@ -15,7 +15,30 @@
   display: flex;  
   transition: transform 0.5s ease;  
 }  
-  
+
+.carousel-prev, .carousel-next {
+    cursor: pointer;
+    position: absolute;
+    top: 50%;
+    width: auto;
+    padding: 16px;
+    margin-top: -22px;
+    color: black;
+    font-weight: bold;
+    font-size: 18px;
+    transition: 0.6s ease;
+    user-select: none;
+  }
+  .carousel-next {
+    right: 0;
+  }
+  .carousel-prev {
+    left: 0;
+}
+.carousel-prev:hover, .carousel-next:hover {
+    background-color: rgba(0,0,0,0.4);
+}
+
 .carousel-slide {  
   min-width: 100%;  
   display: flex;  
@@ -24,10 +47,11 @@
 }  
   
 .carousel-slide img {  
-  max-width: 100%;  
+  max-width: 80%;  
   height: auto;  
 }  
-  
+
+/*  
 .carousel-prev, .carousel-next {  
   position: absolute;  
   top: 50%;  
@@ -36,7 +60,7 @@
   border: none;  
   cursor: pointer;  
   font-size: 2em;  
-}  
+}  */
   
 .carousel-prev { left: 10px; }  
 .carousel-next { right: 10px; }  
@@ -66,12 +90,12 @@
       <img src="https://tg-image.com/file/0240af90bb24cb866957e.jpg" alt="Image 3">
     </div>
   </div>
-  <button class="carousel-prev" onclick="prevSlide()">
-    ←
-  </button>
-  <button class="carousel-next" onclick="nextSlide()">
-    →
-  </button>
+  <div class="carousel-prev" onclick="prevSlide()">
+    ❮
+  </div>
+  <div class="carousel-next" onclick="nextSlide()">
+    ❯
+  </div>
 </div>
 <div class="card">
   <button onclick="goToSlide(0)">
