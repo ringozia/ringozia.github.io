@@ -32,3 +32,23 @@ window.onload = function () {
   showSlide(currentSlide);
   autoSlide();
 };
+
+var btc1 = "#df5e9a";
+var btc2 = "#dc86b0";
+
+var button1 = document.getElementById("tbt1");
+var button2 = document.getElementById("tbt2");
+
+button1.addEventListener("click", function () {
+  // 改变按钮的背景颜色
+  button1.style.backgroundColor = btc1;
+  button2.style.backgroundColor = btc2;
+});
+
+button2.addEventListener("click", function () {
+  // 改变按钮的背景颜色
+  button2.style.backgroundColor = btc1;
+  button1.style.backgroundColor = btc2;
+});
+
+//文本切换
