@@ -1,185 +1,73 @@
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>
-  ringozia博客
-</title>
-<style>
-  /* CSS部分 */  
-.carousel {  
-  position: relative;  
-  overflow: hidden;  
-  width: 100%;  
-}  
-  
-.carousel-track {  
-  display: flex;  
-  transition: transform 0.5s ease;  
-}  
+<!DOCTYPE html>
 
-.carousel-prev, .carousel-next {
-    cursor: pointer;
-    position: absolute;
-    top: 50%;
-    width: auto;
-    padding: 16px;
-    margin-top: -22px;
-    color: black;
-    font-weight: bold;
-    font-size: 18px;
-    transition: 0.6s ease;
-    user-select: none;
-  }
-  .carousel-next {
-    right: 0;
-  }
-  .carousel-prev {
-    left: 0;
-}
-.carousel-prev:hover, .carousel-next:hover {
-    background-color: rgba(0,0,0,0.4);
-}
+<html lang="zh">
 
-.carousel-slide {  
-  min-width: 100%;  
-  display: flex;  
-  justify-content: center;  
-  align-items: center;  
-}  
-  
-.carousel-slide img {  
-  max-width: 80%;  
-  height: auto;  
-}  
 
-/*  
-.carousel-prev, .carousel-next {  
-  position: absolute;  
-  top: 50%;  
-  transform: translateY(-50%);  
-  background: none;  
-  border: none;  
-  cursor: pointer;  
-  font-size: 2em;  
-}  */
-  
-.carousel-prev { left: 10px; }  
-.carousel-next { right: 10px; }  
-  
-.carousel-buttons {  
-  margin-top: 20px;  
-  text-align: center;  
-}  
-  
-.card {  
-  margin-top: 20px;  
-  text-align: center;  
-}
-img {
 
-  border-radius: 12px;
-}
-</style>
-<div class="carousel">
-  <div class="carousel-track" id="carouselTrack">
-    <div class="carousel-slide">
-      <img src="https://tg-image.com/file/de2bd4a0721aababe1369.jpg" alt="Image 1" width="1000"
-  height="500" >
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Document</title>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+
+
+<body class="maxcolor">
+
+    <img src="https://via.placeholder.com/700x200" alt="" class="banner">
+
+
+
+    <div class="dhl">
+
+        <div a="#">首页</div>
+
+        <div>日志</div>
+
+        <div>匣子</div>
+
+
+
     </div>
-    <div class="carousel-slide">
-      <img src="https://tg-image.com/file/a2b2b535e4e808d86c69b.jpg" alt="Image 2" width="1000"
-  height="500">
+
+    <div class="yuan"></div>
+
+    <div class="paper">
+
+
+
+        <h1>一张平平无奇的纸</h1>
+
+        <h3>目前为止只是一次测试</h3>
+
+        <p>这是一个个人博客网页，用于记录自己的Html学习笔记、心得体会、日常记录等等。</p>
+
+
+
     </div>
-    <div class="carousel-slide">
-      <img src="https://tg-image.com/file/b264c695b220c9fa370aa.jpg" alt="Image 3" width="1000"
-  height="500">
-    </div>
-    <div class="carousel-slide">
-      <img src="https://tg-image.com/file/0240af90bb24cb866957e.jpg" alt="Image 3" width="1000"
-  height="500">
-    </div>
-  </div>
-  <div class="carousel-prev" onclick="prevSlide()">
-    ❮
-  </div>
-  <div class="carousel-next" onclick="nextSlide()">
-    ❯
-  </div>
-</div>
-<div class="card">
-  <button onclick="goToSlide(0)">
-    图片1
-  </button>
-  <button onclick="goToSlide(1)">
-    图片2
-  </button>
-  <button onclick="goToSlide(2)">
-    图片3
-  </button>
-</div>
-<div class="card">
-  <button>
-    按钮1
-  </button>
-  <button>
-    按钮2
-  </button>
-  <button>
-    按钮3
-  </button>
-</div>
-<div class="container">
-  <div class="card text-center">
-    <div class="card-header">
-      Card Header
-    </div>
-    <div class="card-body">
-      <h5 class="card-title">
-        Card title
-      </h5>
-      <p class="card-text">
-        Some quick example text to build on the card title and make up the bulk of the card's content.
-      </p>
-    </div>
-    <div class="card-footer text-muted">
-      2 days ago
-    </div>
-  </div>
-</div>
-<script>
-  let currentSlide = 0;  
-const slides = document.querySelectorAll('.carousel-slide');  
-const totalSlides = slides.length;  
-  
-function nextSlide() {  
-  currentSlide = (currentSlide + 1) % totalSlides;  
-  showSlide(currentSlide);  
-}  
-  
-function prevSlide() {  
-  currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;  
-  showSlide(currentSlide);  
-}  
-  
-function goToSlide(n) {  
-  currentSlide = n;  
-  showSlide(currentSlide);  
-}  
-  
-function showSlide(n) {  
-  const track = document.getElementById('carouselTrack');  
-  track.style.transform = `translateX(-${n * 100}%)`;  
-}  
-  
-// 自动切换功能  
-function autoSlide() {  
-  setInterval(nextSlide, 5000); // 每5秒切换一次  
-} 
-  
-// 初始化轮播图  
-window.onload = function() {  
-  showSlide(currentSlide);  
-  autoSlide();  
-};  
-  
-// 拖动翻页功能（此处省略了实现代码）
-</script>
+
+
+
+
+
+
+
+</body>
+
+<footer class="footer">
+
+    <p>版权所有</p>
+
+</footer>
+
+
+
+
+
+</html>
