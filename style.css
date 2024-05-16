@@ -1,0 +1,280 @@
+body {
+
+  margin: 0px;
+
+  padding: 0px;
+
+}
+
+
+
+.dhl {
+
+  background-color: #333;
+
+  color: white;
+
+  overflow: hidden;
+
+  position: sticky;
+
+  top: 0;
+
+  z-index: 999;
+
+  height: 40%;
+
+
+
+  display: flex;
+
+
+
+  justify-content: center;
+
+  align-items: center;
+
+
+
+  backdrop-filter: blur(20px);
+
+  background: rgba(255, 255, 255, 0.269);
+
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+
+}
+
+
+
+.dhl div {
+
+  font-size: 1em;
+
+  float: left;
+
+  display: block;
+
+  color: white;
+
+  text-align: center;
+
+  padding: 2% 4%;
+
+  text-decoration: none;
+
+}
+
+
+
+.dhl div:hover {
+
+  backdrop-filter: blur(20px);
+
+  background: rgba(255, 255, 255, 0.132);
+
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+
+}
+
+
+
+.banner {
+
+  width: 100%;
+
+}
+
+
+
+.paper:after {
+
+  content: "";
+
+  position: absolute;
+
+  width: 50px;
+
+  height: 50px;
+
+  background: -webkit-linear-gradient(top right, transparent 50%, #fff 0);
+
+  top: 0;
+
+  right: 0;
+
+  border-bottom-left-radius: 5px;
+
+}
+
+
+
+.paper {
+
+  position: relative;
+
+  margin-top: 10vh;
+
+  margin-left: 20%;
+
+  margin-right: 20%;
+
+
+
+  padding: 5vh;
+
+  height: 100vh;
+
+  background: linear-gradient(
+
+    -135deg,
+
+    transparent 3%,
+
+    rgba(255, 255, 255, 0.269) 0
+
+  );
+
+
+
+  backdrop-filter: blur(20px);
+
+}
+
+
+
+.yuan {
+
+  margin-left: 20%;
+
+  margin-top: 25%;
+
+  position: absolute;
+
+  width: 150px;
+
+  height: 150px;
+
+  background-color: #fcdced7d;
+
+  border-radius: 50%;
+
+  animation: scaleAnimation 8s infinite ease-in-out;
+
+}
+
+
+
+.footer {
+
+  text-align: center;
+
+  background-color: cadetblue;
+
+  color: white;
+
+  font-size: small;
+
+  margin-top: 6%;
+
+  padding-top: 2%;
+
+  padding-bottom: 2%;
+
+
+
+  backdrop-filter: blur(20px);
+
+  background: rgba(255, 255, 255, 0.3);
+
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+
+}
+
+
+
+/* 渐变背景 */
+
+.maxcolor {
+
+  background: linear-gradient(
+
+    45deg,
+
+    #9d50bb,
+
+    #6e48aa,
+
+    #4a148c,
+
+    #ffffff,
+
+    #ce185e
+
+  );
+
+  background-size: 300% 300%;
+
+  animation: gentleGradientAnimation 15s ease infinite;
+
+}
+
+
+
+.maxcolor2 {
+
+  margin: 0;
+
+  background: linear-gradient(45deg, #9d50bb, #6e48aa, #4a148c, #e90a4d);
+
+  background-size: 300% 300%;
+
+  animation: gentleGradientAnimation 5s ease infinite;
+
+}
+
+
+
+@keyframes gentleGradientAnimation {
+
+  0% {
+
+    background-position: 0% 50%;
+
+  }
+
+  50% {
+
+    background-position: 100% 50%;
+
+  }
+
+  100% {
+
+    background-position: 0% 50%;
+
+  }
+
+}
+
+
+
+/* 小球缩放动画 */
+
+@keyframes scaleAnimation {
+
+  0%,
+
+  100% {
+
+    transform: translate(-50%, -50%) scale(1);
+
+  }
+
+  50% {
+
+    transform: translate(-50%, -50%) scale(0.8);
+
+  }
+
+}
+
