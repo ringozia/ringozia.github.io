@@ -10,7 +10,6 @@
             width: 90%;
             height: 100%;
             margin: 4%;
-            height: 100vh;
 
 
 
@@ -18,6 +17,29 @@
 
         p {
             font-size: 18px;
+        }
+
+        button {
+            font-size: large;
+        }
+
+        input {
+            font-size: large;
+
+        }
+
+
+        .card {
+            border: 1px solid black;
+            padding: 2%;
+            border-radius: 7px;
+        }
+
+        .card2 {
+            border: 0.5px solid rgb(138, 134, 134);
+            padding: 2%;
+            border-radius: 3px;
+            background: #efeded;
         }
     </style>
 
@@ -37,9 +59,9 @@
     <br>
     <br>
 
-    <div style="border: 1px solid black; padding: 2%;border-radius: 7px;">
-        <input type="number" placeholder="Anum" style="width: 14%" id="inp1">
-        <input type="number" placeholder="Bnum" style="width: 14%" id="inp2">
+    <div class="card">
+        <input type="number" placeholder="Anum" style="width: 20%" id="inp1">
+        <input type="number" placeholder="Bnum" style="width: 20%" id="inp2">
         <br>
         <p id="txtx">请输入数值以比对</p>
 
@@ -51,12 +73,26 @@
         <hr>
         <p id="txtx3">...</p>
         <button onclick="bijiao3()">switch 比对</button>
-
-
     </div>
 
-    <script>
+    <dir class="card">数值操作
 
+        <ol class="card2">
+            <p class="card2" id="num1">0</p>
+            <button id="add1">+1</button>
+            <button id="sub1">-1</button>
+            <button id="mul1">*2</button>
+            <button id="div1">/2</button>
+            <button id="reset1">c</button>
+
+        </ol>
+
+    </dir>
+
+
+
+
+    <script>
 
         var btn1 = document.getElementById('btn1');
         var txt1 = document.getElementById('txt1');
@@ -96,9 +132,6 @@
                 txtx.innerHTML = "B>A";
             }
 
-
-
-
         }
 
         function bijiao2() {
@@ -125,8 +158,24 @@
 
         }
 
+        var num1 = document.getElementById('num1');
 
+        add1.onclick = function () {
+            num1.innerHTML = parseInt(num1.innerHTML) + 1;
+        }
+        sub1.onclick = function () {
+            num1.innerHTML = parseInt(num1.innerHTML) - 1;
+        }
+        mul1.onclick = function () {
+            num1.innerHTML = parseInt(num1.innerHTML) * 2;
+        }
+        div1.onclick = function () {
+            num1.innerHTML = parseInt(num1.innerHTML) / 2;
+        }
 
+        reset1.onclick = function () {
+            num1.innerHTML = 0;
+        }
 
 
 
