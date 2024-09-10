@@ -3,15 +3,21 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hosawa</title>
     <style>
         body {
-            margin: 5%;
+            width: 100%;
+            height: 100%;
+            margin: 4%;
+            height: 100vh;
+
+
 
         }
 
         p {
-            font-size: small;
+            font-size: 18px;
         }
     </style>
 
@@ -30,13 +36,24 @@
     <a href="" , style="font-size: 10px;">help me</a>
     <br>
     <br>
-    <br>
-    <input type="number" placeholder="Anum" style="width: 14%" id="inp1">
-    <input type="number" placeholder="Bnum" style="width: 14%" id="inp2">
-    <br>
-    <p id="txtx">请输入数值以比对</p>
-    <br>
-    <button onclick="bijiao()">比对</button>
+
+    <div style="border: 1px solid black; padding: 2%;border-radius: 7px;">
+        <input type="number" placeholder="Anum" style="width: 14%" id="inp1">
+        <input type="number" placeholder="Bnum" style="width: 14%" id="inp2">
+        <br>
+        <p id="txtx">请输入数值以比对</p>
+
+        <button onclick="bijiao()">if 比对</button>
+
+        <hr>
+        <p id="txtx2">...</p>
+        <button onclick="bijiao2()">三元比对</button>
+        <hr>
+        <p id="txtx3">...</p>
+        <button onclick="bijiao3()">switch 比对</button>
+
+
+    </div>
 
     <script>
 
@@ -55,10 +72,14 @@
             }
         }
 
+        var txtx = document.getElementById('txtx');
+        var txtx2 = document.getElementById('txtx2');
+        var txtx3 = document.getElementById('txtx3');
+        var inp1 = document.getElementById('inp1');
+        var inp2 = document.getElementById('inp2');
+
         function bijiao() {
-            var txtx = document.getElementById('txtx');
-            var inp1 = document.getElementById('inp1');
-            var inp2 = document.getElementById('inp2');
+
             var inpVal1 = inp1.value;
             var inpVal2 = inp2.value;
 
@@ -74,7 +95,40 @@
             else {
                 txtx.innerHTML = "B>A";
             }
+
+
+
+
         }
+
+        function bijiao2() {
+            var inpVal1 = inp1.value;
+            var inpVal2 = inp2.value;
+
+            inpVal1 == inpVal2 ? txtx2.innerHTML = "is=" : txtx2.innerHTML = "is!=";
+
+        }
+
+        function bijiao3() {
+            var inpVal1 = inp1.value;
+            var inpVal2 = inp2.value;
+            0
+            var mina = 1;
+            switch (inpVal1) {
+                case 1:
+                    txtx3.innerHTML = "switch = 1";
+                    break;
+                default:
+                    txtx3.innerHTML = inpVal1;
+
+            }
+
+        }
+
+
+
+
+
 
 
     </script>
