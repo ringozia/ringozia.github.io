@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Hosawa</title>
+    <style>
+        body {
+            margin: 5%;
+
+        }
+
+        p {
+            font-size: small;
+        }
+    </style>
+
+
+
+</head>
+
+<body>
+    <h1>Hosawa</h1>
+    <div>
+        <p id='txt1'>欢迎订阅，享受更多服务！</p>
+    </div>
+
+    <button id='btn1'>订阅</button>
+    <br>
+    <a href="" , style="font-size: 10px;">help me</a>
+    <br>
+    <br>
+    <br>
+    <input type="number" placeholder="Anum" style="width: 14%" id="inp1">
+    <input type="number" placeholder="Bnum" style="width: 14%" id="inp2">
+    <br>
+    <p id="txtx">请输入数值以比对</p>
+    <br>
+    <button onclick="bijiao()">比对</button>
+
+    <script>
+
+
+        var btn1 = document.getElementById('btn1');
+        var txt1 = document.getElementById('txt1');
+        btn1.onclick = function () {
+            if (btn1.innerHTML === '取消订阅') {
+                txt1.innerHTML = '欢迎订阅，享受更多服务！';
+                btn1.innerHTML = '订阅';
+
+            }
+            else {
+                txt1.innerHTML = '感谢您的订阅！';
+                btn1.innerHTML = '取消订阅';
+            }
+        }
+
+        function bijiao() {
+            var txtx = document.getElementById('txtx');
+            var inp1 = document.getElementById('inp1');
+            var inp2 = document.getElementById('inp2');
+            var inpVal1 = inp1.value;
+            var inpVal2 = inp2.value;
+
+            if (inpVal1 == "" || inpVal2 == "") {
+                txtx.innerHTML = "请输入数值以比对";
+            }
+            else if (inpVal1 == inpVal2) {
+                txtx.innerHTML = "A=B";
+            }
+            else if (inpVal1 > inpVal2) {
+                txtx.innerHTML = "A>B";
+            }
+            else {
+                txtx.innerHTML = "B>A";
+            }
+        }
+
+
+    </script>
+
+
+</body>
+
+</html>
