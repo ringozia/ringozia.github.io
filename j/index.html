@@ -19,6 +19,11 @@
             font-size: 18px;
         }
 
+        .psmall {
+            font-size: small;
+            color: gray;
+        }
+
         button {
             font-size: large;
         }
@@ -55,7 +60,7 @@
 
     <button id='btn1'>订阅</button>
     <br>
-    <a href="" , style="font-size: 10px;">help me</a>
+    <a href="" , style="font-size: small">help me</a>
     <br>
     <br>
 
@@ -71,11 +76,11 @@
         <p id="txtx2">...</p>
         <button onclick="bijiao2()">三元比对</button>
         <hr>
-        <p id="txtx3">...</p>
-        <button onclick="bijiao3()">switch 比对</button>
+        <!-- <p id="txtx3">...</p> -->
+        <!-- <button onclick="bijiao3()">switch 比对</button> -->
     </div>
 
-    <dir class="card">数值操作
+    <dir class="card">
 
         <ol class="card2">
             <p class="card2" id="num1">0</p>
@@ -89,10 +94,20 @@
 
     </dir>
 
+    <div class="card">
+        <p id="txtxh">0</p>
+        <button onclick="playxh()">开始循环</button>
+        <p class="psmall">setInterval伪循环 循环次数100</p>
+
+
+    </div>
+
+
 
 
 
     <script>
+        document.write("Gokya");
 
         var btn1 = document.getElementById('btn1');
         var txt1 = document.getElementById('txt1');
@@ -145,7 +160,7 @@
         function bijiao3() {
             var inpVal1 = inp1.value;
             var inpVal2 = inp2.value;
-            0
+
             var mina = 1;
             switch (inpVal1) {
                 case 1:
@@ -176,6 +191,38 @@
         reset1.onclick = function () {
             num1.innerHTML = 0;
         }
+
+        //自增一
+        var xyra = 0;
+        xyra = ++xyra
+        console.log(xyra);
+
+        var xyrb = 0;
+        xyra = --xyrb
+        console.log(xyrb);
+
+
+        function playxh() {
+            var txtxh = document.getElementById('txtxh');
+
+            var i = 0;
+            var intervalId = setInterval(function () {
+
+                if (i < 101) {
+                    txtxh.innerHTML = i;
+                    i++;
+
+                } else {
+                    clearInterval(intervalId);
+                }
+
+            }, 500);
+
+
+
+
+        }
+
 
 
 
