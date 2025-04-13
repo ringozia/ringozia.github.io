@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>sim cites</title>
+	<style>
+		body {
+			width: 96%;
+			height: 100%;
+
+			margin-top: 0%;
+			background-color: #15172eff;
+		}
+
+		button {
+			padding: 10px;
+			font-size: 20pt;
+		}
+
+		p {
+
+			font-size: 10pt;
+		}
+
+		.txtbox {
+
+			overflow-y: auto;
+
+			width: 100%;
+			border: 1px solid #000000;
+			font-size: 5px;
+			border-radius: 5px;
+			padding: 3px;
+			color: #FFF;
+			line-height: 10px;
+
+
+
+
+		}
+
+		.card0 {
+
+			background-color: #A9ABC859;
+			padding: 10px;
+			display: flex;
+			justify-content: flex-start;
+			border-radius: 8px;
+			flex-direction: row;
+
+			line-height: 5px;
+			align-items: flex-start;
+			margin-top: 2px;
+		}
+
+		.card0s {
+			width: 50%;
+			background-color: #A9ABC859;
+			padding: 10px;
+			display: flex;
+			justify-content: flex-start;
+			border-radius: 8px;
+			flex-direction: row;
+
+			line-height: 5px;
+			align-items: center;
+			margin: 0.5px;
+
+
+		}
+
+		.btncard {
+
+
+			display: flex;
+			justify-content: space-between;
+			border-radius: 8px;
+			flex-direction: row;
+
+			line-height: 20px;
+			align-items: center;
+			margin-top: 2px;
+			height: 40%;
+		}
+
+		.card1 {
+			background-color: #A9ABC859;
+			padding: 10px;
+			display: flex;
+			justify-content: space-between;
+			border-radius: 8px;
+			flex-direction: row;
+			margin-bottom: 10px;
+			margin-top: 10px;
+
+
+		}
+
+		.card2 {
+			width: 100%;
+			background-color: #A9ABC859;
+			padding: 5px;
+			border-radius: 6px;
+			margin: 0.5px;
+
+
+		}
+
+
+
+
+		.card3 {
+			line-height: 5px;
+
+		}
+
+		.card4 {
+			width: 100%;
+			background-color: #A9ABC859;
+			padding: 10px;
+			border-radius: 6px;
+			margin: 0.5px;
+
+			display: flex;
+			align-items: center;
+			flex-direction: column;
+			height: 100%;
+		}
+
+		.cardgz {
+			display: flex;
+			flex-direction: row;
+			justify-content: center;
+			align-content: flex-start;
+			flex-wrap: wrap;
+
+		}
+
+		.gzbtn {
+			background-color: #C7DFF3;
+			padding: 3px;
+			margin: 2px;
+
+			display: flex;
+			border-radius: 4px;
+
+			line-height: 26%;
+			width: 24%;
+			align-items: center;
+			justify-content: center;
+
+
+
+		}
+
+
+
+
+		.font1 {
+			font-size: 10px;
+			color: #fff;
+			#00000085
+		}
+
+		.font2 {
+			line-height: 20px;
+		}
+
+
+
+		.fontsmall {
+			font-size: 12px;
+
+		}
+
+		.jdt0 {
+			width: 48%;
+		}
+
+
+		.btn1 {
+			background-color: #A9ABC859;
+			padding: 20px;
+			margin: 3px;
+			display: flex;
+
+			justify-content: center;
+			border-radius: 8px;
+			flex-direction: row;
+
+			line-height: 10px;
+			align-items: center;
+
+			width: 100%;
+			height: 100%
+		}
+
+
+
+		.tc1 {
+			display: none;
+			/* 默认隐藏 */
+			position: fixed;
+			z-index: 1;
+			left: 0;
+			top: 0;
+			width: 100%;
+			height: 100%;
+
+			background-color: rgba(0, 0, 0, 0.8);
+			/* 半透明背景 */
+
+
+		}
+
+		.tc1s {
+
+			margin: 30% auto;
+			padding: 10px;
+			border: 1px solid #fff;
+			border-radius: 8px;
+			width: 50%;
+
+			color: #fff;
+			display: flex;
+			align-items: center;
+			flex-direction: column;
+		}
+	</style>
+</head>
+
+<body onload="startSimulation()">
+	<h1>sim cites</h1>
+	<div class="card0">
+		<div class="card0s font2">
+			<p id="tick">年份: 0</p>
+			&emsp;
+			<progress max="12" value="0" id="jdt0" class="jdt0"></progress>
+		</div>
+		<div class="card0s">
+			<p id="dtt" class="font2">土地: 0 (100)</p>
+			&emsp;
+			<p id="dtd" class="font2">点数: 0</p>
+		</div>
+	</div>
+	<div class="btncard">
+		<div class="btn1" id="ibt1">产业</div>
+		<div class="btn1" id="ibt2">发展</div>
+		<div class="btn1" id="ibt3">战争</div>
+		<div class="btn1" id="ibt4">关于</div>
+	</div>
+	<div class="card1">
+		<div class="card2">
+			<div class="card3">
+				<p id="dtr">人口：</p>
+				<p class="font1" id="br">出生率：</p>
+				<p class="font1" id="dr">死亡率：</p>
+			</div>
+			<div class="card3">
+				<p id="dtc">GDP：</p>
+				<p class="font1" id="dtca">增长：</p>
+				<p id="dtcj">rGDP：</p>
+			</div>
+		</div>
+		<div class="card2">
+			<div class="card3">
+				<p id="dtclv">等级：</p>
+				<progress max="100" value="0" id="jdt1"></progress>
+				<p id="cyn">产业：</p>
+				<p id="ccc">企业就职率：</p>
+				<p id="czl">城市化</p>
+			</div>
+		</div>
+	</div>
+	<div class="card0">
+		<div class="card4">
+			大事件
+			<p>大事件窗口</p>
+			<div class="txtbox" id="txtbox">
+				开发计划<br>升级任务（相应的减分事件）<br>游戏：拉霸/猜数字/盲盒/打地鼠/大小押（必中/可能/难度）<br>城市状态栏<br>GDP波动<br>重置数据<br>战争和侵略<br>折线图<br>大事件窗口<br>。<br>。<br>。<br>。<br>。<br>。<br>
+			</div>
+		</div>
+		<div class="card4">
+			年度任务
+			<p id="gztxt">完成</p>
+			<dic class="card2">
+				<div class="cardgz" id="cardgz">
+					<div class="gzbtn" id="gbt1">
+					</div>
+					<div class="gzbtn" id="gbt2">
+					</div>
+					<div class="gzbtn" id="gbt3">
+					</div>
+					<div class="gzbtn" id="gbt4">
+					</div>
+					<div class="gzbtn" id="gbt5">
+					</div>
+					<div class="gzbtn" id="gbt6">
+					</div>
+					<div class="gzbtn" id="gbt7">
+					</div>
+					<div class="gzbtn" id="gbt8">
+					</div>
+					<div class="gzbtn" id="gbt9">
+					</div>
+				</div>
+			</dic>
+		</div>
+	</div>
+	<br>
+	<button id="btna1">LV</button>
+	<div id="tc1" class="tc1">
+		<div class="tc1s">
+			选择需要新建的产业：
+			<p class="font1" id="cytxt0" style="text-align: center">点数：土地：<br>产业情况：</p>
+			<div class="card2 ncy" id="ncy1">
+				农业
+				<p class="font1" id="cytxt1">需求：点数，土地</p>
+			</div>
+			<div class="card2 ncy" id="ncy2">
+				工业
+				<p class="font1" id="cytxt2">需求：等级，点数，土地</p>
+			</div>
+			<div class="card2 ncy" id="ncy3">
+				商业
+				<p class="font1" id="cytxt3">需求：等级，点数，土地</p>
+			</div>
+			<div class="card2 ncy" id="ncy4">
+				信息业
+				<p class="font1" id="cytxt4">需求：等级，点数，土地</p>
+			</div>
+			<p class="font1" id="ncypip">轻触界面外以关闭界面</p>
+		</div>
+	</div>
+</body>
+<script>
+	//颜色声明
+	var btncl1 = ['#A9ABC859', '#a9abc8cc'];
+
+	var btncl2 = ['#A9ABC859', '#a9abc8c3'];
+
+	let dtr = 500; // 初始人口
+	let cyn = 1; // 初始产业数量
+	let cyg = 0;
+	let cys = 0;
+	let cyx = 0;
+	var cyrs = [500, 1000, 600, 700]
+	//每个产业所带来的人口
+	var cyds = [[0, 1, 1], [10, 3, 1], [30, 3, 1], [64, 5, 1]]
+	//新建产业需求
+
+	//土地&点数
+	var dtt = 100;
+	var dtts = 1;
+
+	var dtd = 80;
+
+	//更新数据
+	let tick = 0; //时刻12t=1y
+	let years = 0; //年
+	//读取存档数据
+	var kyears = localStorage.getItem('years');
+	//console.log(kyears)
+	if (kyears >= 1) {
+		// 模拟的年数
+		years = kyears;
+
+	} else {
+		years = 0;
+	}
+
+	//dtc
+	var dtc = 0;
+	var dtcs = [100, 350, 300, 500]
+	//各个产值可以有事件波动
+	var dtclv = 0;
+	var gdpa = 0; //max100加成，完成纪任务可得
+	// 模拟一年
+
+	//往年gdp
+	var bfc1 = 0;
+	var bfc2 = 0;
+
+
+	//初始emj
+	var semj1 = '⭕️';
+	var semj2 = '❌';
+
+	var luk = 0;
+
+	function simulateYear() {
+		bfc1 = dtc;
+
+		//出生 死亡率 基础波动值
+		let dtlb = 0.005 + 0.000 * Math.sin(tick);
+		let dtld = 0.003 + 0.000 * Math.cos(tick);
+
+
+		let cya = cyn + cyg + cys + cyx;
+		let czl = (1 - (cyn / cya)) * 100;
+
+		// 更新产业数量，这里简单模拟产业数量随时间增加
+		//cyn += 1;
+
+		//cyn*num 每个产业员工数量
+		var cc = dtr / ((cyn * cyrs[0]) + (cyg * cyrs[1]) + (cys * cyrs[2]) + (cyx * cyrs[3]))
+
+		//产业空位与生育率（人口过少时变化不明显
+		var dtlbx = ((1 - cc) / 20).toFixed(3);
+		//console.log(dtlbx);
+
+		dtlb += Number(dtlbx)
+		//console.log('xxx')
+
+		//满员时 人口减少
+		if (cc >= 1) {
+			dtld = 0.008 + 0.001 * Math.cos(tick);
+		}
+
+
+		//农业占比增益
+
+		// 计算出生和死亡人数
+		let dtbn = dtr * dtlb;
+		let dtdn = dtr * dtld;
+
+		// 更新人口
+		dtr += (dtbn - dtdn);
+
+
+
+
+		//产值计算
+		dtc += ((cyn * dtcs[0]) + (cyg * dtcs[1]) + (cys * dtcs[2] + (cyx * dtcs[3])))
+		//波动加成
+		dtc += dtc * (0.062 + 0.010 * Math.cos(tick))
+
+		//产值进步加成  城镇率+职位 均
+		var ccx = ((1 - cc) + (czl / 100)) / 2;
+		ccx = (ccx / 50).toFixed(3);
+		//console.log('进步' + ccx);
+
+		//由于产值是每年计算一次的，故进步无效
+		//dtc += dtc * Number(ccx);
+
+
+		//等级产值加成
+		if (dtclv >= 1) {
+			dtc = dtc * dtclv
+
+		};
+
+
+
+		var dtcj = (dtc / dtr);
+
+		dtc = dtc / 10000
+		//dtca = dtca/10000
+		//console.log(dtc)
+
+		var zzlc = dtc - bfc1
+
+		//var sjsa = Math.floor(Math.random() * 35) + 10;
+
+
+		//十年一纪
+
+
+
+
+		if (tick > 12) {
+			//每年更新emj
+			var emj1 = ['⭕️', '🤣', '😊', '🍔', '💎', '❤️', '🌝', '☀️', '🌹', '🙋🏻‍♂️'];
+
+			var emj2 = ['❌', '😨', '😭', '💩', '💣', '🖤', '🌚', '🌧', '🥀', '🙅🏻‍♂️'];
+
+			var listkk = Math.floor(Math.random() * (emj1.length)) + 0;
+
+			semj1 = emj1[listkk]
+
+			semj2 = emj2[listkk]
+
+
+			console.log('一纪')
+
+			document.getElementById('jdt1').value = dtclv
+			tick = 0;
+			years++;
+
+
+
+			//惩罚机制
+			if (kk < 3) {
+				var kkkx = (Math.random() * 0.6) + 0.2;//想要随机小数  不能有floor
+				if(kkkx>dtclv){
+					kkkx = dtclv;
+				}
+				dtclv -= kkkx;
+				
+				
+			}
+			else {
+
+				//更新等级
+				dtclv += luk;
+			}
+			
+			document.getElementById("dtclv").innerText = "等级: " + (dtclv.toFixed(2));
+
+
+			//更新格子
+			var elements = document.querySelectorAll('.gzbtn');
+
+			elements.forEach(function(element) {
+				document.getElementById(element.id).innerText = ''
+			})
+			//更新数据
+			ka = 0;
+			kb = 0;
+			kk = 0;
+
+			document.getElementById('gztxt').innerText = '请至少翻牌三张'
+
+
+		}
+
+
+		document.getElementById('jdt0').value = (tick)
+
+		document.getElementById("dtt").innerText = "土地: " + dtts + '/' + dtt;
+
+		document.getElementById("dtd").innerText = "点数: " + dtd;
+
+		document.getElementById("cytxt0").innerHTML = "产业: " + cya + ' ㅤ( ㅤ' + cyn + ' ㅤ' + cyg + ' ㅤ' + cys + ' ㅤ' + cyx + ' ㅤ)' + '<br>' + "土地: " + dtts + '/' + dtt + ' ㅤ' + '点数：' + dtd;
+
+
+		// 显示结果
+		document.getElementById("dtr").innerText = "人口: " + Math.round(dtr);
+		document.getElementById("cyn").innerText = "产业: " + cya + '(' + cyn + '/' + cyg + '/' + cys + '/' + cyx + ')';
+
+
+		//tick刷新
+
+		tick++;
+
+
+
+
+		document.getElementById("tick").innerText = "年份: " + years;
+
+		document.getElementById("br").innerText = "出生率: " + (dtlb.toFixed(3)) + ' ( +' + dtbn.toFixed() + ' )';
+
+		document.getElementById("dr").innerText = "死亡率: " + (dtld.toFixed(3)) + ' ( -' + dtdn.toFixed() + ' )';
+
+		document.getElementById("ccc").innerText = "产业占有率: " + ((cc * 100).toFixed(2) + '%');
+
+		document.getElementById("czl").innerText = "城镇化: " + (czl.toFixed()) + '%';
+
+		document.getElementById("dtc").innerText = "GDP: " + (dtc.toFixed(3)) + '亿';
+
+		document.getElementById("dtcj").innerText = "均GDP: " + (dtcj.toFixed(2)) + '万';
+
+
+		document.getElementById("dtca").innerText = "增量: " + (zzlc.toFixed(3)) + '亿';
+
+
+		document.getElementById('cytxt1').innerText = '需求：' + cyds[0][0] + '等级，' + cyds[0][1] + '点数，' + cyds[0][2] + '土地';
+
+		document.getElementById('cytxt2').innerText = '需求：' + cyds[1][0] + '等级，' + cyds[1][1] + '点数，' + cyds[1][2] + '土地';
+
+		document.getElementById('cytxt3').innerText = '需求：' + cyds[2][0] + '等级，' + cyds[2][1] + '点数，' + cyds[2][2] + '土地';
+
+		document.getElementById('cytxt4').innerText = '需求：' + cyds[3][0] + '等级，' + cyds[3][1] + '点数，' + cyds[3][2] + '土地';
+		//存档
+		localStorage.setItem('years', years);
+
+
+
+
+	};
+
+	// 循环执行模拟
+	function startSimulation() {
+		simulateYear();
+		setTimeout(startSimulation, 500); // 每秒执行一次
+	};
+	document.getElementById('btna1').addEventListener('click', function() {
+		console.log('交互')
+
+
+		dtclv += Math.random() * 0.60 + 0.20;
+
+		document.getElementById("dtclv").innerText = "等级: " + (dtclv.toFixed(2));
+
+	});
+
+
+	document.addEventListener('DOMContentLoaded', function() {
+		//startevent();
+
+	});
+
+
+
+
+
+	//按钮弹窗  判定点击某个按钮时
+	// 获取元素
+	var elements = document.querySelectorAll('.btn1');
+
+	var kbt = document.getElementById('tc1');
+
+
+	// 为每个元素添加点击事件监听器
+	elements.forEach(function(element) {
+		element.addEventListener('click', function() {
+			var eleid = element.id;
+			console.log('选择按钮' + eleid);
+
+			if (eleid == 'ibt1')
+			{
+				kbt.style.display = "block"
+			}
+
+		});
+	});
+
+
+
+	//新建产业 判断按钮
+	var elements = document.querySelectorAll('.ncy');
+
+	elements.forEach(function(element) {
+		element.addEventListener('click', function() {
+
+
+
+			var eleid = element.id;
+			var cy_btn = document.getElementById(eleid);
+
+			cy_btn.style.backgroundColor = btncl2[1];
+
+			setTimeout(function() {
+				cy_btn.style.backgroundColor = btncl2[0];
+			}, 80);
+
+			var pdlv = 0;
+			var pdtd = 0;
+			var pdtt = 0;
+
+			var cyall = [cyn, cyg, cys, cyx];
+			var cynum = 0;
+
+			if (eleid == 'ncy1')
+			{
+				pdlv = cyds[0][0];
+				pdtd = cyds[0][1];
+				pdtt = cyds[0][2];
+				cynum = 0;
+			}
+			else if (eleid == 'ncy2') {
+				pdlv = cyds[1][0];
+				pdtd = cyds[1][1];
+				pdtt = cyds[1][2];
+				cynum = 1
+			}
+			else if (eleid == 'ncy3') {
+				pdlv = cyds[2][0];
+				pdtd = cyds[2][1];
+				pdtt = cyds[2][2];
+				cynum = 2;
+			}
+			else if (eleid == 'ncy4') {
+				pdlv = cyds[3][0];
+				pdtd = cyds[3][1];
+				pdtt = cyds[3][2];
+				cynum = 3;
+			}
+
+
+			if (dtclv < pdlv || dtd < pdtd || dtts >= dtt) {
+				console.log('条件不足！')
+				document.getElementById('ncypip').innerText = '需求未达成！'
+
+				setTimeout(function() {
+					document.getElementById('ncypip').innerText = '轻触界面外以关闭界面'
+				}, 1000)
+			}
+			else {
+				//新建成功
+				dtd -= pdtd;
+				dtts += 1;
+
+				if (cynum == 0) {
+					cyn += 1;
+				}
+				else if (cynum == 1) {
+					cyg += 1;
+				}
+				else if (cynum == 2) {
+					cys += 1;
+				}
+				else if (cynum == 3) {
+					cyx += 1;
+				}
+
+
+			}
+
+
+
+		});
+	});
+
+	//新建产业 判断按钮
+	var elements = document.querySelectorAll('.gzbtn');
+
+
+	var ka = 0;
+	var kb = 0;
+	var kk = 0;
+
+	elements.forEach(function(element) {
+		element.addEventListener('click', function() {
+			var eleid = element.id;
+			if (eleid == 'gbt1') {
+
+			}
+
+
+
+
+			var bttmd = document.getElementById(eleid);
+
+			if (bttmd.innerText) {
+				console.log('存在内容')
+			} else {
+
+
+				bttmd.style.opacity = 0.7;
+				setTimeout(function() {
+					bttmd.style.opacity = 1.0;
+				}, 30)
+
+
+				//抽中率
+				var gsjn1 = Math.floor(Math.random() * 3) + 1;
+
+
+
+				if (gsjn1 == 1) {
+					bttmd.innerText = semj1;
+					ka++;
+				} else {
+					bttmd.innerText = semj2;
+					kb++;
+				}
+				kk++;
+
+				luk = 0;
+				if (kk >= 3) {
+					luk = ka / kk
+					console.log(luk)
+					document.getElementById('gztxt').innerText = '本次增益' + luk.toFixed(2)
+				}
+			}
+
+		})
+	});
+
+	//同步格子按钮高宽
+	var elements = document.querySelectorAll('.gzbtn');
+
+	elements.forEach(function(element) {
+
+		var gzsize = document.getElementById(element.id);
+		var mosa = gzsize.offsetWidth - 8;
+		gzsize.style.height = mosa + 'px';
+
+		//同步大事件窗口大小
+		var txtboxk = document.getElementById('txtbox');
+		txtboxk.style.height = document.getElementById('cardgz').offsetHeight + 3 + 'px';
+	});
+
+
+
+	window.onclick = function(event) {
+		if (event.target == kbt) {
+			kbt.style.display = "none";
+		}
+	}
+</script>
+
+</html>
