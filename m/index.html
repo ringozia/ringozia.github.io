@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>命馆</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;500&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #3498db;
+            --light: #ecf0f1;
+            --text: #2c3e50;
+            --text-light: #7f8c8d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            color: var(--text);
+            background-color: #f9f9f9;
+            line-height: 1.8;
+        }
+
+        a {
+            color: var(--accent);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--primary);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* 头部样式 */
+        .site-header {
+            background-color: var(--primary);
+            color: white;
+            padding: 4rem 0;
+            text-align: center;
+            margin-bottom: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .site-header::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(0, 0, 0, 0.1) 0%, transparent 100%);
+            z-index: 1;
+        }
+
+        .header-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .site-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+
+        .site-description {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-weight: 300;
+            font-size: 1.2rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* 导航菜单 */
+        .main-nav {
+            background-color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 0;
+        }
+
+        .nav-logo {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+        }
+
+        .nav-item {
+            margin-left: 2rem;
+        }
+
+        .nav-link {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-weight: 500;
+            color: var(--text);
+            position: relative;
+            padding: 0.5rem 0;
+            cursor: pointer;
+        }
+
+        .nav-link.active {
+            color: var(--accent);
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--accent);
+            transition: width 0.3s;
+        }
+
+        .nav-link:hover::after,
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        /* 主要内容布局 */
+        .main-content {
+            width: 100%;
+            padding-bottom: 3rem;
+        }
+
+        /* 内容区域 */
+        .content-section {
+            display: none;
+            width: 100%;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* 标签云容器 */
+        .tag-cloud-container {
+            background: white;
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+            margin-top: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            padding-bottom: 0.8rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* 标签云 */
+        .tag-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 0.6rem 1.2rem;
+            background-color: var(--light);
+            color: var(--text);
+            border-radius: 30px;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-weight: 500;
+            font-size: 1rem;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .tag:hover {
+            background-color: var(--accent);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .tag.active {
+            background-color: var(--accent);
+            color: white;
+        }
+
+        /* 页脚 */
+        .site-footer {
+            background-color: var(--primary);
+            color: white;
+            padding: 3rem 0;
+            text-align: center;
+            width: 100%;
+        }
+
+        .footer-content {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            list-style: none;
+            margin: 1.5rem 0;
+        }
+
+        .footer-item {
+            margin: 0 1rem;
+        }
+
+        .footer-link {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        .footer-link:hover {
+            color: white;
+        }
+
+        .copyright {
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 1.5rem;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .site-title {
+                font-size: 2.2rem;
+            }
+
+            .nav-container {
+                flex-direction: column;
+            }
+
+            .nav-menu {
+                margin-top: 1rem;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .nav-item {
+                margin: 0.5rem;
+            }
+
+            .section-title {
+                font-size: 1.5rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .site-title {
+                font-size: 1.8rem;
+            }
+            
+            .tag {
+                padding: 0.5rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 网站头部 -->
+    <header class="site-header">
+        <div class="container header-content">
+            <h1 class="site-title">命馆</h1>
+            <p class="site-description">miagau</p>
+        </div>
+    </header>
+
+    <!-- 导航菜单 -->
+    <nav class="main-nav">
+        <div class="container nav-container">
+            <a href="#" class="nav-logo">名趣录</a>
+            <ul class="nav-menu">
+                <li class="nav-item"><a class="nav-link active" data-section="wanyu">万玉</a></li>
+                <li class="nav-item"><a class="nav-link" data-section="dasi">大司</a></li>
+                <li class="nav-item"><a class="nav-link" data-section="ersi">二司</a></li>
+                <li class="nav-item"><a class="nav-link" data-section="sansi">三司</a></li>
+                <li class="nav-item"><a class="nav-link" data-section="sisi">四司</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <div class="container main-content">
+        <!-- 动态生成的标签内容将在这里显示 -->
+        <div id="tag-container" class="content-section active">
+            <div class="tag-cloud-container">
+                <h2 class="section-title" id="current-category">万玉</h2>
+                <div class="tag-cloud" id="tag-cloud"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 网站页脚 -->
+    <footer class="site-footer">
+        <div class="container footer-content">
+            <p>命馆 名趣录</p>
+            <ul class="footer-links">
+                <li class="footer-item"><a href="#" class="footer-link">关于</a></li>
+                <li class="footer-item"><a href="#" class="footer-link">联系</a></li>
+                <li class="footer-item"><a href="#" class="footer-link">订阅</a></li>
+                <li class="footer-item"><a href="#" class="footer-link">归档</a></li>
+            </ul>
+            <p class="copyright">© 2023 命馆. 保留所有权利.</p>
+        </div>
+    </footer>
+
+    <script>
+        // 标签数据 - 集中管理，便于维护
+        const tagData = {
+            wanyu: {
+                name: "万玉",
+                tags: ["玻若", "大齐", "文学", "旅行", "摄影", "思考"]
+            },
+            dasi: {
+                name: "大司",
+                tags: ["管理", "领导力", "战略", "组织", "决策", "团队", "效率", "创新", "变革"]
+            },
+            ersi: {
+                name: "二司",
+                tags: ["技术", "研发", "工程", "设计", "架构", "系统", "算法", "数据", "安全"]
+            },
+            sansi: {
+                name: "三司",
+                tags: ["营销", "品牌", "市场", "传播", "数字", "社交媒体", "内容", "广告", "公关"]
+            },
+            sisi: {
+                name: "四司",
+                tags: ["财务", "投资", "分析", "会计", "税务", "预算", "风控", "审计", "估值"]
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const tagCloud = document.getElementById('tag-cloud');
+            const currentCategory = document.getElementById('current-category');
+            
+            // 初始化页面 - 加载默认分类的标签
+            loadTags('wanyu');
+
+            // 导航切换功能
+            navLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // 更新导航状态
+                    navLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // 加载对应分类的标签
+                    const sectionId = this.getAttribute('data-section');
+                    loadTags(sectionId);
+                });
+            });
+
+            // 标签点击功能
+            tagCloud.addEventListener('click', function(e) {
+                if (e.target.classList.contains('tag')) {
+                    e.preventDefault();
+                    
+                    // 更新标签选中状态
+                    const tags = tagCloud.querySelectorAll('.tag');
+                    tags.forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    
+                    // 这里可以添加标签筛选功能
+                    console.log('选中标签:', e.target.textContent);
+                }
+            });
+
+            // 加载标签函数
+            function loadTags(categoryId) {
+                const category = tagData[categoryId];
+                
+                // 更新当前分类标题
+                currentCategory.textContent = category.name;
+                
+                // 清空现有标签
+                tagCloud.innerHTML = '';
+                
+                // 添加新标签
+                category.tags.forEach(tag => {
+                    const tagElement = document.createElement('a');
+                    tagElement.href = '#';
+                    tagElement.className = 'tag';
+                    tagElement.textContent = tag;
+                    
+
+                    
+                    tagCloud.appendChild(tagElement);
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>
