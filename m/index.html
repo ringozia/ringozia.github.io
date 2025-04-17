@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>命馆</title>
+    <title>命馆 · 名趣</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&family=Noto+Sans+SC:wght@300;500&display=swap"
         rel="stylesheet">
@@ -83,7 +83,7 @@
         }
 
         .site-description {
-            font-family: 'Noto Sans SC', sans-serif;
+            /*font-family: 'Noto Sans SC', sans-serif;*/
             font-weight: 300;
             font-size: 1.2rem;
             opacity: 0.9;
@@ -219,7 +219,7 @@
         .site-footer {
             background-color: var(--primary);
             color: white;
-            padding: 3rem 0;
+            padding: 2rem 0;
             text-align: center;
             width: 100%;
         }
@@ -284,7 +284,7 @@
             .site-title {
                 font-size: 1.8rem;
             }
-            
+
             .tag {
                 padding: 0.5rem 1rem;
                 font-size: 0.9rem;
@@ -298,7 +298,7 @@
     <header class="site-header">
         <div class="container header-content">
             <h1 class="site-title">命馆</h1>
-            <p class="site-description">miagau</p>
+            <p class="site-description">名 趣 录</p>
         </div>
     </header>
 
@@ -308,10 +308,10 @@
             <a href="#" class="nav-logo">名趣录</a>
             <ul class="nav-menu">
                 <li class="nav-item"><a class="nav-link active" data-section="wanyu">万玉</a></li>
-                <li class="nav-item"><a class="nav-link" data-section="dasi">大司</a></li>
-                <li class="nav-item"><a class="nav-link" data-section="ersi">二司</a></li>
-                <li class="nav-item"><a class="nav-link" data-section="sansi">三司</a></li>
-                <li class="nav-item"><a class="nav-link" data-section="sisi">四司</a></li>
+                <li class="nav-item"><a class="nav-link" data-section="dasi">当司</a></li>
+                <li class="nav-item"><a class="nav-link" data-section="ersi">前玉</a></li>
+                <li class="nav-item"><a class="nav-link" data-section="sansi">上本</a></li>
+                <li class="nav-item"><a class="nav-link" data-section="sisi">托本</a></li>
             </ul>
         </div>
     </nav>
@@ -334,10 +334,8 @@
             <ul class="footer-links">
                 <li class="footer-item"><a href="#" class="footer-link">关于</a></li>
                 <li class="footer-item"><a href="#" class="footer-link">联系</a></li>
-                <li class="footer-item"><a href="#" class="footer-link">订阅</a></li>
-                <li class="footer-item"><a href="#" class="footer-link">归档</a></li>
             </ul>
-            <p class="copyright">© 2023 命馆. 保留所有权利.</p>
+            <p class="copyright">2025.4.17</p>
         </div>
     </footer>
 
@@ -345,44 +343,134 @@
         // 标签数据 - 集中管理，便于维护
         const tagData = {
             wanyu: {
-                name: "万玉",
-                tags: ["玻若", "大齐", "文学", "旅行", "摄影", "思考"]
+                name: "万玉·贰伍",
+                tags: ["通袒", "丧方", "上贯",
+                    "法门",
+                    "室兰",
+                    "法本",
+                    "地造",
+                    "埃定",
+                    "大地棉",
+                    "亚治亚",
+                    "原泰",
+                    "富原",
+                    "长驰",
+                    "帝甲"]
             },
             dasi: {
-                name: "大司",
-                tags: ["管理", "领导力", "战略", "组织", "决策", "团队", "效率", "创新", "变革"]
+                name: "当司·贰肆",
+                tags: ["治原",
+                    "富碌",
+                    "青太崎",
+                    "期车太",
+                    "车其",
+                    "长舆",
+                    "池兰",
+                    "镜度",
+                    "广策弗丽隆达",
+                    "介之列",
+                    "直本松尤谢",
+                    "圆鉴",
+                    "台通",
+                    "荒造",
+                    "广造",
+                    "法量",
+                    "株吾",
+                    "西地池",
+                    "当司",
+                    "月地考",
+                    "松地季",
+                    "松地直司",
+                    "空圆上馆",
+                    "田粉谷",
+                    "宫分大",
+                    "玉子川",
+                    "大分",
+                    "分圆",
+                    "青方",
+                    "青分",
+                    "青司馆",
+                    "玉司",
+                    "胜线",
+                    "重隆",
+                    "青隆",
+                    "车前"]
             },
             ersi: {
-                name: "二司",
-                tags: ["技术", "研发", "工程", "设计", "架构", "系统", "算法", "数据", "安全"]
+                name: "前玉·贰叁",
+                tags: ["赞约",
+                    "伊路大",
+                    "本居子",
+                    "富达里大",
+                    "花里隆",
+                    "青山大",
+                    "前玉",
+                    "前玉子",
+                    "有司",
+                    "大品",
+                    "纠尤",
+                    "万玉",
+                    "万叶",
+                    "绳本",
+                    "玉据",
+                    "巨玉",
+                    "长本",
+                    "合车",
+                    "更原",
+                    "高玉",
+                    "正玉",
+                    "正分",
+                    "福考",
+                    "居舆",
+                    "皇确",
+                    "尹丘大",
+                    "比丘大",
+                    "青录",
+                    "玉近",
+                    "正右大",
+                    "青当",
+                    "当英",
+                    "伊国",
+                    "宜兰夏至",
+                    "失重秋分",
+                    "失地旷野",
+                    "空庭造木",
+                    "法门",
+                    "富车",
+                    "前玉",
+                    "千叶",
+                    "督早",
+                    "粉谷",
+                    "本居子",
+                    "介之列"]
             },
             sansi: {
-                name: "三司",
-                tags: ["营销", "品牌", "市场", "传播", "数字", "社交媒体", "内容", "广告", "公关"]
+                name: "",
+                tags: ["置空"]
             },
             sisi: {
-                name: "四司",
-                tags: ["财务", "投资", "分析", "会计", "税务", "预算", "风控", "审计", "估值"]
+                name: "",
+                tags: ["置空"]
             }
         };
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             const navLinks = document.querySelectorAll('.nav-link');
             const tagCloud = document.getElementById('tag-cloud');
             const currentCategory = document.getElementById('current-category');
-            
+
             // 初始化页面 - 加载默认分类的标签
             loadTags('wanyu');
 
             // 导航切换功能
             navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
+                link.addEventListener('click', function (e) {
                     e.preventDefault();
-                    
+
                     // 更新导航状态
                     navLinks.forEach(l => l.classList.remove('active'));
                     this.classList.add('active');
-                    
+
                     // 加载对应分类的标签
                     const sectionId = this.getAttribute('data-section');
                     loadTags(sectionId);
@@ -390,39 +478,44 @@
             });
 
             // 标签点击功能
-            tagCloud.addEventListener('click', function(e) {
+            tagCloud.addEventListener('click', function (e) {
                 if (e.target.classList.contains('tag')) {
                     e.preventDefault();
-                    
+
                     // 更新标签选中状态
                     const tags = tagCloud.querySelectorAll('.tag');
                     tags.forEach(t => t.classList.remove('active'));
                     e.target.classList.add('active');
-                    
+
                     // 这里可以添加标签筛选功能
                     console.log('选中标签:', e.target.textContent);
+
+                    // 要传递的字符串
+                    const titleString = e.target.textContent;
+                    // 跳转到第二个页面，并将字符串作为URL参数传递
+                    window.location.href = `mgo.html?title=${encodeURIComponent(titleString)}`;
                 }
             });
 
             // 加载标签函数
             function loadTags(categoryId) {
                 const category = tagData[categoryId];
-                
+
                 // 更新当前分类标题
                 currentCategory.textContent = category.name;
-                
+
                 // 清空现有标签
                 tagCloud.innerHTML = '';
-                
+
                 // 添加新标签
                 category.tags.forEach(tag => {
                     const tagElement = document.createElement('a');
                     tagElement.href = '#';
                     tagElement.className = 'tag';
                     tagElement.textContent = tag;
-                    
 
-                    
+
+
                     tagCloud.appendChild(tagElement);
                 });
             }

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+        }
+
+        .wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .content {
+            flex: 1;
+            /* 内容占满剩余空间 */
+        }
+
+        body {
+            font-family: 'Noto Serif SC', serif;
+            color: var(--text);
+            background-color: #2c3e50;
+            line-height: 1.8;
+        }
+
+        footer {
+            height: 50px;
+            color: white;
+            text-align: center;
+        }
+
+        .tt1 {
+            margin-top: 20%;
+            font-size: 8vw;
+            font-weight: bold;
+            color: #fff;
+            width: 100%;
+            text-align: center
+        }
+
+        .txt1 {
+            font-size: 20px;
+            color: #fff;
+            width: 100%;
+            text-align: center;
+            margin: 0 auto;
+            margin-bottom: 5%;
+        }
+
+        .color-link {
+            margin: 20px;
+            cursor: pointer;
+            border: none;
+            background-color: transparent;
+            font-size: 12px;
+            color: #ffffff;
+        }
+
+        .fbox {
+            flex: 0.11;
+            display: flex;
+            justify-content: center;
+            flex-direction: column;
+        }
+    </style>
+
+</head>
+
+<body>
+
+
+
+
+
+
+    <div class="wrapper">
+        <h1 class="tt1 fcc" id="title1">命馆</h1>
+        <div class="content">
+            <p></p>
+        </div>
+        <footer class="fbox">
+            <p class="txt1 fcc" id="countdown"><span id="timer">--</span></p>
+
+            <div id="color-links">
+                <span class="color-link fcc" onclick="changeBackgroundColor('#fff')">荼</span>
+                <span class="color-link fcc" onclick="changeBackgroundColor('#2c3e50')">青</span>
+                <span class="color-link fcc" onclick="changeBackgroundColor('#222')">墨</span>
+            </div>
+
+
+
+        </footer>
+    </div>
+
+
+
+
+
+    <script>
+        // 从URL参数中获取标题字符串
+        const urlParams = new URLSearchParams(window.location.search);
+        const titleString = urlParams.get('title'); // 获取名为"title"的参数值
+
+        if (titleString) {
+            // 如果获取到标题字符串，则设置页面标题
+            document.title = decodeURIComponent(titleString);
+
+            document.getElementById('title1').innerText = decodeURIComponent(titleString);
+
+        }
+
+
+        // 倒计时功能
+        let countdown = 60; // 倒计时60秒
+        const timerElement = document.getElementById('timer');
+
+        // 更新倒计时显示
+        function updateTimer() {
+            timerElement.textContent = countdown;
+            countdown--;
+            if (countdown < 0) {
+                clearInterval(interval); // 停止倒计时
+                window.location.href = 'index.html';
+            }
+        }
+
+        // 开始倒计时
+        const interval = setInterval(updateTimer, 1000);
+
+
+        // 切换背景颜色
+        function changeBackgroundColor(color) {
+            document.body.style.backgroundColor = color;
+
+            //字体颜色切换
+            var elements = document.querySelectorAll('.fcc');
+
+            for (var i = 0; i < elements.length; i++) {
+
+                if (color == '#fff') {
+                    elements[i].style.color = '#000';
+                } else {
+                    elements[i].style.color = '#fff';
+                }
+            }
+
+
+
+        }
+
+    </script>
+
+</body>
+
+</html>
