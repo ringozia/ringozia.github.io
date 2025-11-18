@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>快乐养鸡场</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(to bottom, #69d189, #559a4b);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            overflow: hidden;
+        }
+
+        /* 顶部栏 */
+        .header {
+            background: #4CAF50;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .header h1 {
+            font-size: 20px;
+            margin-bottom: 5px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            font-size: 14px;
+        }
+
+        .resource-bar {
+            background: rgba(196, 251, 217, 0.9);
+            padding: 5px 10px;
+            margin: 5px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-around;
+            font-size: 12px;
+            color: #000;
+        }
+
+        /* 主游戏区 */
+        .game-area {
+            flex: 1;
+            margin-top: 120px;
+            margin-bottom: 120px;
+            padding: 10px;
+            position: relative;
+            min-height: 300px;
+            overflow: hidden;
+        }
+
+        .chicken {
+            position: absolute;
+            font-size: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            animation: walk 6s infinite linear;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        @keyframes walk {
+            0% {
+                transform: translate(0, 0);
+            }
+
+            10% {
+                transform: translate(40px, -30px);
+            }
+
+            25% {
+                transform: translate(80px, 20px);
+            }
+
+            40% {
+                transform: translate(20px, 60px);
+            }
+
+            50% {
+                transform: translate(-50px, 40px);
+            }
+
+            65% {
+                transform: translate(-90px, -10px);
+            }
+
+            80% {
+                transform: translate(-30px, -50px);
+            }
+
+            90% {
+                transform: translate(30px, -20px);
+            }
+
+            100% {
+                transform: translate(0, 0);
+            }
+        }
+
+        .chicken.scared {
+            animation-duration: 1s !important;
+        }
+
+        .progress-bars {
+            position: absolute;
+            bottom: -20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40px;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: #f7f0f0;
+            border-radius: 2px;
+            margin: 2px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            transition: width 0.3s;
+        }
+
+        .life-fill {
+            background: #e6473c;
+        }
+
+        .growth-fill {
+            background: #5de806;
+        }
+
+        .egg {
+            position: absolute;
+            font-size: 25px;
+            cursor: pointer;
+            animation: bounce 0.5s infinite alternate;
+            filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.3));
+        }
+
+        @keyframes bounce {
+            from {
+                transform: translateY(0);
+            }
+
+            to {
+                transform: translateY(-10px);
+            }
+        }
+
+        /* 底部控制区 */
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #4CAF50;
+            padding: 10px;
+            box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .message {
+            text-align: center;
+            padding: 5px;
+            color: #ffffff;
+            font-size: 14px;
+            height: 20px;
+        }
+
+        .buttons {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            background: #4cd551;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #45a049;
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        /* 弹窗 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            max-width: 90%;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+
+        .shop-categories {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .category {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+        }
+
+        .category h3 {
+            margin-bottom: 10px;
+            color: #4CAF50;
+        }
+
+        .items {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .item {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .item:hover {
+            background: #f5f5f5;
+            transform: scale(1.05);
+        }
+
+        .close-modal {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .achievements {
+            text-align: center;
+        }
+
+        .achievement-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+        }
+
+        .reset-btn {
+            background: #f44336;
+            margin-top: 20px;
+        }
+
+        .reset-btn:hover {
+            background: #d32f2f;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>🐔 快乐养鸡场 🐔</h1>
+        <div class="stats">
+            <span>💰 金币: <span id="coins">100</span></span>
+            <span>🐤 存活: <span id="alive">0</span></span>
+            <span>📊 等级: <span id="level">LV1(0/100)</span></span>
+        </div>
+        <div class="resource-bar">
+            <span>🌾 饲料: <span id="feed" style="color:#000">100</span>/<span id="maxFeed"
+                    style="color:#000">100</span></span>
+            <span>💧 水: <span id="water" style="color:#000">100</span>/<span id="maxWater"
+                    style="color:#000">100</span></span>
+        </div>
+    </div>
+
+    <div class="game-area" id="gameArea"></div>
+
+    <div class="controls">
+        <div class="message" id="message"></div>
+        <div class="buttons">
+            <button onclick="openShop()">🛒 商店</button>
+            <button onclick="openAchievements()">🏆 成就</button>
+        </div>
+    </div>
+
+    <!-- 商店弹窗 -->
+    <div class="modal" id="shopModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('shopModal')">&times;</span>
+            <h2>商店</h2>
+            <div class="shop-categories">
+                <div class="category">
+                    <h3>幼崽</h3>
+                    <div class="items">
+                        <div class="item" onclick="buyItem('chicken', 20)">
+                            <div>🐣</div>
+                            <div>鸡仔</div>
+                            <div>20金币</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="category">
+                    <h3>补给</h3>
+                    <div class="items">
+                        <div class="item" onclick="buyItem('feed20', 20)">
+                            <div>🌾</div>
+                            <div>饲料x20</div>
+                            <div>20金币</div>
+                        </div>
+                        <div class="item" onclick="buyItem('feed50', 30)">
+                            <div>🌾🌾</div>
+                            <div>饲料x50</div>
+                            <div>30金币</div>
+                        </div>
+                        <div class="item" onclick="buyItem('water20', 20)">
+                            <div>💧</div>
+                            <div>水x20</div>
+                            <div>20金币</div>
+                        </div>
+                        <div class="item" onclick="buyItem('water50', 30)">
+                            <div>💧💧</div>
+                            <div>水x50</div>
+                            <div>30金币</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成就弹窗 -->
+    <div class="modal" id="achievementModal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('achievementModal')">&times;</span>
+            <h2>成就</h2>
+            <div class="achievements">
+                <div class="achievement-item">
+                    <div>养鸡仔总数: <span id="totalChickens">0</span></div>
+                </div>
+                <div class="achievement-item">
+                    <div>死亡数: <span id="deaths">0</span></div>
+                </div>
+                <div class="achievement-item">
+                    <div>卖出数: <span id="sold">0</span></div>
+                </div>
+                <button class="reset-btn" onclick="resetGame()">重置游戏</button>
+                <div id="resetContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        let gameState = {
+            coins: 100,
+            feed: 100,
+            water: 100,
+            maxFeed: 100,
+            maxWater: 100,
+            level: 1,
+            exp: 0,
+            expNeeded: 100,
+            chickens: [],
+            eggs: [],
+            totalChickens: 0,
+            deaths: 0,
+            sold: 0
+        };
+
+        // 工具函数
+        function clamp(val, min, max) {
+            return Math.max(min, Math.min(max, val));
+        }
+
+        // 从localStorage加载数据
+        function loadGame() {
+            const saved = localStorage.getItem('chickenGame');
+            if (saved) {
+                const data = JSON.parse(saved);
+                gameState.coins = data.coins || 100;
+                gameState.level = data.level || 1;
+                gameState.exp = data.exp || 0;
+                gameState.expNeeded = data.expNeeded || 100;
+                gameState.maxFeed = data.maxFeed || 100;
+                gameState.maxWater = data.maxWater || 100;
+                gameState.feed = data.feed || 100;
+                gameState.water = data.water || 100;
+                gameState.totalChickens = data.totalChickens || 0;
+                gameState.deaths = data.deaths || 0;
+                gameState.sold = data.sold || 0;
+            }
+            updateUI();
+        }
+
+        // 保存游戏
+        function saveGame() {
+            const dataToSave = {
+                coins: gameState.coins,
+                level: gameState.level,
+                exp: gameState.exp,
+                expNeeded: gameState.expNeeded,
+                maxFeed: gameState.maxFeed,
+                maxWater: gameState.maxWater,
+                feed: gameState.feed,
+                water: gameState.water,
+                totalChickens: gameState.totalChickens,
+                deaths: gameState.deaths,
+                sold: gameState.sold
+            };
+            localStorage.setItem('chickenGame', JSON.stringify(dataToSave));
+        }
+
+        // 更新UI
+        function updateUI() {
+            document.getElementById('coins').textContent = gameState.coins;
+            document.getElementById('alive').textContent = gameState.chickens.length;
+            document.getElementById('level').textContent = `LV${gameState.level}(${gameState.exp}/${gameState.expNeeded})`;
+            document.getElementById('feed').textContent = gameState.feed;
+            document.getElementById('maxFeed').textContent = gameState.maxFeed;
+            document.getElementById('water').textContent = gameState.water;
+            document.getElementById('maxWater').textContent = gameState.maxWater;
+            document.getElementById('totalChickens').textContent = gameState.totalChickens;
+            document.getElementById('deaths').textContent = gameState.deaths;
+            document.getElementById('sold').textContent = gameState.sold;
+
+
+        }
+
+        // 显示消息
+        function showMessage(text) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            setTimeout(() => {
+                messageEl.textContent = '';
+            }, 1500);
+        }
+
+        // 创建鸡仔
+        function createChicken() {
+            const gameArea = document.getElementById('gameArea');
+            const chicken = document.createElement('div');
+            chicken.className = 'chicken';
+            // 缩小鸡圈范围：距离边缘至少40px
+            chicken.style.left = (40 + Math.random() * (gameArea.offsetWidth - 110)) + 'px';
+            chicken.style.top = (40 + Math.random() * (gameArea.offsetHeight - 130)) + 'px';
+
+            const chickenData = {
+                id: Date.now() + Math.random(),
+                element: chicken,
+                life: 100,
+                growth: 0,
+                isAdult: false,
+                scared: false,
+                feedTimer: 10,
+                waterTimer: 10
+            };
+
+            chicken.innerHTML = `
+                🐣
+                <div class="progress-bars">
+                    <div class="progress-bar">
+                        <div class="progress-fill life-fill" style="width: 100%"></div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill growth-fill" style="width: 0%"></div>
+                    </div>
+                </div>
+            `;
+
+            chicken.onclick = () => scareChicken(chickenData);
+
+            gameState.chickens.push(chickenData);
+            gameArea.appendChild(chicken);
+            gameState.totalChickens++;
+            showMessage('有新成员加入咯！');
+            saveGame();
+            updateUI();
+
+            return chickenData;
+        }
+
+        // 吓唬鸡仔
+        function scareChicken(chicken) {
+            if (chicken.isAdult) {
+                sellChicken(chicken);
+                return;
+            }
+
+            chicken.scared = true;
+            chicken.element.classList.add('scared');
+            setTimeout(() => {
+                chicken.scared = false;
+                chicken.element.classList.remove('scared');
+            }, 1000);
+        }
+
+        // 卖鸡
+        function sellChicken(chicken) {
+            gameState.coins += 50;
+            gameState.exp += 5;
+            gameState.sold++;
+
+            // 检查升级
+            if (gameState.exp >= gameState.expNeeded) {
+                gameState.level++;
+                gameState.exp = 0;
+                gameState.expNeeded += 10;
+                gameState.maxFeed += 10;
+                gameState.maxWater += 10;
+                showMessage(`升级到 LV${gameState.level}！`);
+            }
+
+            // 鸡蛋掉落
+            if (Math.random() < 0.25) {
+                createEgg(chicken.element.style.left, chicken.element.style.top);
+            }
+
+            // 移除鸡
+            chicken.element.remove();
+            gameState.chickens = gameState.chickens.filter(c => c.id !== chicken.id);
+
+            showMessage('卖出一只成鸡！');
+            updateUI();
+            saveGame();
+        }
+
+        // 创建鸡蛋
+        function createEgg(x, y) {
+            const egg = document.createElement('div');
+            egg.className = 'egg';
+            egg.textContent = '🥚';
+            egg.style.left = x;
+            egg.style.top = y;
+
+            egg.onclick = () => {
+                gameState.coins += 10;
+                egg.remove();
+                gameState.eggs = gameState.eggs.filter(e => e !== egg);
+                showMessage('获得10金币！');
+                updateUI();
+                saveGame();
+            };
+
+            document.getElementById('gameArea').appendChild(egg);
+            gameState.eggs.push(egg);
+            showMessage('掉落鸡蛋啦！');
+        }
+
+        // 更新鸡的状态
+        function updateChickens() {
+            const gameArea = document.getElementById('gameArea');
+            const aw = gameArea.offsetWidth;
+            const ah = gameArea.offsetHeight;
+
+            let hasStarving = false;
+            let hasDied = false;
+            let hasMatured = false;
+
+            // 物资为0时成长暂停标志
+            let pauseGrowth = (gameState.feed === 0 || gameState.water === 0);
+
+            gameState.chickens.forEach(chicken => {
+                if (chicken.isAdult) return;
+
+                // 边界检查（缩小范围）
+                let x = parseFloat(chicken.element.style.left);
+                let y = parseFloat(chicken.element.style.top);
+                let newX = clamp(x, 40, aw - 70);
+                let newY = clamp(y, 40, ah - 70);
+                if (newX !== x || newY !== y) {
+                    chicken.element.style.left = newX + 'px';
+                    chicken.element.style.top = newY + 'px';
+                }
+
+                // 更新倒计时
+                chicken.feedTimer -= 1;
+                chicken.waterTimer -= 1;
+
+                let consumeFeed = chicken.feedTimer <= 0;
+                let consumeWater = chicken.waterTimer <= 0;
+
+                if (consumeFeed) chicken.feedTimer = 10;
+                if (consumeWater) chicken.waterTimer = 10;
+
+                // 掉血逻辑：任意物资为0时每秒掉血
+                let damage = 0;
+                if (gameState.feed === 0 && gameState.water === 0) {
+                    damage = 4;
+                } else if (gameState.feed === 0) {
+                    damage = 2;
+                } else if (gameState.water === 0) {
+                    damage = 2;
+                }
+
+                if (damage > 0) {
+                    chicken.life = Math.max(0, chicken.life - damage);
+                    hasStarving = true;
+                } else if (!pauseGrowth && chicken.growth < 100) {
+                    // 成长
+                    chicken.growth = Math.min(100, chicken.growth + 100 / 60);
+                    if (chicken.growth >= 100 && !chicken.isAdult) {
+                        chicken.isAdult = true;
+                        chicken.element.querySelector('.progress-bars').style.display = 'none';
+                        chicken.element.innerHTML = '🐔';
+                        hasMatured = true;
+                    }
+                }
+
+                // 资源消耗
+                if (consumeFeed && gameState.feed >= 2) gameState.feed -= 2;
+                if (consumeWater && gameState.water >= 1) gameState.water -= 1;
+
+                // 更新显示
+                const lifeFill = chicken.element.querySelector('.life-fill');
+                const growthFill = chicken.element.querySelector('.growth-fill');
+                if (lifeFill) lifeFill.style.width = chicken.life + '%';
+                if (growthFill) growthFill.style.width = chicken.growth + '%';
+
+                // 更新外观
+                if (chicken.growth >= 50 && chicken.growth < 100 && chicken.element.textContent.includes('🐣')) {
+                    chicken.element.innerHTML = chicken.element.innerHTML.replace('🐣', '🐤');
+                }
+
+                // 死亡检查
+                if (chicken.life <= 0) {
+                    chicken.element.remove();
+                    gameState.chickens = gameState.chickens.filter(c => c.id !== chicken.id);
+                    gameState.deaths++;
+                    hasDied = true;
+                }
+            });
+
+            // 显示消息
+            if (hasDied) showMessage('有幼崽死亡了！');
+            else if (hasStarving) showMessage('有幼崽挨饿中…');
+            else if (hasMatured) showMessage('有幼崽成熟了！');
+
+            updateUI();
+            saveGame();
+        }
+
+        // 添加随机鸡仔（仅商店购买时调用）
+        function addRandomChicken() {
+            if (gameState.chickens.length >= 20) {
+                showMessage('鸡圈已满！');
+                return false;
+            }
+            if (gameState.coins < 20) {
+                showMessage('金币不足！');
+                return false;
+            }
+            createChicken();
+            return true;
+        }
+
+        // 购买物品
+        function buyItem(item, cost) {
+            if (gameState.coins < cost) {
+                showMessage('金币不足！');
+                return;
+            }
+
+            switch (item) {
+                case 'chicken':
+                    if (!addRandomChicken()) return;
+                    break;
+                case 'feed20':
+                    gameState.feed = Math.min(gameState.maxFeed, gameState.feed + 20);
+                    break;
+                case 'feed50':
+                    gameState.feed = Math.min(gameState.maxFeed, gameState.feed + 50);
+                    break;
+                case 'water20':
+                    gameState.water = Math.min(gameState.maxWater, gameState.water + 20);
+                    break;
+                case 'water50':
+                    gameState.water = Math.min(gameState.maxWater, gameState.water + 50);
+                    break;
+            }
+
+            gameState.coins -= cost;
+            showMessage('购买成功！');
+            updateUI();
+            saveGame();
+            // 不再自动关闭商店
+        }
+
+        // 打开商店
+        function openShop() {
+            document.getElementById('shopModal').style.display = 'flex';
+        }
+
+        // 打开成就
+        function openAchievements() {
+            document.getElementById('achievementModal').style.display = 'flex';
+        }
+
+        // 关闭弹窗
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+
+        // 重置游戏
+        function resetGame() {
+            if (gameState.coins < 100) {
+                gameState.coins = 100;
+                document.getElementById('coins').textContent = gameState.coins;
+                closeModal('achievementModal');
+
+                localStorage.removeItem('chickenGame');
+                location.reload();
+
+                updateUI();
+                showMessage('重置游戏成功！');
+
+            }
+            else {
+                closeModal('achievementModal');
+                showMessage('重置游戏失败！金币需要小于100！');
+            }
+
+
+
+
+
+        }
+
+        // 初始化游戏
+        window.onload = () => {
+            loadGame();
+            // 每秒更新一次鸡的状态
+            setInterval(updateChickens, 1000);
+        };
+    </script>
+</body>
+
+</html>
