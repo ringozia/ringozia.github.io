@@ -5,18 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>游戏导航页</title>
   <style>
+    :root {
+      --bg: #121212;
+      --card: #1e1e1e;
+      --text: #e0e0e0;
+      --accent: #4dabf7;
+      --hover: #2a2a2a;
+    }
     body {
       margin: 0;
       padding: 60px 20px;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-      background: #f5f7fa;
-      color: #333;
+      background: var(--bg);
+      color: var(--text);
     }
     h1 {
       text-align: center;
       font-weight: 400;
       margin-bottom: 40px;
-      color: #111;
+      color: var(--text);
     }
     ul {
       list-style: none;
@@ -30,16 +37,16 @@
     a {
       display: block;
       padding: 14px 20px;
-      background: #ffffff;
+      background: var(--card);
       border-radius: 8px;
       text-decoration: none;
-      color: #0066cc;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-      transition: all 0.2s ease;
+      color: var(--accent);
+      box-shadow: 0 1px 3px rgba(0,0,0,.35);
+      transition: all .2s ease;
     }
     a:hover {
-      background: #eef4ff;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+      background: var(--hover);
+      box-shadow: 0 2px 8px rgba(0,0,0,.5);
     }
   </style>
 </head>
@@ -48,7 +55,7 @@
   <h1>游戏导航页</h1>
 
   <ul>
-    <li><a href="股票交易模拟器.html" target="_blank">股票交易模拟器</a></li>
+    <li><a href="股票交易模拟.html" target="_blank">股票交易模拟</a></li>
     <li><a href="快乐养鸡场.html" target="_blank">快乐养鸡场</a></li>
     <!-- 在这里继续加链接 -->
   </ul>
