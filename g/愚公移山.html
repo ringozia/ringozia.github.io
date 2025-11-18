@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>愚公移山V3</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    background:#000;color:#fff;
+    display:flex;flex-direction:column;
+    height:100vh;
+    touch-action:manipulation;
+    user-select:none;
+}
+header{
+    flex-shrink:0;
+    background:#111;
+    padding:12px 0 8px;
+    text-align:center;
+    border-bottom:1px solid #333;
+}
+#stats{
+    display:flex;justify-content:space-around;
+    font-size:14px;margin-top:6px;
+}
+main{
+    flex:1;
+    display:flex;flex-direction:column;
+    align-items:center;
+    padding:0 16px 20px;
+    overflow-y:auto;
+}
+#mountainCard{
+    width:100%;max-width:360px;
+    background:#1a1a1a;border:1px solid #333;
+    border-radius:12px;
+    margin-top:20px;
+    padding:20px;
+    text-align:center;
+}
+#emoji{
+    font-size:120px;line-height:1;
+    margin-bottom:8px;
+}
+#hpBar{
+    height:10px;background:#222;
+    border-radius:5px;overflow:hidden;
+    margin:12px 0 6px;
+}
+#hpFill{
+    height:100%;background:#fff;
+    transition:width .3s;
+}
+#info{
+    font-size:14px;color:#aaa;
+}
+#breedArea{
+    width:100%;max-width:360px;
+    height:200px;
+    background:#222;
+    border:2px solid #444;
+    border-radius:12px;
+    margin-top:24px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:28px;font-weight:bold;
+    touch-action:none;
+    user-select:none;
+}
+#shop{
+    width:100%;max-width:360px;
+    margin-top:20px;
+}
+.shopRow{
+    display:flex;justify-content:space-between;align-items:center;
+    background:#1a1a1a;border:1px solid #333;
+    border-radius:8px;
+    padding:10px 12px;margin-bottom:10px;
+}
+.shopRow>div{font-size:14px;}
+button.buy{
+    padding:6px 14px;
+    background:#fff;color:#000;
+    border:none;border-radius:4px;
+    font-size:14px;font-weight:bold;
+}
+button.buy:disabled{background:#555;color:#222;}
+#floatTxt{position:fixed;pointer-events:none;font-size:22px;font-weight:bold;color:#fff;animation:up 1s forwards;}
+@keyframes up{0%{opacity:1;transform:translateY(0);}100%{opacity:0;transform:translateY(-60px);}}
+#zhiSou{
+    position:fixed;
+    top:20%;left:50%;
+    transform:translateX(-50%);
+    font-size:60px;
+    display:none;
+    z-index:10;
+}
+#help{
+    width:100%;max-width:360px;
+    margin-top:12px;
+    font-size:11px;color:#666;
+    text-align:center;
+    line-height:1.4;
+}
+</style>
+</head>
+<body>
+
+<header>
+    <div style="font-size:18px;">愚公移山V3</div>
+    <div id="stats">
+        <span>👶<b id="pop">1</b>(<b id="autoPop">0</b>/s)</span>
+        <span>🪨<b id="stone">0</b></span>
+        <span>⛏️<b id="dps">0.1</b>/s</span>
+    </div>
+</header>
+
+<main>
+    <div id="mountainCard">
+        <div id="emoji">🐜</div>
+        <div id="name">第一山·蚁丘</div>
+        <div id="hpBar"><div id="hpFill"></div></div>
+        <div id="info">剩余 <span id="hp">500</span> / 预计 <span id="eta">--</span></div>
+    </div>
+
+    <div id="breedArea">点击/按住生娃</div>
+
+    <div id="shop">
+        <div class="shopRow">
+            <div>
+                <div>👶 繁殖强化</div>
+                <div style="font-size:12px;color:#aaa">消耗 <span id="popCost">10</span> 石</div>
+            </div>
+            <button class="buy" id="popBtn" onclick="buyPop()">+1</button>
+        </div>
+        <div class="shopRow">
+            <div>
+                <div>🤖 繁殖机器</div>
+                <div style="font-size:12px;color:#aaa">消耗 <span id="machineCost">10</span> 石</div>
+            </div>
+            <button class="buy" id="machineBtn" onclick="buyMachine()">+1</button>
+        </div>
+    </div>
+
+    <div id="help">
+        ①点击生娃；②机器/人口每秒自动挖山；③升级强化与机器；④点击智叟减少损失；⑤通关16峰。
+    </div>
+</main>
+
+<div id="zhiSou">🧓</div>
+
+<script>
+/* ====== 数据 ====== */
+const peaks = [
+    {emoji:"🐜",name:"蚁丘",       hp:500,    reward:50,  unlock:0},
+    {emoji:"🌱",name:"土坡",       hp:1500,   reward:150, unlock:0},
+    {emoji:"🌄",name:"丘陵",       hp:4000,   reward:400, unlock:100},
+    {emoji:"⛰️",name:"小山",      hp:10000,  reward:1000,unlock:500},
+    {emoji:"🏔️",name:"青山",      hp:25000,  reward:2500,unlock:2000},
+    {emoji:"🗻",name:"峻峰",       hp:60000,  reward:6000,unlock:5000},
+    {emoji:"🌋",name:"险岭",       hp:150000, reward:15000,unlock:10000},
+    {emoji:"⛈️",name:"绝壁",      hp:350000, reward:35000,unlock:30000},
+    {emoji:"🌪️",name:"天障",      hp:800000, reward:80000,unlock:60000},
+    {emoji:"☄️",name:"巍山",      hp:2e6,    reward:200000,unlock:150000},
+    {emoji:"🪐",name:"巨岳",      hp:5e6,    reward:500000,unlock:400000},
+    {emoji:"🌌",name:"崇山",      hp:12e6,   reward:1.2e6,unlock:1e6},
+    {emoji:"🔮",name:"极巅",      hp:30e6,   reward:3e6,unlock:3e6},
+    {emoji:"🐉",name:"昆仑",      hp:80e6,   reward:8e6,unlock:8e6},
+    {emoji:"👹",name:"不周",      hp:200e6,  reward:20e6,unlock:20e6},
+    {emoji:"🐘",name:"太行王屋", hp:500e6,  reward:50e6,unlock:50e6}
+];
+
+let pop   = 1;      // 人口
+let stone = 0;      // 石块
+let idx   = 0;      // 当前山峰
+let hp    = peaks[0].hp;
+let maxHp = peaks[0].hp;
+let lastTime = Date.now();
+let zhiSouActive = false;
+let popLevel = 1;   // 繁殖强化等级
+let machineLevel = 0; // 繁殖机器等级
+
+const dps = ()=> pop * 0.1;  // 每秒攻击值 = 人口 * 0.1
+const autoPopPerSec = ()=> machineLevel; // 每秒自动产生人口
+
+/* ====== 本地存储 ====== */
+function save(){
+    localStorage.setItem('yugongSave',JSON.stringify({
+        pop,stone,idx,hp,maxHp,popLevel,machineLevel
+    }));
+}
+function load(){
+    const s = localStorage.getItem('yugongSave');
+    if(!s)return;
+    try{
+        const d = JSON.parse(s);
+        pop   = d.pop   ?? 1;
+        stone = d.stone ?? 0;
+        idx   = d.idx   ?? 0;
+        hp    = d.hp    ?? peaks[idx].hp;
+        maxHp = d.maxHp ?? peaks[idx].hp;
+        popLevel = d.popLevel ?? 1;
+        machineLevel = d.machineLevel ?? 0;
+    }catch{}
+}
+load();
+setInterval(save,3000);  // 每3秒自动存档
+
+/* ====== 渲染 ====== */
+function draw(){
+    document.getElementById('pop').textContent  = Math.floor(pop);
+    document.getElementById('autoPop').textContent = autoPopPerSec();
+    document.getElementById('stone').textContent= Math.floor(stone);
+    document.getElementById('dps').textContent  = dps().toFixed(1);
+
+    const p = hp/maxHp*100;
+    document.getElementById('hpFill').style.width = p+'%';
+    document.getElementById('hp').textContent = Math.ceil(hp);
+    document.getElementById('eta').textContent = hp>0 ? (hp/dps()).toFixed(0)+'s' : '--';
+
+    document.getElementById('emoji').textContent = peaks[idx].emoji;
+    document.getElementById('name').textContent = `第${idx+1}山·${peaks[idx].name}`;
+
+    document.getElementById('popBtn').disabled = stone < popCost();
+    document.getElementById('machineBtn').disabled = stone < machineCost();
+    document.getElementById('popCost').textContent = popCost();
+    document.getElementById('machineCost').textContent = machineCost();
+    document.getElementById('popBtn').textContent = `+${popLevel}`;
+    document.getElementById('machineBtn').textContent = `+${machineLevel}`;
+}
+const popCost = ()=> Math.floor(10 * Math.pow(1.5, popLevel-1) * (idx+1));
+const machineCost = ()=> Math.floor(10 * Math.pow(1.5, machineLevel) * (idx+1));
+
+function buyPop(){
+    if(stone<popCost())return;
+    stone-=popCost();
+    popLevel++;
+    save();
+    draw();
+}
+function buyMachine(){
+    if(stone<machineCost())return;
+    stone-=machineCost();
+    machineLevel++;
+    save();
+    draw();
+}
+
+/* ====== 主循环 ====== */
+setInterval(()=>{
+    const now = Date.now();
+    const dt = (now-lastTime)/1000;
+    lastTime=now;
+
+    // 自动产生人口
+    if (machineLevel > 0) {
+        pop += autoPopPerSec() * dt;
+    }
+
+    if(hp>0){
+        const dmg = dps()*dt;
+        hp = Math.max(0,hp-dmg);
+        stone += dmg;
+    }
+
+    if(hp<=0 && idx<peaks.length-1){
+        const reward = peaks[idx].reward;
+        stone += reward;
+        idx++;
+        hp = maxHp = peaks[idx].hp;
+        pop *= 1.2;
+        save();
+    }
+
+    draw();
+},100);
+
+/* ====== 繁殖点击 ====== */
+let pressing = false;
+const breedArea = document.getElementById('breedArea');
+
+function tapDown(){
+    pressing = true;
+    breedArea.style.background = '#333';
+}
+function tapUp(){
+    pressing = false;
+    breedArea.style.background = '#222';
+}
+function doBreed(){
+    pop += popLevel;
+    floatText(`+${popLevel}`);
+    draw();
+}
+function floatText(txt){
+    const el = document.createElement('div');
+    el.id='floatTxt';
+    el.textContent=txt;
+    el.style.left = (Math.random()*60+20)+'%';
+    el.style.top  = '45%';
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),1000);
+}
+
+breedArea.addEventListener('mousedown',tapDown);
+breedArea.addEventListener('mouseup',tapUp);
+breedArea.addEventListener('mouseleave',tapUp);
+breedArea.addEventListener('touchstart',e=>{e.preventDefault();tapDown();});
+breedArea.addEventListener('touchend',e=>{e.preventDefault();tapUp();});
+
+let manual = setInterval(()=>pressing&&doBreed(),100);
+
+/* ====== 智叟入侵 ====== */
+function zhiSouAttack(){
+    if(zhiSouActive)return;
+    zhiSouActive=true;
+    const el = document.getElementById('zhiSou');
+    el.style.display='block';
+    el.onclick = ()=>{
+        el.style.display='none';
+        zhiSouActive=false;
+    };
+    setTimeout(()=>{
+        if(!zhiSouActive)return;
+        el.style.display='none';
+        const loss = Math.floor(pop*0.25);
+        pop = Math.max(1,pop-loss);
+        save();
+        draw();
+        zhiSouActive=false;
+    },3000);
+}
+setInterval(()=>{
+    if(Math.random()<0.05 && pop>50) zhiSouAttack(); // 5%概率，提高频率
+},3000); // 每3秒检测一次
+
+draw();
+</script>
+</body>
+</html>
