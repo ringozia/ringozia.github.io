@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>疫情感染模拟游戏</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        #title {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            letter-spacing: 1px;
+            flex-shrink: 0;
+        }
+
+        #controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            padding: 12px;
+            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+        }
+
+        #controls label {
+            font-weight: 500;
+            text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+        }
+
+        #controls input {
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background: rgba(0, 0, 0, 0.2);
+            color: white;
+            width: 80px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        #controls button {
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            background: linear-gradient(45deg, #4776E6, #8E54E9);
+            color: white;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        #controls button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #helpBtn {
+            position: absolute;
+            top: 60px;
+            right: 12px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #4776E6, #8E54E9);
+            color: white;
+            border: none;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            transition: all 0.3s ease;
+        }
+
+        #helpBtn:hover {
+            transform: scale(1.1);
+        }
+
+        #canvas {
+            display: block;
+            background-color: rgba(0, 0, 0, 0.2);
+            touch-action: none;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        #stats {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            flex-shrink: 0;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            box-shadow: 0 0 4px rgba(255, 255, 255, 0.5);
+        }
+
+        .normal {
+            background-color: white;
+        }
+
+        .infected {
+            background-color: #de7048;
+        }
+
+        .doctor {
+            background-color: #6631e3;
+            box-shadow: 0 0 6px #ffffff;
+        }
+
+        .host {
+            background-color: #e60e0e;
+            box-shadow: 0 0 6px #ffffff;
+        }
+
+        .antibody {
+            background-color: #ffd43b;
+        }
+
+        /* 弹窗样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 100;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            margin: 10% auto;
+            padding: 25px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: modalFadeIn 0.4s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close {
+            color: #aaa;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .close:hover {
+            color: white;
+        }
+
+        .modal-content h2 {
+            color: #ffd43b;
+            text-align: center;
+            margin-top: 0;
+            text-shadow: 0 0 10px rgba(255, 212, 59, 0.5);
+        }
+
+        .modal-content p,
+        .modal-content li {
+            line-height: 1.6;
+            margin: 10px 0;
+        }
+
+        .modal-content ul {
+            padding-left: 20px;
+        }
+
+        .modal-content li {
+            margin-bottom: 8px;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 15px 0;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="title">疫情感染模拟游戏</div>
+
+    <div id="controls">
+        <label>粒子数量 (10-2000): </label>
+        <input type="number" id="particleCount" min="10" max="2000" value="500">
+        <button onclick="resetSimulation()">开始模拟</button>
+        <button id="helpBtn" onclick="showHelp()">?</button>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <div id="stats">
+        <div class="stat-item">
+            <div class="color-box normal"></div>
+            <span>正常: <span id="normalCount">0</span></span>
+        </div>
+        <div class="stat-item">
+            <div class="color-box infected"></div>
+            <span>感染: <span id="infectedCount">0</span></span>
+        </div>
+        <div class="stat-item">
+            <div class="color-box antibody"></div>
+            <span>抗体: <span id="antibodyCount">0</span></span>
+        </div>
+    </div>
+
+    <!-- 帮助弹窗 -->
+    <div id="helpModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeHelp()">&times;</span>
+            <h2>游戏说明</h2>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="color-box normal"></div>
+                    <span>正常人</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box infected"></div>
+                    <span>感染者</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box doctor"></div>
+                    <span>医生</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box host"></div>
+                    <span>宿主</span>
+                </div>
+                <div class="legend-item">
+                    <div class="color-box antibody"></div>
+                    <span>抗体</span>
+                </div>
+            </div>
+            <ul>
+                <li><strong>传播规则：</strong>正常人会被感染者和宿主感染</li>
+                <li><strong>治愈规则：</strong>医生可治愈感染者，使其变成亮黄色抗体（持续5秒）</li>
+                <li><strong>抗体特性：</strong>抗体持续5秒，期间不会被感染</li>
+                <li><strong>抗体传播：</strong>感染者接触抗体后，50%概率变成抗体（5秒有效），50%概率直接变成正常人</li>
+                <li><strong>抗体消失：</strong>5秒后抗体变回正常人</li>
+                <li><strong>特殊说明：</strong>医生和宿主不会被感染</li>
+                <li><strong>点击效果：</strong>点击画布会在点击位置产生圆形冲击波，弹开周围的粒子，弹力会自然衰减</li>
+            </ul>
+            <p style="text-align: center; margin-top: 20px; font-size: 14px; color: #aaa;">
+                点击空白处或×按钮关闭说明
+            </p>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // 设置画布大小为手机屏幕
+        function resizeCanvas() {
+            const titleEl = document.getElementById('title');
+            const controlsEl = document.getElementById('controls');
+            const statsEl = document.getElementById('stats');
+
+            // 计算剩余高度
+            const usedHeight = titleEl.offsetHeight + controlsEl.offsetHeight + statsEl.offsetHeight;
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - usedHeight;
+        }
+
+        // 初始化画布大小
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 粒子类型
+        const TYPES = {
+            NORMAL: 'normal',
+            INFECTED: 'infected',
+            DOCTOR: 'doctor',
+            HOST: 'host',
+            ANTIBODY: 'antibody'
+        };
+
+        // 粒子类
+        class Particle {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.radius = 4;
+                this.infectionRadius = 10;
+                this.healRadius = 20;
+                this.antibodyEndTime = 0;
+                this.glowIntensity = 0;
+            }
+
+            update() {
+                // 随机漫步
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // 边界检测
+                if (this.x - this.radius < 0 || this.x + this.radius > canvas.width) {
+                    this.vx = -this.vx;
+                }
+                if (this.y - this.radius < 0 || this.y + this.radius > canvas.height) {
+                    this.vy = -this.vy;
+                }
+
+                // 确保粒子在边界内
+                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+
+                // 检查抗体状态是否结束
+                if (this.type === TYPES.ANTIBODY && Date.now() > this.antibodyEndTime) {
+                    this.type = TYPES.NORMAL;
+                }
+
+                // 更新发光效果
+                if (this.type === TYPES.DOCTOR || this.type === TYPES.HOST) {
+                    this.glowIntensity = 0.5 + Math.sin(Date.now() * 0.01) * 0.3;
+                }
+
+                // 速度衰减，回归正常漫步
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+
+                // 确保粒子有最低速度维持运动
+                const minSpeed = 0.5;
+                const currentSpeed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (currentSpeed < minSpeed) {
+                    // 重新给予随机速度
+                    this.vx += (Math.random() - 0.5) * 0.5;
+                    this.vy += (Math.random() - 0.5) * 0.5;
+                }
+
+                // 限制最大速度
+                const maxSpeed = 3;
+                const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+                if (speed > maxSpeed) {
+                    this.vx = (this.vx / speed) * maxSpeed;
+                    this.vy = (this.vy / speed) * maxSpeed;
+                }
+            }
+
+            draw() {
+                // 发光效果
+                if (this.type === TYPES.DOCTOR || this.type === TYPES.HOST) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius + 5, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${this.glowIntensity * 0.5})`;
+                    ctx.fill();
+                }
+
+                // 绘制粒子
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+
+                switch (this.type) {
+                    case TYPES.NORMAL:
+                        ctx.fillStyle = 'white';
+                        break;
+                    case TYPES.INFECTED:
+                        ctx.fillStyle = '#de7048';
+                        break;
+                    case TYPES.DOCTOR:
+                        ctx.fillStyle = '#6631e3';
+                        break;
+                    case TYPES.HOST:
+                        ctx.fillStyle = '#e80808';
+                        break;
+                    case TYPES.ANTIBODY:
+                        ctx.fillStyle = '#ffd43b';
+                        break;
+                }
+
+
+                ctx.fill();
+
+                // 额外发光
+                if (this.type === TYPES.DOCTOR || this.type === TYPES.HOST) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.radius - 1, 0, Math.PI * 2);
+                    ctx.fillStyle = `rgba(255, 255, 255, ${this.glowIntensity})`;
+                    ctx.fill();
+                }
+            }
+
+            distanceTo(other) {
+                const dx = this.x - other.x;
+                const dy = this.y - other.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+
+            // 新增方法：将粒子从指定点弹开
+            repelFrom(x, y, radius, force) {
+                const dx = this.x - x;
+                const dy = this.y - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < radius && distance > 0) {
+                    const angle = Math.atan2(dy, dx);
+                    const forceMultiplier = (radius - distance) / radius * force;
+
+                    this.vx += Math.cos(angle) * forceMultiplier;
+                    this.vy += Math.sin(angle) * forceMultiplier;
+                }
+            }
+        }
+
+        // 粒子数组
+        let particles = [];
+        let repelCircles = []; // 存储冲击波信息
+
+        // 初始化粒子
+        function initParticles(count) {
+            particles = [];
+
+            // 创建正常人
+            for (let i = 0; i < count - 4; i++) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height,
+                    TYPES.NORMAL
+                ));
+            }
+
+            // 创建感染者
+            for (let i = 0; i < 3; i++) {
+                particles.push(new Particle(
+                    Math.random() * canvas.width,
+                    Math.random() * canvas.height,
+                    TYPES.INFECTED
+                ));
+            }
+
+            // 创建医生
+            particles.push(new Particle(
+                Math.random() * canvas.width,
+                Math.random() * canvas.height,
+                TYPES.DOCTOR
+            ));
+
+            // 创建宿主
+            particles.push(new Particle(
+                Math.random() * canvas.width,
+                Math.random() * canvas.height,
+                TYPES.HOST
+            ));
+        }
+
+        // 更新统计
+        function updateStats() {
+            const counts = {
+                normal: 0,
+                infected: 0,
+                doctor: 0,
+                host: 0,
+                antibody: 0
+            };
+
+            particles.forEach(p => {
+                counts[p.type]++;
+            });
+
+            document.getElementById('normalCount').textContent = counts.normal;
+            document.getElementById('infectedCount').textContent = counts.infected;
+            document.getElementById('antibodyCount').textContent = counts.antibody;
+        }
+
+        // 感染和治愈逻辑
+        function checkInteractions() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = 0; j < particles.length; j++) {
+                    if (i === j) continue;
+
+                    const p1 = particles[i];
+                    const p2 = particles[j];
+                    const distance = p1.distanceTo(p2);
+
+
+
+                    //被宿主感染
+                    if (p1.type === TYPES.NORMAL) {
+                        if ((p2.type === TYPES.HOST) && distance < p2.infectionRadius) {
+                            if (Math.random() < 0.3) { // 概率感染
+                                p1.type = TYPES.INFECTED;
+                            }
+
+                        }
+                    }
+
+                    // 被传染逻辑
+                    if (p1.type === TYPES.NORMAL) {
+                        if ((p2.type === TYPES.INFECTED) && distance < p2.infectionRadius) {
+                            if (Math.random() < 0.01) { // 概率感染
+                                p1.type = TYPES.INFECTED;
+                            }
+                        }
+                    }
+
+
+                    // 治愈逻辑：医生治愈感染者变成抗体
+                    if (p1.type === TYPES.INFECTED && p2.type === TYPES.DOCTOR &&
+                        distance < p2.healRadius) {
+                        if (Math.random() < 0.6) { // 概率治愈
+                            p1.type = TYPES.ANTIBODY;
+                            p1.antibodyEndTime = Date.now() + 5000; // 5秒抗体时间
+                        }
+                    }
+
+                    // 抗体与感染者交互：50%变抗体，50%变正常
+                    if (p1.type === TYPES.INFECTED && p2.type === TYPES.ANTIBODY &&
+                        distance < p2.infectionRadius) {
+                        if (Math.random() < 0.01) { // 概率变抗体
+                            p1.type = TYPES.ANTIBODY;
+                            p1.antibodyEndTime = Date.now() + 5000; // 5秒抗体时间
+                        } else { // 50%概率直接变正常
+                            p1.type = TYPES.NORMAL;
+                        }
+                    }
+                }
+            }
+        }
+
+        // 绘制冲击波效果
+        function drawRepelCircles() {
+            repelCircles = repelCircles.filter(circle => {
+                const age = Date.now() - circle.startTime;
+                if (age > circle.duration) return false;
+
+                const progress = age / circle.duration;
+                const currentRadius = circle.radius * progress;
+                const alpha = 1 - progress;
+
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.strokeStyle = '#ffd43b';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(circle.x, circle.y, currentRadius, 0, Math.PI * 2);
+                ctx.stroke();
+                ctx.restore();
+
+                return true;
+            });
+        }
+
+        // 动画循环
+        function animate() {
+            // 清空画布
+            ctx.fillStyle = 'black';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 绘制冲击波
+            drawRepelCircles();
+
+            // 更新和绘制粒子
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            // 检查交互
+            checkInteractions();
+
+            // 更新统计
+            updateStats();
+
+            requestAnimationFrame(animate);
+        }
+
+        // 重置模拟
+        function resetSimulation() {
+            const count = parseInt(document.getElementById('particleCount').value);
+            if (count >= 10 && count <= 10000) {
+                initParticles(count);
+                repelCircles = [];
+            } else {
+                alert('请输入10-2000之间的数字');
+            }
+        }
+
+        // 显示帮助
+        function showHelp() {
+            document.getElementById('helpModal').style.display = 'block';
+        }
+
+        // 关闭帮助
+        function closeHelp() {
+            document.getElementById('helpModal').style.display = 'none';
+        }
+
+        // 点击模态框外部关闭
+        window.onclick = function (event) {
+            const modal = document.getElementById('helpModal');
+            if (event.target == modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // 点击画布产生冲击波
+        canvas.addEventListener('click', function (e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const radius = Math.min(canvas.width / 3, 150); // 最大不超过屏幕宽度的1/3
+            const force = 10;//5
+            const duration = 300; // 冲击波动画持续时间（毫秒）
+
+            // 添加冲击波效果
+            repelCircles.push({
+                x: x,
+                y: y,
+                radius: radius,
+                startTime: Date.now(),
+                duration: duration
+            });
+
+            // 弹开范围内的粒子
+            particles.forEach(particle => {
+                particle.repelFrom(x, y, radius, force);
+            });
+        });
+
+        // 初始化并开始动画
+        resetSimulation();
+        animate();
+    </script>
+</body>
+
+</html>
