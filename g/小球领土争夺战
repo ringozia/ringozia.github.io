@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>小球领土争夺战（最终版）</title>
+<style>
+/* ===== 样式保持与上一版一致，节省篇幅 ===== */
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+body{overflow:hidden;background:linear-gradient(135deg,#1e3c72 0%,#2a5298 100%);color:#fff;font-size:14px}
+#startScreen{position:fixed;inset:0;z-index:1000;background:linear-gradient(135deg,#1e3c72 0%,#2a5298 50%,#1e3c72 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+#startScreen h1{font-size:8vw;margin-bottom:20px;text-shadow:3px 3px 6px rgba(0,0,0,.5);background:linear-gradient(45deg,#fff,#f0f0f0);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center}
+.colorSelection{display:flex;gap:5vw;flex-wrap:wrap;justify-content:center;margin-bottom:30px}
+.colorOption{width:18vw;height:18vw;max-width:80px;max-height:80px;border-radius:50%;border:3px solid #fff;cursor:pointer;transition:.3s;box-shadow:0 3px 10px rgba(0,0,0,.3)}
+.colorOption:hover{transform:scale(1.1) rotate(5deg)}
+.colorOption.selected{border-color:#f39c12;box-shadow:0 0 20px #f39c12,0 0 40px #f39c12;animation:pulse 1s infinite}
+@keyframes pulse{0%{transform:scale(1.1)}50%{transform:scale(1.2)}100%{transform:scale(1.1)}}
+#startBtn{padding:15px 40px;font-size:5vw;border:none;border-radius:50px;background:linear-gradient(45deg,#27ae60,#2ecc71);color:#fff;cursor:pointer;box-shadow:0 5px 15px rgba(0,0,0,.3);transition:.3s}
+#startBtn:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,0,0,.4)}
+#gameContainer{display:none;flex-direction:column;height:100vh}
+#header{background:linear-gradient(90deg,#34495e,#2c3e50);padding:10px 15px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+#header h2{font-size:5vw;text-shadow:2px 2px 4px rgba(0,0,0,.5)}
+#helpBtn, #restartBtn{padding:8px 12px;font-size:3vw;border:none;border-radius:20px;background:linear-gradient(45deg,#3498db,#5dade2);color:#fff;cursor:pointer;transition:.3s;margin-left:8px}
+#helpBtn:hover, #restartBtn:hover{transform:translateY(-2px);box-shadow:0 5px 15px rgba(0,0,0,.3)}
+#infoBar{background:linear-gradient(90deg,#2c3e50,#34495e);padding:10px 15px;display:flex;justify-content:space-around;flex-wrap:wrap;gap:10px;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+.teamInfo{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 12px;background:rgba(0,0,0,.2);border-radius:20px;min-width:70px;position:relative}
+.teamInfo.selected{background:rgba(255,255,255,.3);box-shadow:0 0 15px rgba(255,255,255,.5)}
+.teamColor{width:20px;height:20px;border-radius:50%;box-shadow:0 2px 5px rgba(0,0,0,.3)}
+.teamStats{display:flex;flex-direction:column;align-items:center;font-size:10px;line-height:1.2;text-align:center}
+#funcBar{background:linear-gradient(90deg,#2c3e50,#34495e);padding:8px 15px;display:flex;align-items:center;gap:10px;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+#funcBar label{font-size:3vw}
+#cloneBar{flex:1;height:8px;background:#555;border-radius:4px;overflow:hidden}
+#cloneProgress{height:100%;width:0%;background:linear-gradient(90deg,#f39c12,#f1c40f);transition:width 20s linear}
+#gameArea{flex:1;display:flex;justify-content:center;align-items:center;padding:10px}
+#battleField{position:relative;background:#1a252f;border:2px solid #34495e;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+.cell{position:absolute;border:0.5px solid #2c3e50}
+.ball{position:absolute;border-radius:50%;cursor:pointer;border:1px solid #000;box-shadow:none}
+.ball.clone{border:1px solid #fff}
+#eventBar{background:linear-gradient(90deg,#34495e,#2c3e50);padding:15px;text-align:center;min-height:50px;font-size:4vw;font-weight:bold;text-shadow:2px 2px 4px rgba(0,0,0,.5);box-shadow:0 -2px 10px rgba(0,0,0,.3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 胜利弹窗（可关闭） */
+#endWrap{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:2000}
+#endBox{background:#222;border-radius:12px;width:80%;max-width:360px;padding:30px 20px;text-align:center;position:relative;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+#endBox .close{position:absolute;top:8px;right:12px;font-size:20px;color:#aaa;cursor:pointer}
+#endBox .close:hover{color:#fff}
+#endBox h2#endTitle{font-size:24px;margin-bottom:10px;color:#fff}
+#endBox p#endMsg{color:#ccc;font-size:14px;margin-bottom:20px}
+#endBtn{padding:10px 30px;font-size:16px;border:none;border-radius:30px;background:linear-gradient(45deg,#27ae60,#2ecc71);color:#fff;cursor:pointer;box-shadow:0 5px 15px rgba(0,0,0,.3)}
+#endBtn:hover{transform:translateY(-3px);box-shadow:0 8px 25px rgba(0,0,0,.4)}
+@media (min-width:768px){
+    #startScreen h1,#header h2,#eventBar{font-size:28px}
+    #startBtn,#helpBtn,#restartBtn{font-size:16px}
+    .teamStats{font-size:12px}
+    #funcBar label{font-size:14px}
+}
+</style>
+</head>
+<body>
+<!-- 首页 -->
+<div id="startScreen">
+    <h1>小球领土争夺战</h1>
+    <p style="font-size:4vw;margin-bottom:20px">选择你的战队颜色</p>
+    <div class="colorSelection">
+        <div class="colorOption" data-color="red" style="background:#e74c3c"></div>
+        <div class="colorOption" data-color="yellow" style="background:#f1c40f"></div>
+        <div class="colorOption" data-color="blue" style="background:#3498db"></div>
+        <div class="colorOption" data-color="white" style="background:#ecf0f1"></div>
+    </div>
+    <button id="startBtn">开始游戏</button>
+</div>
+
+<!-- 游戏页 -->
+<div id="gameContainer">
+    <div id="header">
+        <h2>小球领土争夺战</h2>
+        <div>
+            <button id="helpBtn">游戏说明</button>
+            <button id="restartBtn">重玩</button>
+        </div>
+    </div>
+    <div id="infoBar">
+        <div class="teamInfo" data-team="red"><div class="teamColor" style="background:#e74c3c"></div><div class="teamStats"><span>领土:<span id="redTerritory">0</span></span><span>士兵:<span id="redBalls">0</span></span></div></div>
+        <div class="teamInfo" data-team="yellow"><div class="teamColor" style="background:#f1c40f"></div><div class="teamStats"><span>领土:<span id="yellowTerritory">0</span></span><span>士兵:<span id="yellowBalls">0</span></span></div></div>
+        <div class="teamInfo" data-team="blue"><div class="teamColor" style="background:#3498db"></div><div class="teamStats"><span>领土:<span id="blueTerritory">0</span></span><span>士兵:<span id="blueBalls">0</span></span></div></div>
+        <div class="teamInfo" data-team="white"><div class="teamColor" style="background:#ecf0f1"></div><div class="teamStats"><span>领土:<span id="whiteTerritory">0</span></span><span>士兵:<span id="whiteBalls">0</span></span></div></div>
+    </div>
+    <div id="funcBar"><label>克隆冷却</label><div id="cloneBar"><div id="cloneProgress"></div></div></div>
+    <div id="gameArea"><div id="battleField"></div></div>
+    <div id="eventBar"></div>
+</div>
+
+<!-- 胜利弹窗（可关闭） -->
+<div id="endWrap">
+    <div id="endBox">
+        <span class="close" id="closeEnd">×</span>
+        <h2 id="endTitle"></h2>
+        <p id="endMsg"></p>
+        <button id="endBtn">再来一局</button>
+    </div>
+</div>
+
+<script>
+/* ==========  参数  ========== */
+const CELL_SIZE = 20, BALL_SIZE = 10, BALL_SPEED = 10, LINE_WIDTH = 0.5,
+      CONFLICT_TIME = 300, CLONE_CD_FULL = 20000, CLONE_STAY = 10000, CLONE_BACK_OFF = BALL_SIZE * 2;
+
+let selColor, running = false, cells = [], balls = [], spawns = [], teams = ['red','yellow','blue','white'],
+    terMem = {red:0,yellow:0,blue:0,white:0}, cntMem = {red:0,yellow:0,blue:0,white:0},
+    alive = new Set(teams), spawnCtrs = {}, cloneReady = false, cloneUsed = new Set(), lastKiller = '未知';
+const teamSpawns = {red:[], yellow:[], blue:[], white:[]};
+
+const colors = {
+    red:   {main:'#e74c3c', light:'#f1948a', spawn:'#c0392b'},
+    yellow:{main:'#f1c40f', light:'#f9e79f', spawn:'#d68910'},
+    blue:  {main:'#3498db', light:'#85c1e9', spawn:'#2874a6'},
+    white: {main:'#ecf0f1', light:'#fdfeff', spawn:'#bdc3c7'},
+    gray:  '#7f8c8d'
+};
+
+/* ---------- 首页 ---------- */
+document.querySelectorAll('.colorOption').forEach(opt=>{
+    opt.addEventListener('click',()=>{ document.querySelectorAll('.colorOption').forEach(o=>o.classList.remove('selected')); opt.classList.add('selected'); selColor = opt.dataset.color; });
+});
+document.getElementById('startBtn').onclick = ()=>{
+    if(!selColor){alert('请先选择颜色');return;}
+    document.getElementById('startScreen').style.display='none'; document.getElementById('gameContainer').style.display='flex'; initGame();
+};
+document.getElementById('restartBtn').onclick = ()=>{
+    if(confirm('确定要重玩吗？')) resetGame();
+};
+document.getElementById('endBtn').onclick = resetGame;
+document.getElementById('closeEnd').onclick = ()=> document.getElementById('endWrap').style.display='none';
+document.getElementById('helpBtn').onclick = ()=>alert('游戏说明：\n1. 选择战队颜色。\n2. 小球恒定速度，碰撞不加速。\n3. 0.3 s 内被反染则冲突后退。\n4. 20秒克隆冷却，10秒窗口期触碰己方出生点可克隆1次。\n5. 出生点被全灭→先删小球→1秒后变灰格子→战胜播报。\n6. 只剩两方时触发狂暴模式：优先撞向敌方出生点，其次扩领土，最后补灰色。\n7. 点击任意小球（母体/克隆体）送回出生点。\n8. 成为最后幸存者！');
+
+/* ---------- 初始化 ---------- */
+function initGame(){
+    const field = document.getElementById('battleField'), area = document.getElementById('gameArea');
+    const cols = Math.floor((area.clientWidth-20)/CELL_SIZE), rows = Math.floor((area.clientHeight-20)/CELL_SIZE);
+    field.style.width = cols*CELL_SIZE+'px'; field.style.height = rows*CELL_SIZE+'px';
+
+    for(let r=0;r<rows;r++){ cells[r]=[]; for(let c=0;c<cols;c++){
+        const cell = document.createElement('div'); cell.className='cell';
+        cell.style.cssText = `width:${CELL_SIZE}px;height:${CELL_SIZE}px;left:${c*CELL_SIZE}px;top:${r*CELL_SIZE}px;background:${colors.gray};border:${LINE_WIDTH}px solid #2c3e50`;
+        cell.dataset.owner='none'; cell.dataset.lastChange='0'; field.appendChild(cell); cells[r][c]=cell;
+    }}
+    const poses = [{x:0,y:0},{x:cols-2,y:0},{x:0,y:rows-2},{x:cols-2,y:rows-2}].sort(()=>Math.random()-.5);
+    teams.forEach((t,i)=>{
+        const cx = poses[i].x, cy = poses[i].y;
+        for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){
+            const sc = cells[cy+dy][cx+dx];
+            sc.style.backgroundColor=colors[t].spawn;
+            sc.dataset.owner=t; sc.dataset.isSpawn='true';
+            spawns.push(sc);
+            teamSpawns[t].push(sc);
+            terMem[t]++;
+        }
+        spawnCtrs[t] = {x:(cx+1)*CELL_SIZE, y:(cy+1)*CELL_SIZE};
+        createBall(t, (cx+1)*CELL_SIZE, (cy+1)*CELL_SIZE, false);
+    });
+    document.querySelectorAll('.teamInfo').forEach(x=>x.classList.remove('selected'));
+    document.querySelector(`.teamInfo[data-team="${selColor}"]`).classList.add('selected');
+    running=true; gameLoop(); startCloneCd(); showEvent('游戏开始！占领更多领土吧！');
+    /* 1 秒批量刷新 DOM + 边界巡检 */
+    setInterval(()=>{ batchUpdateDom(); checkOutOfBounds(); },1000);
+}
+
+/* ---------- 小球 ---------- */
+function createBall(team,x,y,isClone){
+    const b = document.createElement('div'); b.className='ball'+(isClone?' clone':'');
+    b.style.cssText = `width:${BALL_SIZE}px;height:${BALL_SIZE}px;background:${colors[team].main};left:${x}px;top:${y}px;border:1px solid #000;box-shadow:none`;
+    b.onclick = () => sendBackToSpawn(ballOfEl(b));
+    document.getElementById('battleField').appendChild(b);
+    const ball={el:b,team,x,y,vx:(Math.random()-.5)*BALL_SPEED*2,vy:(Math.random()-.5)*BALL_SPEED*2,clone:isClone};
+    balls.push(ball); cntMem[ball.team]++; return ball;
+}
+
+/* ---------- 主循环（仅碰撞/移动） ---------- */
+function gameLoop(){
+    if(!running) return;
+    for(let i=0;i<balls.length;i++){
+        for(let j=i+1;j<balls.length;j++) checkBallCollision(balls[i],balls[j]);
+    }
+    // 狂暴模式：只剩两队时，每球实时计算最近敌方出生点方向
+    if(alive.size===2){
+        const [t1,t2]=[...alive];
+        balls.forEach(b=>{
+            const enemyTeam = b.team===t1?t2:t1;
+            const enemySpawns = teamSpawns[enemyTeam].filter(c=>c.dataset.owner===enemyTeam);
+            if(enemySpawns.length){
+                // 取最近敌方出生点
+                let nearest=enemySpawns[0], minD=Math.hypot(enemySpawns[0].offsetLeft-b.x, enemySpawns[0].offsetTop-b.y);
+                enemySpawns.forEach(c=>{
+                    const d=Math.hypot(c.offsetLeft-b.x, c.offsetTop-b.y);
+                    if(d<minD){minD=d; nearest=c;}
+                });
+                b.angPref = Math.atan2(nearest.offsetTop+CELL_SIZE/2 - (b.y+BALL_SIZE/2), nearest.offsetLeft+CELL_SIZE/2 - (b.x+BALL_SIZE/2));
+            }else{
+                // 敌方出生点已灭，退而求其次：优先扩已方领土，再补灰色
+                const myTerr = cells.flat().filter(c=>c.dataset.owner===b.team);
+                const grayCells = cells.flat().filter(c=>c.dataset.owner==='none');
+                if(myTerr.length){
+                    const target=myTerr[Math.floor(Math.random()*myTerr.length)];
+                    b.angPref = Math.atan2(target.offsetTop+CELL_SIZE/2 - (b.y+BALL_SIZE/2), target.offsetLeft+CELL_SIZE/2 - (b.x+BALL_SIZE/2));
+                }else if(grayCells.length){
+                    const target=grayCells[Math.floor(Math.random()*grayCells.length)];
+                    b.angPref = Math.atan2(target.offsetTop+CELL_SIZE/2 - (b.y+BALL_SIZE/2), target.offsetLeft+CELL_SIZE/2 - (b.x+BALL_SIZE/2));
+                }else b.angPref=null;
+            }
+        });
+    }
+    balls.forEach(b=>{
+        b.vx+=(Math.random()-.5)*0.1; b.vy+=(Math.random()-.5)*0.1;
+        const sp = Math.hypot(b.vx,b.vy)||1; b.vx=b.vx/sp*BALL_SPEED; b.vy=b.vy/sp*BALL_SPEED;
+        if(alive.size===2 && b.angPref){
+            const ang=Math.atan2(b.vy,b.vx), diff=b.angPref-ang;
+            b.vx=Math.cos(ang+diff*0.05)*BALL_SPEED;
+            b.vy=Math.sin(ang+diff*0.05)*BALL_SPEED;
+        }
+        b.x+=b.vx; b.y+=b.vy;
+        const fld=document.getElementById('battleField'), maxX=fld.clientWidth-BALL_SIZE, maxY=fld.clientHeight-BALL_SIZE;
+        if(b.x<=0||b.x>=maxX){b.vx=-b.vx;b.x=Math.max(0,Math.min(maxX,b.x))}
+        if(b.y<=0||b.y>=maxY){b.vy=-b.vy;b.y=Math.max(0,Math.min(maxY,b.y))}
+        const lc=Math.floor(b.x/CELL_SIZE), rc=Math.floor((b.x+BALL_SIZE)/CELL_SIZE), tr=Math.floor(b.y/CELL_SIZE), br=Math.floor((b.y+BALL_SIZE)/CELL_SIZE);
+        const seen=new Set();
+        for(let r=tr;r<=br;r++)for(let c=lc;c<=rc;c++){
+            if(cells[r]&&cells[r][c]){ const key=`${r}-${c}`; if(!seen.has(key)){seen.add(key); if(cellHit(b,cells[r][c])) cellCollide(b,cells[r][c])}}
+        }
+        if(cloneReady && !cloneUsed.has(b.team) && !b.clone){
+            const hitSpawn=[...spawns].some(sp=>sp.dataset.owner===b.team && cellHit(b,sp));
+            if(hitSpawn){
+                const ctr=spawnCtrs[b.team];
+                createBall(b.team, ctr.x, ctr.y, true);
+                cloneUsed.add(b.team);
+                showEvent(b.team+'战队 克隆体诞生！');
+            }
+        }
+        b.el.style.left=b.x+'px'; b.el.style.top=b.y+'px';
+    });
+    requestAnimationFrame(gameLoop);
+}
+
+/* ---------- 每秒边界巡检 ---------- */
+function checkOutOfBounds(){
+    const fld=document.getElementById('battleField');
+    const maxX=fld.clientWidth,maxY=fld.clientHeight;
+    balls.forEach(b=>{
+        if(b.x+BALL_SIZE/2<0||b.x+BALL_SIZE/2>maxX||b.y+BALL_SIZE/2<0||b.y+BALL_SIZE/2>maxY){
+            sendBackToSpawn(b);
+        }
+    });
+}
+
+/* ---------- 克隆冷却（纯 CSS 过渡） ---------- */
+function startCloneCd(){
+    const bar=document.getElementById('cloneProgress');
+    bar.style.transition='none'; bar.style.width='0%';
+    bar.offsetWidth; /* reflow */
+    bar.style.transition=`width ${CLONE_CD_FULL/1000}s linear`;
+    bar.style.width='100%';
+    cloneReady=true; cloneUsed.clear();
+    setTimeout(()=>{
+        if(!running)return;
+        cloneReady=false;
+        bar.style.transition='none'; bar.style.width='0%';
+        if(running) startCloneCd();
+    },CLONE_CD_FULL+200);
+}
+
+/* ---------- 碰撞/染色 ---------- */
+function checkBallCollision(a,b){
+    const dx=a.x-b.x, dy=a.y-b.y, dist=Math.hypot(dx,dy), minD=BALL_SIZE;
+    if(dist<minD&&dist>0){
+        const ang=Math.atan2(dy,dx), sin=Math.sin(ang), cos=Math.cos(ang);
+        let vx1=a.vx*cos+a.vy*sin, vy1=a.vy*cos-a.vx*sin, vx2=b.vx*cos+b.vy*sin, vy2=b.vy*cos-b.vx*sin;
+        const tvx=vx1; vx1=vx2; vx2=tvx;
+        a.vx=vx1*cos-vy1*sin; a.vy=vy1*cos+vx1*sin; b.vx=vx2*cos-vy2*sin; b.vy=vy2*cos+vx2*sin;
+        const s1=Math.hypot(a.vx,a.vy)||1, s2=Math.hypot(b.vx,b.vy)||1;
+        a.vx=a.vx/s1*BALL_SPEED; a.vy=a.vy/s1*BALL_SPEED; b.vx=b.vx/s2*BALL_SPEED; b.vy=b.vy/s2*BALL_SPEED;
+        const over=minD-dist, sx=dx/dist*over, sy=dy/dist*over;
+        if(Math.random()>.5){a.x+=sx; a.y+=sy; b.x-=sx*.4; b.y-=sy*.4}else{a.x+=sx*.4; a.y+=sy*.4; b.x-=sx; b.y-=sy}
+    }
+}
+function cellHit(ball,cell){
+    const cl=+cell.style.left.slice(0,-2), ct=+cell.style.top.slice(0,-2), cr=cl+CELL_SIZE, cb=ct+CELL_SIZE;
+    return ball.x<cr&&ball.x+BALL_SIZE>cl&&ball.y<cb&&ball.y+BALL_SIZE>ct;
+}
+function cellCollide(ball,cell){
+    if(cell.dataset.owner===ball.team) return;
+    const now=performance.now(), last=+cell.dataset.lastChange||0;
+    if(now-last<CONFLICT_TIME && cell.dataset.owner!=='none' && cell.dataset.owner!==ball.team){
+        const backX=-Math.sign(ball.vx)*CLONE_BACK_OFF, backY=-Math.sign(ball.vy)*CLONE_BACK_OFF;
+        ball.x+=backX; ball.y+=backY;
+    }
+    const oldOwner = cell.dataset.owner;
+    ball.vx=-ball.vx; ball.vy=-ball.vy;
+    if(oldOwner!=='none') terMem[oldOwner]--;
+    cell.dataset.owner=ball.team; cell.style.backgroundColor=colors[ball.team].light; cell.dataset.lastChange=String(now); terMem[ball.team]++;
+    if(cell.dataset.isSpawn==='true'){
+        lastKiller = ball.team;
+        checkElim(oldOwner, ball.team);
+    }
+}
+function checkElim(team, killerTeam){
+    if(!alive.has(team)) return;
+    const left=teamSpawns[team].filter(c=>c.dataset.owner===team);
+    if(left.length===0){
+        balls=balls.filter(b=>{
+            if(b.team===team){b.el.remove(); cntMem[team]--; return false} return true
+        });
+        setTimeout(()=>{
+            cells.flat().forEach(cl=>{
+                if(cl.dataset.owner===team){ cl.dataset.owner='none'; cl.style.backgroundColor=colors.gray; }
+            });
+            terMem[team]=0;
+            if(running) batchUpdateDom();
+        },1000);
+        showEvent((killerTeam==='red'?'红':killerTeam==='yellow'?'黄':killerTeam==='blue'?'蓝':'白')+' 战胜 '+(team==='red'?'红':team==='yellow'?'黄':team==='blue'?'蓝':'白')+'！');
+        alive.delete(team);
+        if(alive.size===2){
+            alive.forEach(t=>{
+                const ctr=spawnCtrs[t];
+                for(let i=0;i<5;i++) createBall(t, ctr.x, ctr.y, true);
+                showEvent(t+' 狂暴模式：优先撞敌方出生点！');
+            });
+        }
+        if(alive.size===1){
+            const w=[...alive][0];
+            showEvent((w==='red'?'红':w==='yellow'?'黄':w==='blue'?'蓝':'白')+' 获得最终胜利！');
+            running=false;
+            const winTitle = w===selColor ? '你选择的战队胜利了！' : '你选择的战队失败了！';
+            document.getElementById('endTitle').textContent = winTitle;
+            document.getElementById('endMsg').textContent = (w==='red'?'红':w==='yellow'?'黄':w==='blue'?'蓝':'白')+'战队取得最终胜利';
+            document.getElementById('endWrap').style.display='flex';
+        }
+    }
+}
+
+/* ---------- 1 秒批量刷新 DOM ---------- */
+function batchUpdateDom(){
+    teams.forEach(t=>{
+        document.getElementById(t+'Territory').textContent=terMem[t];
+        document.getElementById(t+'Balls').textContent=cntMem[t];
+    });
+    const bar=document.getElementById('infoBar'), arr=[...bar.querySelectorAll('.teamInfo')];
+    arr.sort((a,b)=>{
+        const ta=a.dataset.team, tb=b.dataset.team;
+        return terMem[tb]-terMem[ta];
+    });
+    arr.forEach(el=>bar.appendChild(el));
+}
+function showEvent(msg){ document.getElementById('eventBar').textContent=msg; }
+function ballOfEl(el){ return balls.find(b=>b.el===el) }
+function sendBackToSpawn(ball){
+    const ctr=spawnCtrs[ball.team];
+    ball.x=ctr.x; ball.y=ctr.y;
+    ball.vx=(Math.random()-.5)*BALL_SPEED*2; ball.vy=(Math.random()-.5)*BALL_SPEED*2;
+}
+function resetGame(){
+    running = false;
+    cells = []; balls = []; spawns = [];
+    terMem = {red:0,yellow:0,blue:0,white:0}; cntMem = {red:0,yellow:0,blue:0,white:0};
+    alive = new Set(teams); cloneReady = false; cloneUsed.clear();
+    teams.forEach(t=>teamSpawns[t]=[]);
+    document.getElementById('battleField').innerHTML = '';
+    document.getElementById('endWrap').style.display='none';
+    document.getElementById('gameContainer').style.display='none';
+    document.getElementById('startScreen').style.display='flex';
+    document.querySelectorAll('.colorOption').forEach(o=>o.classList.remove('selected'));
+    selColor = null;
+}
+</script>
+</body>
+</html>
