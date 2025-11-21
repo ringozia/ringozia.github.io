@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D太阳系可视化</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: radial-gradient(circle at center, #0a1a2a, #000000);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* 只保留底部预览条，顶部信息面板全部移除 */
+        #preview-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 120px;
+            background: rgba(10, 25, 47, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(64, 224, 255, 0.3);
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            overflow-x: auto;
+            z-index: 100;
+        }
+
+        .preview-item {
+            min-width: 100px;
+            height: 90px;
+            margin: 0 10px;
+            background: rgba(64, 224, 255, 0.1);
+            border: 2px solid rgba(64, 224, 255, 0.3);
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            color: #e0f7ff;
+            font-size: 12px;
+            text-align: center;
+        }
+
+        .preview-item:hover {
+            background: rgba(64, 224, 255, 0.2);
+            border-color: rgba(64, 224, 255, 0.6);
+            transform: translateY(-5px);
+        }
+
+        .preview-item.active {
+            background: rgba(64, 224, 255, 0.3);
+            border-color: #40e0ff;
+            box-shadow: 0 0 20px rgba(64, 224, 255, 0.5);
+        }
+
+        .preview-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-bottom: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .preview-icon::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            height: 80%;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), transparent 70%);
+        }
+
+        /* 特殊颜色预览 */
+        .preview-icon.sun { background: radial-gradient(circle, #FFD700, #FFA500); }
+        .preview-icon.mercury { background: radial-gradient(circle, #8C7853, #6B5637); }
+        .preview-icon.venus { background: radial-gradient(circle, #FFC649, #FFB347); }
+        .preview-icon.earth { background: radial-gradient(circle, #6B93D6, #4169E1); }
+        .preview-icon.mars { background: radial-gradient(circle, #CD5C5C, #A0522D); }
+        .preview-icon.jupiter { background: radial-gradient(circle, #D8CA9D, #B8860B); }
+        .preview-icon.saturn { background: radial-gradient(circle, #FAD5A5, #DAA520); }
+        .preview-icon.uranus { background: radial-gradient(circle, #4FD0E7, #40E0D0); }
+        .preview-icon.neptune { background: radial-gradient(circle, #4B70DD, #4169E1); }
+        .preview-icon.pluto { background: radial-gradient(circle, #8C7853, #696969); }
+        .preview-icon.crystal { background: radial-gradient(circle, rgba(64, 224, 255, 0.8), rgba(64, 224, 255, 0.3)); }
+
+        .preview-name {
+            font-weight: bold;
+            margin-top: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <!-- 只保留底部预览条 -->
+    <div id="preview-bar">
+        <div class="preview-item active" data-target="overview">
+            <div class="preview-icon crystal"></div>
+            <div class="preview-name">总览</div>
+        </div>
+        <div class="preview-item" data-target="sun">
+            <div class="preview-icon sun"></div>
+            <div class="preview-name">太阳</div>
+        </div>
+        <div class="preview-item" data-target="mercury">
+            <div class="preview-icon mercury"></div>
+            <div class="preview-name">水星</div>
+        </div>
+        <div class="preview-item" data-target="venus">
+            <div class="preview-icon venus"></div>
+            <div class="preview-name">金星</div>
+        </div>
+        <div class="preview-item" data-target="earth">
+            <div class="preview-icon earth"></div>
+            <div class="preview-name">地球</div>
+        </div>
+        <div class="preview-item" data-target="mars">
+            <div class="preview-icon mars"></div>
+            <div class="preview-name">火星</div>
+        </div>
+        <div class="preview-item" data-target="jupiter">
+            <div class="preview-icon jupiter"></div>
+            <div class="preview-name">木星</div>
+        </div>
+        <div class="preview-item" data-target="saturn">
+            <div class="preview-icon saturn"></div>
+            <div class="preview-name">土星</div>
+        </div>
+        <div class="preview-item" data-target="uranus">
+            <div class="preview-icon uranus"></div>
+            <div class="preview-name">天王星</div>
+        </div>
+        <div class="preview-item" data-target="neptune">
+            <div class="preview-icon neptune"></div>
+            <div class="preview-name">海王星</div>
+        </div>
+        <div class="preview-item" data-target="pluto">
+            <div class="preview-icon pluto"></div>
+            <div class="preview-name">冥王星</div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    
+    <script>
+        // 场景设置
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        // 相机位置
+        camera.position.set(0, 10, 25);
+
+        // 轨道控制器
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 2;
+        controls.maxDistance = 100;
+
+        // 环境光
+        const ambientLight = new THREE.AmbientLight(0x404040, 0.2);
+        scene.add(ambientLight);
+
+        // 太阳光源
+        const sunLight = new THREE.PointLight(0xffffff, 3, 200);
+        sunLight.posi
