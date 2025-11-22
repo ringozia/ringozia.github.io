@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>黑洞吞噬者</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, sans-serif;
+            touch-action: none;
+        }
+
+        /* === 顶部栏：标题 + 说明按钮 === */
+        #topBar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0));
+            color: white;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+        }
+
+        #gameTitle {
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+        }
+
+        #helpBtn {
+            font-size: 16px;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            color: white;
+            cursor: pointer;
+        }
+
+        /* === 信息栏：吞噬量 + 最高记录 === */
+        #infoBar {
+            position: fixed;
+            top: 40px;
+            left: 0;
+            right: 0;
+            height: 30px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+        }
+
+        #score {
+            font-size: 18px;
+            color: #ffd700;
+        }
+
+        #highScore {
+            font-size: 14px;
+            color: white;
+        }
+
+        /* === 游戏画布 === */
+        #canvas {
+            display: block;
+            background: radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0f 100%);
+        }
+
+        /* === 底部特效指示器 === */
+        #effectIndicators {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1000;
+            height: 25px;
+            align-items: center;
+        }
+
+        .effect-star {
+            width: 20px;
+            height: 20px;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .effect-star::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+
+        .effect-star.gold::before { background: #ffd700; }
+        .effect-star.red::before { background: #ff4444; }
+        .effect-star.blue::before { background: #4444ff; }
+        .effect-star.purple::before { background: #aa44ff; }
+
+        /* === 自定义说明弹窗 === */
+        #helpOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #helpPanel {
+            background: #222;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 400px;
+            padding: 20px;
+            position: relative;
+        }
+
+        #helpPanel h2 {
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        #helpPanel .starDesc {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+        }
+
+        #helpPanel .starDesc .effect-star {
+            margin-right: 10px;
+        }
+
+        #closeHelp {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部栏 -->
+    <div id="topBar">
+        <div id="gameTitle">黑洞吞噬者</div>
+        <button id="helpBtn">说明</button>
+    </div>
+
+    <!-- 信息栏 -->
+    <div id="infoBar">
+        <div id="score">吞噬量: <span id="scoreValue">0</span></div>
+        <div id="highScore">最高: <span id="highScoreValue">0</span></div>
+    </div>
+
+    <!-- 游戏画布 -->
+    <canvas id="canvas"></canvas>
+
+    <!-- 底部特效指示器 -->
+    <div id="effectIndicators"></div>
+
+    <!-- 游戏说明弹窗 -->
+    <div id="helpOverlay">
+        <div id="helpPanel">
+            <button id="closeHelp">&times;</button>
+            <h2>游戏说明</h2>
+            <p>拖动黑洞吞噬星星，不同星星带来不同效果：</p>
+            <div class="starDesc">
+                <div class="effect-star gold"></div>
+                <span>金星：黑洞扩大2倍，持续5秒</span>
+            </div>
+            <div class="starDesc">
+                <div class="effect-star red"></div>
+                <span>红星：吞噬得分×5，持续10秒</span>
+            </div>
+            <div class="starDesc">
+                <div class="effect-star blue"></div>
+                <span>蓝星：全屏普通星被吸引，持续5秒</span>
+            </div>
+            <div class="starDesc">
+                <div class="effect-star purple"></div>
+                <span>紫星：星星密度翻倍，持续10秒</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('scoreValue');
+        const highScoreElement = document.getElementById('highScoreValue');
+        const effectIndicators = document.getElementById('effectIndicators');
+        const helpOverlay = document.getElementById('helpOverlay');
+        const helpBtn = document.getElementById('helpBtn');
+        const closeHelp = document.getElementById('closeHelp');
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // 最高记录
+        let highScore = localStorage.getItem('blackHoleHighScore') || 0;
+        highScoreElement.textContent = highScore;
+        setInterval(() => {
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('blackHoleHighScore', highScore);
+                highScoreElement.textContent = highScore;
+            }
+        }, 5000);
+
+        // 说明弹窗
+        helpBtn.addEventListener('click', () => helpOverlay.style.display = 'flex');
+        closeHelp.addEventListener('click', () => helpOverlay.style.display = 'none');
+        helpOverlay.addEventListener('click', e => {
+            if (e.target === helpOverlay) helpOverlay.style.display = 'none';
+        });
+
+        // 游戏配置
+        const config = {
+            starDensity: 0.0008,
+            specialStarFrequency: 0.004,
+            blackHoleInitialSize: 30,
+            backgroundStarCount: 100,
+            specialStarWeights: { gold: 1, red: 1, blue: 1, purple: 1 }
+        };
+
+        let score = 0;
+        let scoreMultiplier = 1;
+        let scoreMultiplierUntil = 0;
+        let globalAttraction = false;
+        let globalAttractionUntil = 0;
+        let starDensityMultiplier = 1;
+        let starDensityMultiplierUntil = 0;
+        let lastSpecialStarTime = Date.now();
+
+        // 效果指示器（每种一颗）
+        const activeEffects = new Map();
+
+        function addEffectIndicator(type) {
+            const colorMap = { 1: 'gold', 2: 'red', 3: 'blue', 4: 'purple' };
+            if (activeEffects.has(type)) return;
+            const indicator = document.createElement('div');
+            indicator.className = `effect-star ${colorMap[type]}`;
+            effectIndicators.appendChild(indicator);
+            const duration = type === 2 || type === 4 ? 10000 : 5000;
+            const timeoutId = setTimeout(() => {
+                indicator.remove();
+                activeEffects.delete(type);
+            }, duration);
+            activeEffects.set(type, { element: indicator, timeoutId });
+        }
+
+        let blackHole = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: config.blackHoleInitialSize,
+            baseRadius: config.blackHoleInitialSize,
+            expandedUntil: 0,
+            pulsePhase: 0
+        };
+
+        let stars = [];
+        let backgroundStars = [];
+        let baseStarCount = 0;
+
+        // 背景星星
+        class BackgroundStar {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 2 + 0.5;
+                this.speed = Math.random() * 0.5 + 0.1;
+                this.opacity = Math.random() * 0.5 + 0.1;
+            }
+            update() {
+                this.x -= this.speed;
+                if (this.x < -10) { this.x = canvas.width + 10; this.y = Math.random() * canvas.height; }
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.opacity;
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // 游戏星星
+        class Star {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3 + 2;
+                this.speedX = (Math.random() - 0.5) * 0.5;
+                this.speedY = (Math.random() - 0.5) * 0.5;
+                const rand = Math.random();
+                if (rand < config.specialStarFrequency) {
+                    const weights = config.specialStarWeights;
+                    const totalWeight = weights.gold + weights.red + weights.blue + weights.purple;
+                    const r = Math.random() * totalWeight;
+                    if (r < weights.gold) this.type = 1;
+                    else if (r < weights.gold + weights.red) this.type = 2;
+                    else if (r < weights.gold + weights.red + weights.blue) this.type = 3;
+                    else this.type = 4;
+                } else this.type = 0;
+                this.twinkle = Math.random() * Math.PI * 2;
+                this.angle = Math.random() * Math.PI * 2;
+                this.orbitRadius = Math.random() * 50 + 20;
+                this.orbitSpeed = (Math.random() - 0.5) * 0.02;
+            }
+            update() {
+                this.angle += this.orbitSpeed;
+                this.x += this.speedX + Math.sin(this.angle) * 0.5;
+                this.y += this.speedY + Math.cos(this.angle) * 0.5;
+                if (globalAttraction && (this.type === 0 || this.type === 2)) {
+                    const dx = blackHole.x - this.x, dy = blackHole.y - this.y, dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist > blackHole.radius) { this.x += dx * 0.02; this.y += dy * 0.02; }
+                }
+                if (this.x < -50) this.x = canvas.width + 50; if (this.x > canvas.width + 50) this.x = -50;
+                if (this.y < -50) this.y = canvas.height + 50; if (this.y > canvas.height + 50) this.y = -50;
+                this.twinkle += 0.05;
+                const dx = this.x - blackHole.x, dy = this.y - blackHole.y, dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < blackHole.radius) {
+                    if (this.type === 1) { blackHole.expandedUntil = Date.now() + 5000; score += 5; addEffectIndicator(1); }
+                    else if (this.type === 2) { scoreMultiplier = 5; scoreMultiplierUntil = Date.now() + 10000; score += 1 * scoreMultiplier; addEffectIndicator(2); }
+                    else if (this.type === 3) { globalAttraction = true; globalAttractionUntil = Date.now() + 5000; score += 1; addEffectIndicator(3); }
+                    else if (this.type === 4) {
+                        starDensityMultiplier = 2; starDensityMultiplierUntil = Date.now() + 10000; score += 1; addEffectIndicator(4);
+                        const currentCount = stars.length, targetCount = baseStarCount * 2;
+                        for (let i = currentCount; i < targetCount; i++) stars.push(new Star());
+                    }
+                    else score += 1 * scoreMultiplier;
+                    scoreElement.textContent = score;
+                    this.x = Math.random() * canvas.width; this.y = Math.random() * canvas.height; this.type = 0;
+                } else if (dist < blackHole.radius * 3) {
+                    const attraction = 1 - (dist / (blackHole.radius * 3));
+                    this.x -= dx * attraction * 0.05; this.y -= dy * attraction * 0.05;
+                }
+            }
+            draw() {
+                const twinkleOpacity = 0.5 + Math.sin(this.twinkle) * 0.5;
+                if (this.type === 1) {
+                    ctx.save(); ctx.shadowBlur = 20; ctx.shadowColor = '#ffd700'; ctx.fillStyle = `rgba(255,215,0,${twinkleOpacity})`;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size * 1.5, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                    ctx.save(); ctx.translate(this.x, this.y); ctx.rotate(this.twinkle * 0.5); ctx.fillStyle = '#ffff00';
+                    this.drawStarShape(0, 0, this.size, this.size * 0.5, 5); ctx.fill(); ctx.restore();
+                } else if (this.type === 2) {
+                    ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = '#ff4444'; ctx.fillStyle = `rgba(255,68,68,${twinkleOpacity})`;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size * 1.3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                } else if (this.type === 3) {
+                    ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = '#4444ff'; ctx.fillStyle = `rgba(68,68,255,${twinkleOpacity})`;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size * 1.3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                } else if (this.type === 4) {
+                    ctx.save(); ctx.shadowBlur = 15; ctx.shadowColor = '#aa44ff'; ctx.fillStyle = `rgba(170,68,255,${twinkleOpacity})`;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size * 1.3, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                } else {
+                    ctx.save(); ctx.globalAlpha = twinkleOpacity; ctx.fillStyle = 'white';
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+                }
+            }
+            drawStarShape(cx, cy, outerRadius, innerRadius, points) {
+                const angle = Math.PI / points;
+                ctx.beginPath();
+                for (let i = 0; i < 2 * points; i++) {
+                    const radius = i % 2 === 0 ? outerRadius : innerRadius;
+                    const x = cx + Math.cos(i * angle - Math.PI / 2) * radius;
+                    const y = cy + Math.sin(i * angle - Math.PI / 2) * radius;
+                    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+            }
+        }
+
+        // 初始化
+        for (let i = 0; i < config.backgroundStarCount; i++) backgroundStars.push(new BackgroundStar());
+        baseStarCount = Math.floor(canvas.width * canvas.height * config.starDensity);
+        for (let i = 0; i < baseStarCount; i++) stars.push(new Star());
+
+        function ensureSpecialStars() {
+            const now = Date.now();
+            const timeSinceLastSpecial = now - lastSpecialStarTime;
+            const minInterval = 30000;
+            const shouldSpawn = Math.random() < 0.001;
+            if (timeSinceLastSpecial > minInterval || shouldSpawn) {
+                const normalStars = stars.filter(s => s.type === 0);
+                if (normalStars.length > 0) {
+                    const star = normalStars[Math.floor(Math.random() * normalStars.length)];
+                    const weights = config.specialStarWeights;
+                    const totalWeight = weights.gold + weights.red + weights.blue + weights.purple;
+                    const r = Math.random() * totalWeight;
+                    if (r < weights.gold) star.type = 1;
+                    else if (r < weights.gold + weights.red) star.type = 2;
+                    else if (r < weights.gold + weights.red + weights.blue) star.type = 3;
+                    else star.type = 4;
+                    lastSpecialStarTime = now;
+                }
+            }
+            if (starDensityMultiplier > 1 && Math.random() < 0.1) stars.push(new Star());
+        }
+
+        function drawBlackHole() {
+            const currentTime = Date.now();
+            let targetRadius = blackHole.baseRadius;
+            if (currentTime < blackHole.expandedUntil) targetRadius = blackHole.baseRadius * 2;
+            blackHole.radius += (targetRadius - blackHole.radius) * 0.1;
+            blackHole.pulsePhase += 0.05;
+            const pulseScale = 1 + Math.sin(blackHole.pulsePhase) * 0.1;
+            const currentRadius = blackHole.radius * pulseScale;
+
+            ctx.fillStyle = 'rgba(0,0,0,1)';
+            ctx.beginPath(); ctx.arc(blackHole.x, blackHole.y, currentRadius * 0.6, 0, Math.PI * 2); ctx.fill();
+            const gradient = ctx.createRadialGradient(blackHole.x, blackHole.y, currentRadius * 0.6, blackHole.x, blackHole.y, currentRadius);
+            gradient.addColorStop(0, 'rgba(0,0,0,0.9)'); gradient.addColorStop(1, 'rgba(40,0,80,0.3)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath(); ctx.arc(blackHole.x, blackHole.y, currentRadius, 0, Math.PI * 2); ctx.fill();
+            ctx.save(); ctx.globalAlpha = 0.3; ctx.strokeStyle = 'rgba(100,50,200,0.5)'; ctx.lineWidth = 2;
+            for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(blackHole.x, blackHole.y, currentRadius * (1.2 + i * 0.3), 0, Math.PI * 2); ctx.stroke(); }
+            ctx.restore();
+        }
+
+        let isDragging = false;
+        function handleStart(e) { isDragging = true; e.preventDefault(); }
+        function handleMove(e) {
+            if (!isDragging) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+            const y = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+            blackHole.x = x; blackHole.y = y - 70;
+        }
+        function handleEnd() { isDragging = false; }
+
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('mouseleave', handleEnd);
+        canvas.addEventListener('touchstart', handleStart);
+        canvas.addEventListener('touchmove', handleMove);
+        canvas.addEventListener('touchend', handleEnd);
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            backgroundStars.forEach(star => { star.update(); star.draw(); });
+            drawBlackHole();
+            const currentTime = Date.now();
+            if (currentTime > scoreMultiplierUntil) scoreMultiplier = 1;
+            if (currentTime > globalAttractionUntil) globalAttraction = false;
+            ensureSpecialStars();
+            stars.forEach(star => { star.update(); star.draw(); });
+            requestAnimationFrame(gameLoop);
+        }
+
+        gameLoop();
+    </script>
+</body>
+</html>
