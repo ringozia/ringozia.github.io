@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sheena Ringo 47th Birthday</title>
+    
+    <!-- 引入更有质感的明朝体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;800&family=Zen+Old+Mincho:wght@400;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --c-bg: #FDFBFB;
+            --c-text: #1a1a1a;
+            --c-rose: #B76E79;
+            --c-rose-deep: #7a2b35;
+            --c-gold: #C5A059;
+            --font-main: 'Shippori Mincho', serif;
+            --font-art: 'Zen Old Mincho', serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background-color: var(--c-bg);
+            color: var(--c-text);
+            width: 100vw;
+            overflow-x: hidden;
+            -ms-overflow-style: none; 
+            scrollbar-width: none;
+        }
+        ::-webkit-scrollbar { display: none; }
+
+        /* Loader */
+        #loader {
+            position: fixed; inset: 0; background: #fff; z-index: 10000;
+            display: flex; align-items: center; justify-content: center;
+            transition: opacity 0.8s;
+        }
+        .load-line { width: 100px; height: 1px; background: #eee; position: relative; }
+        .load-prog { position: absolute; left: 0; top: 0; height: 100%; background: var(--c-rose); width: 0%; transition: width 0.5s; }
+
+        /* --- SECTION 1: DYNAMIC RAIN (Refined) --- */
+        #sec-intro {
+            height: 100vh;
+            width: 100vw;
+            position: relative;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .rain-col {
+            position: absolute;
+            top: -20vh;
+            width: 70px; /* 较宽的列，更具呼吸感 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            opacity: 0.8;
+            will-change: transform;
+        }
+
+        .rain-track {
+            display: flex;
+            flex-direction: column;
+            gap: 5rem; /* 增大间距，不再拥挤 */
+            animation: textFlow linear infinite;
+        }
+
+        .song-text {
+            writing-mode: vertical-rl;
+            font-family: var(--font-art);
+            color: #111;
+            transition: all 0.3s;
+            text-shadow: 0 0 1px rgba(0,0,0,0.05);
+        }
+        
+        /* 特殊高亮样式 */
+        .song-text.highlight {
+            color: var(--c-rose-deep);
+            font-weight: 900;
+            transform: scale(1.1);
+        }
+
+        @keyframes textFlow {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-50%); }
+        }
+
+        #sec-intro.exit .rain-col:nth-child(odd) { transform: translateY(-120vh); transition: transform 1.2s cubic-bezier(0.6,0,0.2,1); }
+        #sec-intro.exit .rain-col:nth-child(even) { transform: translateY(120vh); transition: transform 1.2s cubic-bezier(0.6,0,0.2,1); }
+
+        .scroll-hint {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            font-size: 0.75rem; letter-spacing: 3px; color: var(--c-gold);
+            animation: pulse 3s infinite;
+        }
+        @keyframes pulse { 50% { opacity: 0.3; } }
+
+        /* --- SECTION 2: TIMELINE --- */
+        #sec-bio {
+            min-height: 100vh;
+            background: #fff;
+            padding: 80px 20px;
+        }
+        
+        .tl-container {
+            max-width: 600px;
+            margin: 0 auto;
+            border-left: 1px solid rgba(183, 110, 121, 0.2);
+            padding-left: 30px;
+        }
+
+        .tl-item {
+            margin-bottom: 50px;
+            opacity: 0; transform: translateY(20px);
+            transition: all 0.6s ease;
+        }
+        .tl-item.show { opacity: 1; transform: translateY(0); }
+
+        .tl-year { font-family: var(--font-art); font-size: 1.5rem; color: var(--c-gold); line-height: 1; }
+        .tl-body { margin-top: 8px; }
+        .tl-title { font-size: 1.1rem; font-weight: 700; color: #333; }
+        .tl-meta { font-size: 0.8rem; color: #888; margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; }
+
+        /* --- SECTION 3: LYRIC CAPSULES --- */
+        #sec-disco {
+            padding: 80px 0;
+            background: #F8F4F5;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .marquee-row {
+            display: flex;
+            width: 100%;
+            margin-bottom: 30px;
+        }
+        .marquee-move { display: flex; animation: marquee 60s linear infinite; }
+        
+        .capsule {
+            background: #fff;
+            padding: 12px 25px;
+            margin: 0 10px;
+            border-radius: 40px;
+            font-size: 0.9rem;
+            color: #555;
+            font-family: var(--font-art);
+            white-space: nowrap;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            border: 1px solid transparent;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .capsule:hover {
+            border-color: var(--c-rose);
+            color: var(--c-rose-deep);
+            background: #fff0f2;
+            transform: scale(1.05);
+        }
+
+        @keyframes marquee { to { transform: translateX(-50%); } }
+
+        /* Metadata Popup (Fixed) */
+        .meta-popup {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%) scale(0.9);
+            width: 85%; max-width: 400px;
+            background: rgba(255,255,255,0.98);
+            border: 1px solid var(--c-rose);
+            box-shadow: 0 20px 50px rgba(122, 43, 53, 0.15);
+            padding: 30px;
+            text-align: center;
+            opacity: 0; pointer-events: none;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 500;
+        }
+        .meta-popup.active { opacity: 1; transform: translate(-50%, -50%) scale(1); pointer-events: auto; }
+        
+        .mp-lyric-jp { font-size: 1.1rem; font-weight: bold; margin-bottom: 8px; color: #000; font-family: var(--font-art); }
+        .mp-lyric-cn { font-size: 0.9rem; color: #555; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+        .mp-info { font-size: 0.8rem; color: var(--c-gold); letter-spacing: 1px; line-height: 1.6; }
+        .mp-title { font-size: 1.2rem; color: var(--c-rose-deep); margin-bottom: 5px; font-weight: bold; }
+
+        /* --- SECTION 4: APPLE BLIND BOX --- */
+        #sec-game {
+            min-height: 100vh;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .apple-container { display: flex; flex-wrap: wrap; justify-content: center; width: 90%; max-width: 650px; }
+        .apple-btn {
+            font-size: 3.8rem; margin: -8px; cursor: pointer; transition: transform 0.2s;
+            filter: drop-shadow(0 5px 5px rgba(0,0,0,0.05));
+        }
+        .apple-btn:active { transform: scale(0.9); }
+
+        /* --- SECTION 5: GRAND FINALE (Red/Gold) --- */
+        #sec-finale {
+            height: 100vh;
+            width: 100vw;
+            /* 替换黑色背景为 深酒红/胭脂红 渐变 */
+            background: linear-gradient(135deg, #2c0005 0%, #580e1a 50%, #7a2b35 100%);
+            color: #eaddcf; /* 暖白金色 */
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .year-counter {
+            font-family: var(--font-art);
+            font-size: 5rem;
+            color: var(--c-gold);
+            opacity: 0.8;
+            font-weight: 700;
+        }
+
+        .slide-hint {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            border-bottom: 1px solid var(--c-gold);
+            padding-bottom: 5px;
+            color: rgba(255,255,255,0.6);
+        }
+
+        .final-msg {
+            position: absolute; inset: 0;
+            display: flex; flex-direction: row-reverse;
+            justify-content: center; align-items: center;
+            opacity: 0; pointer-events: none; transition: opacity 1.5s;
+        }
+        .final-msg.show { opacity: 1; pointer-events: auto; }
+
+        .jp-char {
+            writing-mode: vertical-rl;
+            font-size: 3.5rem;
+            font-family: var(--font-art);
+            margin: 0 15px;
+            color: #fff;
+            text-shadow: 0 0 15px rgba(197, 160, 89, 0.6);
+            transform: translateY(30px); opacity: 0;
+            transition: all 1s ease;
+        }
+        
+        .en-sub {
+            position: absolute; bottom: 50px; width: 100%; text-align: center;
+            font-size: 0.9rem; letter-spacing: 3px; color: var(--c-gold);
+            opacity: 0; transition: opacity 2s 2s;
+        }
+
+    </style>
+</head>
+<body>
+
+<div id="loader">
+    <div class="load-line"><div class="load-prog" id="load-prog"></div></div>
+</div>
+
+<!-- 1. Intro -->
+<section id="sec-intro">
+    <div id="rain-area" style="width:100%; height:100%;"></div>
+    <div class="scroll-hint">SCROLL TO START</div>
+</section>
+
+<!-- 2. Bio -->
+<section id="sec-bio">
+    <div style="text-align:center; margin-bottom:50px; color:var(--c-rose-deep); letter-spacing:5px;">DISCOGRAPHY</div>
+    <div class="tl-container" id="tl-box"></div>
+</section>
+
+<!-- 3. Lyric Cards -->
+<section id="sec-disco">
+    <div style="text-align:center; margin-bottom:30px; color:#999; font-size:0.8rem; letter-spacing:2px;">LYRIC FRAGMENTS</div>
+    <div id="marquee-root"></div>
+    
+    <!-- Popup -->
+    <div class="meta-popup" id="meta-popup">
+        <div class="mp-title" id="mp-title"></div>
+        <div class="mp-lyric-jp" id="mp-jp"></div>
+        <div class="mp-lyric-cn" id="mp-cn"></div>
+        <div class="mp-info">
+            <span id="mp-album"></span><br>
+            <span id="mp-year"></span>
+        </div>
+    </div>
+</section>
+
+<!-- 4. Game -->
+<section id="sec-game">
+    <div class="apple-container" id="apple-box"></div>
+</section>
+
+<!-- 5. Finale -->
+<section id="sec-finale">
+    <div class="year-counter" id="year-num">2025</div>
+    <div class="slide-hint" id="slide-hint">Slide Up to 1978</div>
+    
+    <div class="final-msg" id="final-view">
+        <div class="jp-char" style="transition-delay:0.2s">椎名林檎</div>
+        <div class="jp-char" style="transition-delay:0.6s">四十七歳</div>
+        <div class="jp-char" style="transition-delay:1.0s">誕生日</div>
+        <div class="jp-char" style="transition-delay:1.4s">御目出度</div>
+        <div class="en-sub">The Queen of Japanese Rock</div>
+    </div>
+</section>
+
+<script>
+    // --- MASTER DATABASE (Merged Lyrics & Info) ---
+    // snippet: Page 3显示的歌词片段
+    const masterDB = [
+        {t:"丸ノ内サディスティック", a:"無罪モラトリアム", y:1999, snippet:"将来僧になって...", j:"将来僧になって結婚して欲しい", c:"希望将来出家以此结婚"},
+        {t:"幸福論", a:"無罪モラトリアム", y:1998, snippet:"光を探している", j:"君が其処に居る事が 幸福の條件", c:"你在那里这件事 就是幸福的条件"},
+        {t:"歌舞伎町の女王", a:"無罪モラトリアム", y:1998, snippet:"この町が私の庭", j:"今夜からはこの町が私の庭", c:"今夜开始这条街就是我的庭院"},
+        {t:"本能", a:"勝訴ストリップ", y:1999, snippet:"約束は要らない", j:"約束は要らないわ 果たされないことなど", c:"不需要什么约定 反正大都不会实现"},
+        {t:"ギブス", a:"勝訴ストリップ", y:2000, snippet:"i wanna be with u", j:"Don't U think? i wanna be with u", c:"你不觉得吗？我想和你在一起"},
+        {t:"罪と罰", a:"勝訴ストリップ", y:2000, snippet:"頬を刺す朝", j:"頬を刺す朝の山手通り", c:"刺痛脸颊的清晨山手通"},
+        {t:"正しい街", a:"無罪モラトリアム", y:1999, snippet:"キスをして", j:"あの日飛び出して行って", c:"那天我飞奔而出"},
+        {t:"浴室", a:"勝訴ストリップ", y:2000, snippet:"洗って切って", j:"洗って切って水の中", c:"洗净切开在水中"},
+        {t:"茎 (STEM)", a:"加爾基 精液 栗ノ花", y:2003, snippet:"そこには種が", j:"そこには、種が、", c:"在那里，有一颗种子"},
+        {t:"迷彩", a:"加爾基 精液 栗ノ花", y:2003, snippet:"眼が合うの", j:"ねえ、如何して眼が合うの", c:"呐，为何眼神会交汇"},
+        {t:"意識", a:"加爾基 精液 栗ノ花", y:2003, snippet:"頭が動いている", j:"頭が動いている", c:"大脑在转动"},
+        {t:"りんごのうた", a:"Single", y:2003, snippet:"私の名前を", j:"私の名前をよく呼んで", c:"好好呼唤我的名字"},
+        {t:"群青日和", a:"教育 (東京事変)", y:2004, snippet:"新宿は豪雨", j:"新宿は豪雨", c:"新宿下起了豪雨"},
+        {t:"遭難", a:"教育 (東京事変)", y:2004, snippet:"花が咲いたよ", j:"この部屋で春を迎えている", c:"在这个房间里迎来了春天"},
+        {t:"修羅場", a:"大人 (東京事変)", y:2005, snippet:"白い嘘", j:"エピソードなど希釈して", c:"将轶事什么的稀释吧"},
+        {t:"キラーチューン", a:"娯楽 (東京事変)", y:2007, snippet:"贅沢は味方", j:"贅沢は味方", c:"奢侈是同伴"},
+        {t:"閃光少女", a:"娯楽 (東京事変)", y:2007, snippet:"今を感じたい", j:"現在(いま)を最高値で通過して", c:"以最高值通过现在"},
+        {t:"ありあまる富", a:"日出処", y:2009, snippet:"僕らの富", j:"僕らが手にしている富は", c:"我们手中的财富"},
+        {t:"カーネーション", a:"日出処", y:2011, snippet:"唯一つ", j:"唯一つ、唯一つ", c:"唯一的，唯一的"},
+        {t:"自由へ道連れ", a:"日出処", y:2012, snippet:"道連れしちゃえば", j:"道連れしちゃえば", c:"若结伴同行的话"},
+        {t:"NIPPON", a:"日出処", y:2014, snippet:"日本晴れ", j:"万歳！万歳！日本晴れ", c:"万岁！万岁！日本晴朗"},
+        {t:"長く短い祭", a:"三毒史", y:2015, snippet:"天上天下", j:"天上天下繋ぐ花火", c:"连接天上天下的烟火"},
+        {t:"神様、仏様", a:"三毒史", y:2015, snippet:"地団駄を踏んで", j:"地団駄を踏んで", c:"跺着脚"},
+        {t:"人生は夢だらけ", a:"逆輸入", y:2017, snippet:"大人の皆様", j:"大人の皆様に敬具", c:"致各位大人"},
+        {t:"目抜き通り", a:"三毒史", y:2017, snippet:"誰も知らない", j:"誰も知らない", c:"谁也不知道"},
+        {t:"獣ゆく細道", a:"三毒史", y:2018, snippet:"この世は無常", j:"この世は無常", c:"这世间无常"},
+        {t:"公然の秘密", a:"ニュートンの林檎", y:2019, snippet:"味見したい", j:"味見したい", c:"想要尝尝味道"},
+        {t:"鶏と蛇と豚", a:"三毒史", y:2019, snippet:"三毒を喰らえ", j:"三毒を喰らえ", c:"吞噬三毒"},
+        {t:"私は猫の目", a:"放生会", y:2023, snippet:"猫の目", j:"番狂わせ", c:"出乎意料"},
+        {t:"さらば純情", a:"放生会", y:2023, snippet:"純情", j:"さらば純情", c:"再见纯情"}
+    ];
+
+    // Helper: Shuffle Array
+    function shuffle(array) {
+        let currentIndex = array.length, randomIndex;
+        while (currentIndex != 0) {
+            randomIndex = Math.floor(Math.random() * currentIndex);
+            currentIndex--;
+            [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+        }
+        return array;
+    }
+
+    // --- INIT ---
+    document.fonts.ready.then(() => {
+        document.getElementById('load-prog').style.width = '100%';
+        setTimeout(() => {
+            document.getElementById('loader').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loader').style.display = 'none';
+                initRain();
+            }, 600);
+        }, 800);
+    });
+
+    // --- 1. RAIN LOGIC (Non-Repetitive & Beautified) ---
+    const rainArea = document.getElementById('rain-area');
+    const introSec = document.getElementById('sec-intro');
+
+    function initRain() {
+        const colWidth = 80; 
+        const cols = Math.ceil(window.innerWidth / colWidth);
+        
+        for(let i=0; i<cols; i++) {
+            const col = document.createElement('div');
+            col.className = 'rain-col';
+            col.style.left = (i * colWidth + Math.random()*10) + 'px';
+            
+            const track = document.createElement('div');
+            track.className = 'rain-track';
+            // Slower, varying speeds
+            track.style.animationDuration = (40 + Math.random()*30) + 's'; 
+
+            // Shuffle DB for THIS column to ensure no repeats inside one strip
+            const localDB = shuffle([...masterDB]);
+            // Pick first 15
+            const subset = localDB.slice(0, 15);
+            
+            let html = subset.map(item => {
+                // Random Styling
+                const fontSize = 1 + Math.random() * 0.8; // 1rem - 1.8rem
+                const opacity = 0.3 + Math.random() * 0.7;
+                const weight = Math.random() > 0.7 ? 600 : 400;
+                // Highlight roughly 10%
+                const isHighlight = Math.random() > 0.85;
+                const hlClass = isHighlight ? 'highlight' : '';
+                
+                return `<span class="song-text ${hlClass}" style="font-size:${fontSize}rem; opacity:${isHighlight?1:opacity}; font-weight:${weight}">${item.t}</span>`;
+            }).join('');
+            
+            track.innerHTML = html + html; // Loop
+            col.appendChild(track);
+            rainArea.appendChild(col);
+            
+            // Stagger
+            col.style.transform = `translateY(${Math.random() * -30}vh)`;
+        }
+    }
+
+    // Scroll Observer
+    window.addEventListener('scroll', () => {
+        if(window.scrollY > 100) introSec.classList.add('exit');
+        else introSec.classList.remove('exit');
+        checkBio();
+    });
+
+    // --- 2. BIO TIMELINE (Filtered Known Years) ---
+    const tlBox = document.getElementById('tl-box');
+    // Unique Sort
+    const timelineData = [...masterDB].sort((a,b) => a.y - b.y);
+    // Deduplicate logic for display if needed, but let's just list hits
+    
+    timelineData.forEach(item => {
+        const d = document.createElement('div');
+        d.className = 'tl-item';
+        d.innerHTML = `
+            <div class="tl-year">${item.y}</div>
+            <div class="tl-body">
+                <div class="tl-title">${item.t}</div>
+                <div class="tl-meta">${item.a}</div>
+            </div>
+        `;
+        tlBox.appendChild(d);
+    });
+
+    function checkBio() {
+        const trigger = window.innerHeight * 0.85;
+        document.querySelectorAll('.tl-item').forEach(el => {
+            if(el.getBoundingClientRect().top < trigger) el.classList.add('show');
+        });
+    }
+
+    // --- 3. LYRIC MARQUEE (Show Snippet -> Popup Full) ---
+    const marqueeRoot = document.getElementById('marquee-root');
+    const popup = document.getElementById('meta-popup');
+    let popupTimer;
+
+    function initMarquee() {
+        const rows = 4; 
+        for(let r=0; r<rows; r++) {
+            const row = document.createElement('div');
+            row.className = 'marquee-row';
+            
+            const move = document.createElement('div');
+            move.className = 'marquee-move';
+            move.style.animationDuration = (45 + r*5) + 's';
+            if(r%2!==0) move.style.animationDirection = 'reverse';
+
+            // Mix DB
+            const rowData = shuffle([...masterDB]).slice(0, 15);
+            let html = rowData.map(d => {
+                // Store index/data
+                const dataStr = encodeURIComponent(JSON.stringify(d));
+                return `<div class="capsule" onclick="openPopup('${dataStr}')" onmouseenter="openPopup('${dataStr}')">${d.snippet}</div>`
+            }).join('');
+            
+            move.innerHTML = html + html + html; 
+            row.appendChild(move);
+            marqueeRoot.appendChild(row);
+        }
+    }
+    initMarquee();
+
+    window.openPopup = function(str) {
+        const data = JSON.parse(decodeURIComponent(str));
+        
+        document.getElementById('mp-title').innerText = data.t;
+        document.getElementById('mp-jp').innerText = data.j;
+        document.getElementById('mp-cn').innerText = data.c;
+        document.getElementById('mp-album').innerText = "Album: " + data.a;
+        document.getElementById('mp-year').innerText = "Year: " + data.y;
+        
+        popup.classList.add('active');
+        
+        clearTimeout(popupTimer);
+        popupTimer = setTimeout(() => {
+            popup.classList.remove('active');
+        }, 3000); // 3秒后自动消失，或者移出区域
+    }
+
+    // --- 4. GAME (Blind Box) ---
+    const appleBox = document.getElementById('apple-box');
+    for(let i=0; i<20; i++) {
+        const a = document.createElement('div');
+        a.className = 'apple-btn';
+        a.innerText = '🍎';
+        a.style.transform = `rotate(${Math.random()*30-15}deg)`;
+        a.onclick = () => {
+            const pick = masterDB[Math.floor(Math.random()*masterDB.length)];
+            const str = encodeURIComponent(JSON.stringify(pick));
+            // Reuse popup
+            openPopup(str);
+        }
+        appleBox.appendChild(a);
+    }
+
+    // --- 5. FINALE (Red Theme) ---
+    const finale = document.getElementById('sec-finale');
+    const yearNum = document.getElementById('year-num');
+    const finalView = document.getElementById('final-view');
+    const slideHint = document.getElementById('slide-hint');
+    
+    let year = 2025;
+    let isDone = false;
+    let startY = 0;
+
+    function scrollYear(delta) {
+        if(isDone) return;
+        if(delta > 0) {
+            year--;
+            if(year <= 1978) {
+                year = 1978;
+                showFinal();
+            }
+        }
+        yearNum.innerText = year;
+        const p = (year-1978)/(2025-1978);
+        yearNum.style.opacity = 0.1 + p*0.9;
+    }
+
+    function showFinal() {
+        isDone = true;
+        yearNum.style.opacity = 0;
+        slideHint.style.opacity = 0;
+        finalView.classList.add('show');
+        
+        const chars = document.querySelectorAll('.jp-char');
+        chars.forEach(c => {
+            c.style.opacity = 1;
+            c.style.transform = 'translateY(0)';
+        });
+        document.querySelector('.en-sub').style.opacity = 1;
+    }
+
+    finale.addEventListener('touchstart', e => startY=e.touches[0].clientY, {passive:false});
+    finale.addEventListener('touchmove', e => {
+        const diff = startY - e.touches[0].clientY;
+        if(diff > 5) { // Drag Up
+            e.preventDefault();
+            scrollYear(1);
+            startY = e.touches[0].clientY;
+        }
+    }, {passive:false});
+
+    finale.addEventListener('wheel', e => {
+        if(e.deltaY > 0) {
+            e.preventDefault();
+            scrollYear(1);
+        }
+    }, {passive:false});
+
+</script>
+</body>
+</html>
