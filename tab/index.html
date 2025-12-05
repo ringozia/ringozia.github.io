@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RingoTab</title>
+  <style>
+    /* 全局样式重置与基础配置 */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: "Microsoft Yahei", sans-serif;
+    }
+
+    /* 隐藏所有滚动条 - 核心修改1 */
+    ::-webkit-scrollbar {
+      display: none;
+      /* 隐藏webkit内核滚动条 */
+    }
+
+    /* 兼容其他浏览器 */
+    body,
+    .site-list,
+    .site-result {
+      -ms-overflow-style: none;
+      /* IE/Edge */
+      scrollbar-width: none;
+      /* Firefox */
+    }
+
+    /* 跟随系统的暗黑模式适配 */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-color: #1a1a1a;
+        --text-color: #f0f0f0;
+        --card-bg: #2d2d2d;
+        --card-hover: #3d3d3d;
+        --border-color: #444;
+        --search-bg: #2d2d2d;
+        --search-border: #555;
+        --popup-bg: #2d2d2d;
+        --capsule-bg: #3d3d3d;
+        --capsule-hover: #4d4d4d;
+        --title-color: #fff;
+        --search-btn-color: #0078d7;
+        /* 搜索按钮文本色 */
+        --search-btn-hover-color: #0063b1;
+        /* 搜索按钮 hover 文本色 */
+      }
+    }
+
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-color: #f5f5f5;
+        --text-color: #333;
+        --card-bg: #fff;
+        --card-hover: #f0f0f0;
+        --border-color: #e0e0e0;
+        --search-bg: #fff;
+        --search-border: #ddd;
+        --popup-bg: #fff;
+        --capsule-bg: #f0f0f0;
+        --capsule-hover: #e0e0e0;
+        --title-color: #222;
+        --search-btn-color: #0078d7;
+        /* 搜索按钮文本色 */
+        --search-btn-hover-color: #0063b1;
+        /* 搜索按钮 hover 文本色 */
+      }
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      /* 核心修改2：调整padding值 */
+      padding: calc(25vh * 0.9) 0 2rem;
+    }
+
+    /* 容器居中 & 垂直居中适配 */
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1rem;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+    }
+
+    /* 搜索栏上方大标题 */
+    .page-title {
+      text-align: center;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      font-weight: 600;
+      color: var(--title-color);
+      margin-bottom: clamp(1rem, 2vw, 1.5rem);
+      letter-spacing: 0.05rem;
+    }
+
+    /* 搜索栏样式 */
+    .search-wrapper {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto clamp(1rem, 2vw, 1.5rem);
+      position: relative;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      height: clamp(3rem, 5vw, 3.5rem);
+      background-color: var(--search-bg);
+      border: 1px solid var(--search-border);
+      border-radius: 2rem;
+      padding: 0 clamp(1rem, 2vw, 1.5rem);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      justify-content: space-between;
+    }
+
+    .search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--text-color);
+      font-size: clamp(0.9rem, 1.5vw, 1rem);
+      height: 100%;
+      padding-right: clamp(0.8rem, 1.5vw, 1rem);
+    }
+
+    .search-clear {
+      width: clamp(1rem, 1.8vw, 1.2rem);
+      height: clamp(1rem, 1.8vw, 1.2rem);
+      border-radius: 50%;
+      background-color: var(--capsule-bg);
+      color: var(--text-color);
+      border: none;
+      cursor: pointer;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: clamp(0.7rem, 1.2vw, 0.8rem);
+      margin-right: clamp(0.8rem, 1.5vw, 1rem);
+    }
+
+    .search-clear:hover {
+      background-color: var(--capsule-hover);
+    }
+
+    /* 搜索按钮样式 - 核心修改3：无底色纯文本 */
+    .search-btn {
+      width: auto;
+      /* 取消固定宽高 */
+      height: auto;
+      background-color: transparent;
+      /* 移除底色 */
+      color: var(--search-btn-color);
+      /* 文本色 */
+      border: none;
+      cursor: pointer;
+      font-size: clamp(0.9rem, 1.5vw, 1rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 500;
+      /* 取消原有margin，改为内边距 */
+      margin: 0;
+      padding: 0 clamp(1rem, 1.5vw, 1.2rem);
+      border-radius: 0;
+      /* 取消圆角 */
+    }
+
+    .search-btn:hover {
+      background-color: transparent;
+      /* 确保hover无底色 */
+      color: var(--search-btn-hover-color);
+      /* hover文本色 */
+      box-shadow: none;
+      /* 取消阴影 */
+    }
+
+    /* 搜索弹窗样式 */
+    .search-popup {
+      position: absolute;
+      top: calc(100% + 0.5rem);
+      left: 0;
+      width: 100%;
+      background-color: var(--popup-bg);
+      border: 1px solid var(--border-color);
+      border-radius: clamp(0.6rem, 1vw, 0.8rem);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      padding: clamp(0.8rem, 1.5vw, 1rem);
+      display: none;
+      z-index: 100;
+    }
+
+    .popup-tabs {
+      display: flex;
+      margin-bottom: clamp(0.8rem, 1.5vw, 1rem);
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: clamp(0.4rem, 0.8vw, 0.5rem);
+    }
+
+    .popup-tab {
+      padding: clamp(0.4rem, 0.8vw, 0.5rem) clamp(0.8rem, 1.5vw, 1rem);
+      border: none;
+      background: transparent;
+      color: var(--text-color);
+      cursor: pointer;
+      font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+      border-bottom: 2px solid transparent;
+    }
+
+    .popup-tab.active {
+      border-bottom-color: #0078d7;
+      color: #0078d7;
+    }
+
+    /* 搜索历史样式 */
+    .history-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: clamp(0.4rem, 0.8vw, 0.5rem);
+    }
+
+    .history-item {
+      padding: clamp(0.3rem, 0.7vw, 0.4rem) clamp(0.6rem, 1.2vw, 0.8rem);
+      background-color: var(--capsule-bg);
+      border-radius: 1rem;
+      font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+      cursor: pointer;
+      max-width: clamp(100px, 15vw, 120px);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .history-item:hover {
+      background-color: var(--capsule-hover);
+    }
+
+    .history-clear {
+      padding: clamp(0.3rem, 0.7vw, 0.4rem) clamp(0.6rem, 1.2vw, 0.8rem);
+      background-color: #ff4d4f;
+      color: #fff;
+      border-radius: 1rem;
+      font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+      cursor: pointer;
+    }
+
+    /* 搜索网站结果样式 */
+    .site-result {
+      display: none;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: clamp(1rem, 2vw, 1.5rem);
+      max-height: 300px;
+      overflow-y: auto;
+      padding: clamp(0.4rem, 0.8vw, 0.5rem) 0;
+    }
+
+    /* 弹窗内网站项（图标+外部名称）- 自适应大小 */
+    .site-result-item-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(0.3rem, 0.8vw, 0.5rem);
+    }
+
+    .site-result-item {
+      width: clamp(60px, 10vw, 80px);
+      height: clamp(60px, 10vw, 80px);
+      background-color: var(--card-bg);
+      border-radius: clamp(0.4rem, 0.8vw, 0.5rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* 确保内容居中 */
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      /* 新增：确保文字居中样式 */
+      text-align: center;
+      font-size: clamp(1.5rem, 3vw, 2rem);
+      color: var(--text-color);
+    }
+
+    .site-result-item:hover {
+      background-color: var(--card-hover);
+    }
+
+    .site-result-icon {
+      width: clamp(1.5rem, 3vw, 2rem);
+      height: clamp(1.5rem, 3vw, 2rem);
+      object-fit: contain;
+    }
+
+    .site-result-name {
+      font-size: clamp(0.7rem, 1.2vw, 0.8rem);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: clamp(60px, 10vw, 80px);
+      text-align: center;
+      color: var(--text-color);
+    }
+
+    /* 分类列表样式（胶囊状）- 自适应大小 */
+    .category-list {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: clamp(0.6rem, 1.2vw, 0.8rem);
+      margin-bottom: clamp(1rem, 2vw, 1.5rem);
+      padding: clamp(0.4rem, 0.8vw, 0.5rem) clamp(0.8rem, 1.5vw, 1rem);
+      overflow-x: auto;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      background-color: var(--bg-color);
+      z-index: 10;
+    }
+
+    .category-item {
+      height: clamp(2rem, 3.5vw, 2.3rem);
+      padding: 0 clamp(0.8rem, 1.5vw, 1.0rem);
+      background-color: var(--card-bg);
+      border-radius: clamp(1rem, 2vw, 1.4rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      font-size: clamp(0.7rem, 1.2vw, 0.8rem);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .category-item:hover,
+    .category-item.active {
+      background-color: var(--card-hover);
+      border-color: #0078d7;
+      color: #0078d7;
+    }
+
+    /* 网站列表样式 */
+    .site-list {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: clamp(1rem, 2vw, 1.5rem);
+      max-height: calc(100vh - 280px);
+      overflow-y: auto;
+      padding-bottom: 2rem;
+    }
+
+    /* 网站项（图标+外部名称）- 自适应大小 */
+    .site-item-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(0.3rem, 0.8vw, 0.5rem);
+    }
+
+    .site-item {
+      width: clamp(50px, 8vw, 60px);
+      height: clamp(50px, 8vw, 60px);
+      background-color: var(--card-bg);
+      border-radius: clamp(0.4rem, 0.8vw, 0.5rem);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      /* 确保内容居中 */
+      cursor: pointer;
+      border: 1px solid var(--border-color);
+      /* 新增：确保文字居中样式 */
+      text-align: center;
+      font-size: clamp(1.2rem, 2.5vw, 1.8rem);
+      color: var(--text-color);
+    }
+
+    .site-item:hover {
+      background-color: var(--card-hover);
+    }
+
+    .site-icon {
+      width: clamp(2rem, 3.5vw, 2.5rem);
+      height: clamp(2rem, 3.5vw, 2.5rem);
+      object-fit: contain;
+    }
+
+    .site-name {
+      font-size: clamp(0.8rem, 1.2vw, 0.9rem);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: clamp(80px, 12vw, 100px);
+      text-align: center;
+      color: var(--text-color);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- 页面大标题 -->
+    <h1 class="page-title">RingoTab</h1>
+
+    <!-- 搜索栏 -->
+    <div class="search-wrapper">
+      <div class="search-box">
+        <input type="text" class="search-input" placeholder="输入搜索内容，按回车或点击搜索" autocomplete="off">
+        <button class="search-clear">×</button>
+        <button class="search-btn">搜</button> <!-- 纯文本搜索按钮 -->
+      </div>
+      <!-- 搜索弹窗 -->
+      <div class="search-popup">
+        <div class="popup-tabs">
+          <button class="popup-tab active" data-tab="history">历史</button>
+          <button class="popup-tab" data-tab="site">网站</button>
+        </div>
+        <!-- 搜索历史 -->
+        <div class="history-list"></div>
+        <!-- 网站搜索结果 -->
+        <div class="site-result"></div>
+      </div>
+    </div>
+
+    <!-- 分类列表 -->
+    <div class="category-list"></div>
+
+    <!-- 网站列表 -->
+    <div class="site-list"></div>
+  </div>
+
+  <!-- 引入数据文件 -->
+  <script src="data.js"></script>
+  <script>
+    // 全局变量
+    let currentCategoryIndex = 0;
+    let currentPopupTabIndex = 0;
+    const SEARCH_HISTORY_KEY = 'searchHistory';
+    const MAX_HISTORY_COUNT = 20;
+    const POPUP_TABS = ['history', 'site'];
+
+    // DOM元素获取
+    const searchInput = document.querySelector('.search-input');
+    const searchClear = document.querySelector('.search-clear');
+    const searchBtn = document.querySelector('.search-btn');
+    const searchPopup = document.querySelector('.search-popup');
+    const popupTabs = document.querySelectorAll('.popup-tab');
+    const historyList = document.querySelector('.history-list');
+    const siteResult = document.querySelector('.site-result');
+    const categoryList = document.querySelector('.category-list');
+    const siteList = document.querySelector('.site-list');
+    const searchBox = document.querySelector('.search-box');
+
+    // 初始化函数
+    function init() {
+      renderCategoryList();
+      renderSiteList(currentCategoryIndex);
+      bindEvents();
+      renderSearchHistory();
+    }
+
+    // 渲染分类列表
+    function renderCategoryList() {
+      if (!window.categoryConfig || !Array.isArray(window.categoryConfig)) {
+        categoryList.innerHTML = '<div>暂无分类配置</div>';
+        return;
+      }
+
+      const sortedCategories = [...window.categoryConfig].sort((a, b) => (a.qz || 0) - (b.qz || 0));
+      categoryList.innerHTML = '';
+
+      sortedCategories.forEach((category, index) => {
+        const categoryItem = document.createElement('div');
+        categoryItem.className = `category-item ${index === currentCategoryIndex ? 'active' : ''}`;
+        categoryItem.textContent = category.glm;
+        categoryItem.dataset.code = category.dh;
+        categoryItem.dataset.index = index;
+        categoryItem.addEventListener('click', () => {
+          currentCategoryIndex = index;
+          renderCategoryList();
+          renderSiteList(index);
+        });
+        categoryList.appendChild(categoryItem);
+      });
+    }
+
+    // 渲染网站列表 - 核心修改4：优化无图标时显示首个字符居中
+    function renderSiteList(categoryIndex) {
+      if (!window.categoryConfig || !Array.isArray(window.categoryConfig) || !window.siteConfig || !Array.isArray(window.siteConfig)) {
+        siteList.innerHTML = '<div>暂无网站配置</div>';
+        return;
+      }
+
+      const sortedCategories = [...window.categoryConfig].sort((a, b) => (a.qz || 0) - (b.qz || 0));
+      const currentCategory = sortedCategories[categoryIndex];
+      if (!currentCategory) {
+        siteList.innerHTML = '<div>该分类无数据</div>';
+        return;
+      }
+
+      const filteredSites = [...window.siteConfig]
+        .filter(site => site.gl === currentCategory.dh)
+        .sort((a, b) => (a.qz || 0) - (b.qz || 0));
+
+      siteList.innerHTML = '';
+
+      if (filteredSites.length === 0) {
+        siteList.innerHTML = '<div>该分类暂无网站</div>';
+        return;
+      }
+
+      filteredSites.forEach(site => {
+        const siteItemWrap = document.createElement('div');
+        siteItemWrap.className = 'site-item-wrap';
+
+        const siteItem = document.createElement('div');
+        siteItem.className = 'site-item';
+
+        // 网站名称处理
+        const siteName = site.wzm || site.wz || '未知网站';
+        const shortName = siteName.length > 7 ? siteName.substring(0, 7) + '...' : siteName;
+        // 获取首个字符（汉字/字母/数字）
+        const firstChar = siteName.charAt(0) || '未';
+
+        // 拼接favicon地址
+        let domain = '';
+        try {
+          const urlObj = new URL(site.wz);
+          domain = urlObj.origin;
+        } catch (e) {
+          domain = site.wz.startsWith('http') ? site.wz : `https://${site.wz}`;
+        }
+        const faviconUrl = `${domain}/favicon.ico`;
+
+        // 重构图标HTML - 优化无图标时显示首个字符居中
+        siteItem.innerHTML = `
+          <img class="site-icon" 
+               src="${faviconUrl}" 
+               onerror="this.style.display='none'; this.parentNode.textContent='${firstChar}';" 
+               alt="${siteName}">
+        `;
+
+        // 网站名称元素
+        const siteNameEl = document.createElement('span');
+        siteNameEl.className = 'site-name';
+        siteNameEl.textContent = shortName;
+
+        siteItemWrap.appendChild(siteItem);
+        siteItemWrap.appendChild(siteNameEl);
+
+        // 点击跳转
+        siteItemWrap.addEventListener('click', () => {
+          window.open(site.wz, '_self');
+        });
+
+        siteList.appendChild(siteItemWrap);
+      });
+    }
+
+    // 根据关键词检索网站 - 同步优化弹窗内网站项的无图标显示
+    function searchSiteByKeyword(keyword) {
+      if (!keyword || !window.siteConfig || !Array.isArray(window.siteConfig)) {
+        siteResult.innerHTML = '<div style="width:100%;text-align:center;color:#999;">暂无匹配网站</div>';
+        return;
+      }
+
+      const lowerKeyword = keyword.toLowerCase();
+      const matchedSites = window.siteConfig.filter(site => {
+        const siteName = site.wzm || '';
+        return siteName.toLowerCase().includes(lowerKeyword);
+      }).sort((a, b) => (a.qz || 0) - (b.qz || 0));
+
+      siteResult.innerHTML = '';
+
+      if (matchedSites.length === 0) {
+        siteResult.innerHTML = '<div style="width:100%;text-align:center;color:#999;">暂无匹配网站</div>';
+        return;
+      }
+
+      matchedSites.forEach(site => {
+        const siteResultItemWrap = document.createElement('div');
+        siteResultItemWrap.className = 'site-result-item-wrap';
+
+        const siteResultItem = document.createElement('div');
+        siteResultItem.className = 'site-result-item';
+
+        const siteName = site.wzm || site.wz || '未知网站';
+        const shortName = siteName.length > 7 ? siteName.substring(0, 7) + '...' : siteName;
+        const firstChar = siteName.charAt(0) || '未';
+
+        let domain = '';
+        try {
+          const urlObj = new URL(site.wz);
+          domain = urlObj.origin;
+        } catch (e) {
+          domain = site.wz.startsWith('http') ? site.wz : `https://${site.wz}`;
+        }
+        const faviconUrl = `${domain}/favicon.ico`;
+
+        // 重构弹窗内网站项HTML
+        siteResultItem.innerHTML = `
+          <img class="site-result-icon" 
+               src="${faviconUrl}" 
+               onerror="this.style.display='none'; this.parentNode.textContent='${firstChar}';" 
+               alt="${siteName}">
+        `;
+
+        const siteResultNameEl = document.createElement('span');
+        siteResultNameEl.className = 'site-result-name';
+        siteResultNameEl.textContent = shortName;
+
+        siteResultItemWrap.appendChild(siteResultItem);
+        siteResultItemWrap.appendChild(siteResultNameEl);
+
+        siteResultItemWrap.addEventListener('click', () => {
+          window.open(site.wz, '_self');
+        });
+
+        siteResult.appendChild(siteResultItemWrap);
+      });
+    }
+
+    // 切换弹窗标签
+    function switchPopupTab(index) {
+      currentPopupTabIndex = index;
+      popupTabs.forEach((tab, i) => {
+        if (i === index) {
+          tab.classList.add('active');
+        } else {
+          tab.classList.remove('active');
+        }
+      });
+      const tabType = POPUP_TABS[index];
+      if (tabType === 'history') {
+        historyList.style.display = 'flex';
+        siteResult.style.display = 'none';
+      } else if (tabType === 'site') {
+        historyList.style.display = 'none';
+        siteResult.style.display = 'flex';
+        searchSiteByKeyword(searchInput.value.trim());
+      }
+    }
+
+    // 检查是否点击了弹窗/搜索栏外部
+    function isClickOutsideSearchArea(event) {
+      const isClickOnSearchBox = searchBox.contains(event.target);
+      const isClickOnPopup = searchPopup.contains(event.target);
+      return !isClickOnSearchBox && !isClickOnPopup;
+    }
+
+    // 绑定所有事件
+    function bindEvents() {
+      // 点击空白处关闭弹窗
+      document.addEventListener('click', (e) => {
+        if (isClickOutsideSearchArea(e)) {
+          searchPopup.style.display = 'none';
+          searchClear.style.display = 'none';
+        }
+      });
+
+      // 键盘切换逻辑
+      document.addEventListener('keydown', (e) => {
+        if (searchPopup.style.display === 'block' && document.activeElement === searchInput) {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+            e.preventDefault();
+            const tabCount = POPUP_TABS.length;
+            currentPopupTabIndex = e.key === 'ArrowLeft'
+              ? (currentPopupTabIndex - 1 + tabCount) % tabCount
+              : (currentPopupTabIndex + 1) % tabCount;
+            switchPopupTab(currentPopupTabIndex);
+          }
+          return;
+        }
+
+        if (!window.categoryConfig || !Array.isArray(window.categoryConfig)) return;
+        const categoryCount = window.categoryConfig.length;
+        if (categoryCount === 0) return;
+
+        if (document.activeElement !== searchInput) {
+          if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            currentCategoryIndex = (currentCategoryIndex - 1 + categoryCount) % categoryCount;
+            renderCategoryList();
+            renderSiteList(currentCategoryIndex);
+          } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            currentCategoryIndex = (currentCategoryIndex + 1) % categoryCount;
+            renderCategoryList();
+            renderSiteList(currentCategoryIndex);
+          }
+        }
+      });
+
+      // 搜索框输入
+      searchInput.addEventListener('input', (e) => {
+        const value = e.target.value.trim();
+        searchClear.style.display = value ? 'flex' : 'none';
+        searchPopup.style.display = 'block';
+        if (document.querySelector('.popup-tab.active').dataset.tab === 'site') {
+          searchSiteByKeyword(value);
+        }
+      });
+
+      // 搜索栏点击
+      searchBox.addEventListener('click', () => {
+        searchInput.focus();
+        searchPopup.style.display = 'block';
+        if (searchInput.value.trim()) {
+          searchClear.style.display = 'flex';
+          if (document.querySelector('.popup-tab.active').dataset.tab === 'site') {
+            searchSiteByKeyword(searchInput.value.trim());
+          }
+        }
+      });
+
+      // 输入框失焦
+      searchInput.addEventListener('blur', (e) => {
+        e.stopPropagation();
+      });
+
+      // 弹窗点击阻止冒泡
+      searchPopup.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
+
+      // 清除搜索内容
+      searchClear.addEventListener('click', () => {
+        searchInput.value = '';
+        searchClear.style.display = 'none';
+        searchPopup.style.display = 'block';
+        switchPopupTab(0);
+      });
+
+      // 搜索按钮点击
+      searchBtn.addEventListener('click', () => {
+        doSearch();
+      });
+
+      // 回车搜索
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          doSearch();
+        }
+      });
+
+      // 弹窗标签切换
+      popupTabs.forEach((tab, index) => {
+        tab.addEventListener('click', () => {
+          switchPopupTab(index);
+        });
+      });
+    }
+
+    // 执行搜索
+    function doSearch() {
+      const keyword = searchInput.value.trim();
+      if (!keyword) return;
+
+      saveSearchHistory(keyword);
+      window.open(`https://cn.bing.com/search?q=${encodeURIComponent(keyword)}`, '_self');
+    }
+
+    // 保存搜索历史
+    function saveSearchHistory(keyword) {
+      let history = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]');
+      history = history.filter(item => item !== keyword);
+      history.unshift(keyword);
+      if (history.length > MAX_HISTORY_COUNT) {
+        history = history.slice(0, MAX_HISTORY_COUNT);
+      }
+      localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
+      renderSearchHistory();
+    }
+
+    // 渲染搜索历史
+    function renderSearchHistory() {
+      let history = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]');
+      historyList.innerHTML = '';
+
+      if (history.length === 0) {
+        historyList.innerHTML = '<div style="width:100%;text-align:center;color:#999;">暂无搜索历史</div>';
+        return;
+      }
+
+      history.forEach(item => {
+        const historyItem = document.createElement('div');
+        historyItem.className = 'history-item';
+        historyItem.textContent = item.length > 10 ? item.substring(0, 10) + '...' : item;
+        historyItem.addEventListener('click', () => {
+          window.open(`https://cn.bing.com/search?q=${encodeURIComponent(item)}`, '_self');
+        });
+        historyList.appendChild(historyItem);
+      });
+
+      const clearBtn = document.createElement('div');
+      clearBtn.className = 'history-clear';
+      clearBtn.textContent = '× 清除';
+      clearBtn.addEventListener('click', () => {
+        localStorage.removeItem(SEARCH_HISTORY_KEY);
+        renderSearchHistory();
+      });
+      historyList.appendChild(clearBtn);
+    }
+
+    // 页面加载初始化
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+
+</html>
