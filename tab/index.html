@@ -14,23 +14,19 @@
       font-family: "Microsoft Yahei", sans-serif;
     }
 
-    /* 隐藏所有滚动条 - 核心修改1 */
+    /* 隐藏所有滚动条 */
     ::-webkit-scrollbar {
       display: none;
-      /* 隐藏webkit内核滚动条 */
     }
 
-    /* 兼容其他浏览器 */
     body,
     .site-list,
     .site-result {
       -ms-overflow-style: none;
-      /* IE/Edge */
       scrollbar-width: none;
-      /* Firefox */
     }
 
-    /* 跟随系统的暗黑模式适配 */
+    /* 暗黑/亮色模式适配 */
     @media (prefers-color-scheme: dark) {
       :root {
         --bg-color: #1a1a1a;
@@ -45,9 +41,10 @@
         --capsule-hover: #4d4d4d;
         --title-color: #fff;
         --search-btn-color: #0078d7;
-        /* 搜索按钮文本色 */
         --search-btn-hover-color: #0063b1;
-        /* 搜索按钮 hover 文本色 */
+        --tooltip-bg: #333;
+        --tooltip-text: #fff;
+        --tooltip-border: #555;
       }
     }
 
@@ -65,9 +62,10 @@
         --capsule-hover: #e0e0e0;
         --title-color: #222;
         --search-btn-color: #0078d7;
-        /* 搜索按钮文本色 */
         --search-btn-hover-color: #0063b1;
-        /* 搜索按钮 hover 文本色 */
+        --tooltip-bg: #fff;
+        --tooltip-text: #333;
+        --tooltip-border: #ddd;
       }
     }
 
@@ -78,11 +76,11 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      /* 核心修改2：调整padding值 */
       padding: calc(25vh * 0.9) 0 2rem;
+      position: relative;
+      z-index: 1;
     }
 
-    /* 容器居中 & 垂直居中适配 */
     .container {
       max-width: 1200px;
       margin: 0 auto;
@@ -92,9 +90,9 @@
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
+      z-index: 2;
     }
 
-    /* 搜索栏上方大标题 */
     .page-title {
       text-align: center;
       font-size: clamp(1.5rem, 3vw, 2rem);
@@ -104,12 +102,14 @@
       letter-spacing: 0.05rem;
     }
 
-    /* 搜索栏样式 */
+    /* 搜索栏样式 - 核心：提升容器层级 */
     .search-wrapper {
       width: 100%;
       max-width: 800px;
       margin: 0 auto clamp(1rem, 2vw, 1.5rem);
       position: relative;
+      z-index: 1000;
+      /* 搜索容器基础层级 */
     }
 
     .search-box {
@@ -120,7 +120,7 @@
       background-color: var(--search-bg);
       border: 1px solid var(--search-border);
       border-radius: 2rem;
-      padding: 0 clamp(1rem, 2vw, 1.5rem);
+      padding: 0 clamp(0rem, 5vw, 1.5rem);
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       justify-content: space-between;
     }
@@ -131,7 +131,7 @@
       outline: none;
       background: transparent;
       color: var(--text-color);
-      font-size: clamp(0.9rem, 1.5vw, 1rem);
+      font-size: clamp(0.9rem, 0.5vw, 1rem);
       height: 100%;
       padding-right: clamp(0.8rem, 1.5vw, 1rem);
     }
@@ -155,39 +155,30 @@
       background-color: var(--capsule-hover);
     }
 
-    /* 搜索按钮样式 - 核心修改3：无底色纯文本 */
     .search-btn {
       width: auto;
-      /* 取消固定宽高 */
       height: auto;
       background-color: transparent;
-      /* 移除底色 */
       color: var(--search-btn-color);
-      /* 文本色 */
       border: none;
       cursor: pointer;
       font-size: clamp(0.9rem, 1.5vw, 1rem);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-weight: 500;
-      /* 取消原有margin，改为内边距 */
+      font-weight: 800;
       margin: 0;
-      padding: 0 clamp(1rem, 1.5vw, 1.2rem);
+      padding: 0 clamp(1rem, 0.5vw, 1.2rem);
       border-radius: 0;
-      /* 取消圆角 */
     }
 
     .search-btn:hover {
       background-color: transparent;
-      /* 确保hover无底色 */
       color: var(--search-btn-hover-color);
-      /* hover文本色 */
       box-shadow: none;
-      /* 取消阴影 */
     }
 
-    /* 搜索弹窗样式 */
+    /* 搜索栏悬浮窗 - 最顶层（z-index: 2000） */
     .search-popup {
       position: absolute;
       top: calc(100% + 0.5rem);
@@ -199,7 +190,8 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
       padding: clamp(0.8rem, 1.5vw, 1rem);
       display: none;
-      z-index: 100;
+      z-index: 2000;
+      /* 搜索弹窗：最顶层 */
     }
 
     .popup-tabs {
@@ -224,7 +216,6 @@
       color: #0078d7;
     }
 
-    /* 搜索历史样式 */
     .history-list {
       display: flex;
       flex-wrap: wrap;
@@ -256,7 +247,6 @@
       cursor: pointer;
     }
 
-    /* 搜索网站结果样式 */
     .site-result {
       display: none;
       justify-content: center;
@@ -267,12 +257,12 @@
       padding: clamp(0.4rem, 0.8vw, 0.5rem) 0;
     }
 
-    /* 弹窗内网站项（图标+外部名称）- 自适应大小 */
     .site-result-item-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: clamp(0.3rem, 0.8vw, 0.5rem);
+      width: clamp(80px, 10vw, 100px);
     }
 
     .site-result-item {
@@ -283,10 +273,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* 确保内容居中 */
       cursor: pointer;
       border: 1px solid var(--border-color);
-      /* 新增：确保文字居中样式 */
       text-align: center;
       font-size: clamp(1.5rem, 3vw, 2rem);
       color: var(--text-color);
@@ -312,20 +300,35 @@
       color: var(--text-color);
     }
 
-    /* 分类列表样式（胶囊状）- 自适应大小 */
+    /* 分类列表样式 - 核心：桌面端居中 + 手机端左对齐 + 增大内边距 */
     .category-list {
       display: flex;
       justify-content: center;
+      /* 桌面端默认水平居中 */
       align-items: center;
       gap: clamp(0.6rem, 1.2vw, 0.8rem);
       margin-bottom: clamp(1rem, 2vw, 1.5rem);
-      padding: clamp(0.4rem, 0.8vw, 0.5rem) clamp(0.8rem, 1.5vw, 1rem);
+      /* 增大内边距，避免窄屏显示不全 */
+      padding: clamp(0.8rem, 1.5vw, 1rem) clamp(1.5rem, 3vw, 2rem);
       overflow-x: auto;
       white-space: nowrap;
       position: sticky;
       top: 0;
       background-color: var(--bg-color);
-      z-index: 10;
+      z-index: 900;
+      /* 分类列表层级低于弹窗 */
+      width: 100%;
+      /* 确保容器宽度为100% */
+    }
+
+    /* 手机端适配：767px及以下左对齐 */
+    @media (max-width: 767px) {
+      .category-list {
+        justify-content: flex-start;
+        /* 手机端左对齐 */
+        padding: clamp(0.8rem, 1.5vw, 1rem) clamp(1rem, 2vw, 1.5rem);
+        /* 手机端适度调整内边距 */
+      }
     }
 
     .category-item {
@@ -350,23 +353,26 @@
       color: #0078d7;
     }
 
-    /* 网站列表样式 */
     .site-list {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(clamp(80px, 8vw, 100px), 1fr));
       gap: clamp(1rem, 2vw, 1.5rem);
       max-height: calc(100vh - 280px);
       overflow-y: auto;
       padding-bottom: 2rem;
+      justify-items: center;
+      z-index: 800;
+      position: relative;
     }
 
-    /* 网站项（图标+外部名称）- 自适应大小 */
     .site-item-wrap {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: clamp(0.3rem, 0.8vw, 0.5rem);
+      width: clamp(80px, 8vw, 100px);
+      position: relative;
+      z-index: 850;
     }
 
     .site-item {
@@ -377,10 +383,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      /* 确保内容居中 */
       cursor: pointer;
       border: 1px solid var(--border-color);
-      /* 新增：确保文字居中样式 */
       text-align: center;
       font-size: clamp(1.2rem, 2.5vw, 1.8rem);
       color: var(--text-color);
@@ -401,46 +405,86 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      max-width: clamp(80px, 12vw, 100px);
+      width: 100%;
       text-align: center;
       color: var(--text-color);
+    }
+
+    /* 网站备注弹窗 - 次之（z-index: 1500） */
+    @media (min-width: 768px) {
+      .site-tooltip {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1500;
+        /* 备注弹窗：低于搜索弹窗，高于其他元素 */
+        max-width: 25vw;
+        max-height: 25vh;
+        min-width: 120px;
+        min-height: 40px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        background-color: var(--tooltip-bg);
+        color: var(--tooltip-text);
+        border: 1px solid var(--tooltip-border);
+        border-radius: 6px;
+        padding: 8px 12px;
+        font-size: 14px;
+        line-height: 1.5;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+        display: none;
+        white-space: pre-wrap;
+        word-break: break-word;
+        transition: opacity 0.2s ease;
+        transform: translateZ(0);
+        clip-path: none;
+        overflow: visible;
+      }
+
+      .site-tooltip::-webkit-scrollbar {
+        display: block;
+        width: 4px;
+        z-index: 1501;
+      }
+
+      .site-tooltip::-webkit-scrollbar-thumb {
+        background-color: var(--tooltip-border);
+        border-radius: 2px;
+      }
+    }
+
+    @media (max-width: 767px) {
+      .site-tooltip {
+        display: none !important;
+      }
     }
   </style>
 </head>
 
 <body>
   <div class="container">
-    <!-- 页面大标题 -->
     <h1 class="page-title">RingoTab</h1>
 
-    <!-- 搜索栏 -->
     <div class="search-wrapper">
       <div class="search-box">
-        <input type="text" class="search-input" placeholder="输入搜索内容，按回车或点击搜索" autocomplete="off">
+        <input type="text" class="search-input" placeholder="  输入搜索内容" autocomplete="off">
         <button class="search-clear">×</button>
-        <button class="search-btn">搜</button> <!-- 纯文本搜索按钮 -->
+        <button class="search-btn">搜</button>
       </div>
-      <!-- 搜索弹窗 -->
       <div class="search-popup">
         <div class="popup-tabs">
           <button class="popup-tab active" data-tab="history">历史</button>
           <button class="popup-tab" data-tab="site">网站</button>
         </div>
-        <!-- 搜索历史 -->
         <div class="history-list"></div>
-        <!-- 网站搜索结果 -->
         <div class="site-result"></div>
       </div>
     </div>
 
-    <!-- 分类列表 -->
     <div class="category-list"></div>
-
-    <!-- 网站列表 -->
     <div class="site-list"></div>
   </div>
 
-  <!-- 引入数据文件 -->
   <script src="data.js"></script>
   <script>
     // 全局变量
@@ -449,8 +493,9 @@
     const SEARCH_HISTORY_KEY = 'searchHistory';
     const MAX_HISTORY_COUNT = 20;
     const POPUP_TABS = ['history', 'site'];
+    const TOOLTIP_OFFSET = 15;
 
-    // DOM元素获取
+    // DOM元素
     const searchInput = document.querySelector('.search-input');
     const searchClear = document.querySelector('.search-clear');
     const searchBtn = document.querySelector('.search-btn');
@@ -462,12 +507,14 @@
     const siteList = document.querySelector('.site-list');
     const searchBox = document.querySelector('.search-box');
 
-    // 初始化函数
+    // 初始化
     function init() {
       renderCategoryList();
       renderSiteList(currentCategoryIndex);
       bindEvents();
       renderSearchHistory();
+      bindTooltipPositionEvent();
+      // 无需再处理分类对齐的JS逻辑，完全由CSS媒体查询控制
     }
 
     // 渲染分类列表
@@ -495,7 +542,7 @@
       });
     }
 
-    // 渲染网站列表 - 核心修改4：优化无图标时显示首个字符居中
+    // 渲染网站列表
     function renderSiteList(categoryIndex) {
       if (!window.categoryConfig || !Array.isArray(window.categoryConfig) || !window.siteConfig || !Array.isArray(window.siteConfig)) {
         siteList.innerHTML = '<div>暂无网站配置</div>';
@@ -524,16 +571,21 @@
         const siteItemWrap = document.createElement('div');
         siteItemWrap.className = 'site-item-wrap';
 
+        // 网站备注弹窗
+        const siteTooltip = document.createElement('div');
+        siteTooltip.className = 'site-tooltip';
+        siteTooltip.textContent = site.bz || site.wzm || site.wz || '未知网站';
+        siteTooltip.dataset.siteId = site.wzm || site.wz;
+        document.body.appendChild(siteTooltip);
+
         const siteItem = document.createElement('div');
         siteItem.className = 'site-item';
 
-        // 网站名称处理
         const siteName = site.wzm || site.wz || '未知网站';
         const shortName = siteName.length > 7 ? siteName.substring(0, 7) + '...' : siteName;
-        // 获取首个字符（汉字/字母/数字）
         const firstChar = siteName.charAt(0) || '未';
 
-        // 拼接favicon地址
+        // Favicon处理
         let domain = '';
         try {
           const urlObj = new URL(site.wz);
@@ -543,7 +595,6 @@
         }
         const faviconUrl = `${domain}/favicon.ico`;
 
-        // 重构图标HTML - 优化无图标时显示首个字符居中
         siteItem.innerHTML = `
           <img class="site-icon" 
                src="${faviconUrl}" 
@@ -551,7 +602,6 @@
                alt="${siteName}">
         `;
 
-        // 网站名称元素
         const siteNameEl = document.createElement('span');
         siteNameEl.className = 'site-name';
         siteNameEl.textContent = shortName;
@@ -564,11 +614,109 @@
           window.open(site.wz, '_self');
         });
 
+        // 备注弹窗事件
+        siteItemWrap.addEventListener('mouseenter', (e) => {
+          showTooltip(e, siteTooltip);
+        });
+        siteItemWrap.addEventListener('mouseleave', () => {
+          hideTooltip(siteTooltip);
+        });
+
         siteList.appendChild(siteItemWrap);
       });
     }
 
-    // 根据关键词检索网站 - 同步优化弹窗内网站项的无图标显示
+    // 显示备注弹窗（水平/垂直平行分布）
+    function showTooltip(e, tooltip) {
+      if (!tooltip) return;
+
+      const target = e.currentTarget;
+      const rect = target.getBoundingClientRect();
+
+      // 获取弹窗真实尺寸
+      tooltip.style.display = 'block';
+      const tooltipRect = {
+        width: tooltip.offsetWidth,
+        height: tooltip.offsetHeight
+      };
+      tooltip.style.display = 'none';
+
+      // 仅正右/正左/正下/正上（无斜角）
+      let positions = [
+        { left: rect.right + TOOLTIP_OFFSET, top: rect.top + (rect.height - tooltipRect.height) / 2 }, // 正右
+        { left: rect.left - tooltipRect.width - TOOLTIP_OFFSET, top: rect.top + (rect.height - tooltipRect.height) / 2 }, // 正左
+        { left: rect.left + (rect.width - tooltipRect.width) / 2, top: rect.bottom + TOOLTIP_OFFSET }, // 正下
+        { left: rect.left + (rect.width - tooltipRect.width) / 2, top: rect.top - tooltipRect.height - TOOLTIP_OFFSET } // 正上
+      ];
+
+      // 找第一个不超出屏幕的位置
+      let bestPosition = null;
+      for (let pos of positions) {
+        const isOutOfScreen =
+          pos.left < 0 ||
+          pos.top < 0 ||
+          pos.left + tooltipRect.width > window.innerWidth ||
+          pos.top + tooltipRect.height > window.innerHeight;
+
+        if (!isOutOfScreen) {
+          bestPosition = pos;
+          break;
+        }
+      }
+
+      // 保底位置
+      if (!bestPosition) {
+        bestPosition = {
+          left: rect.right + TOOLTIP_OFFSET,
+          top: rect.top + (rect.height - tooltipRect.height) / 2
+        };
+        // 确保在屏幕内
+        if (bestPosition.left + tooltipRect.width > window.innerWidth) {
+          bestPosition.left = rect.left - tooltipRect.width - TOOLTIP_OFFSET;
+        }
+        if (bestPosition.top < 0) bestPosition.top = TOOLTIP_OFFSET;
+        if (bestPosition.top + tooltipRect.height > window.innerHeight) {
+          bestPosition.top = window.innerHeight - tooltipRect.height - TOOLTIP_OFFSET;
+        }
+      }
+
+      tooltip.style.left = `${bestPosition.left}px`;
+      tooltip.style.top = `${bestPosition.top}px`;
+      tooltip.style.display = 'block';
+    }
+
+    // 隐藏备注弹窗
+    function hideTooltip(tooltip) {
+      if (tooltip) tooltip.style.display = 'none';
+    }
+
+    // 备注弹窗位置微调
+    function bindTooltipPositionEvent() {
+      document.addEventListener('mousemove', (e) => {
+        const hoveredTooltip = document.querySelector('.site-tooltip[style*="display: block"]');
+        if (!hoveredTooltip) return;
+
+        const tooltipParent = Array.from(document.querySelectorAll('.site-item-wrap')).find(wrap =>
+          wrap.querySelector(`.site-tooltip[data-site-id="${hoveredTooltip.dataset.siteId}"]`)
+        );
+        if (!tooltipParent || !tooltipParent.matches(':hover')) return;
+
+        const rect = hoveredTooltip.getBoundingClientRect();
+        let x = parseInt(hoveredTooltip.style.left);
+        let y = parseInt(hoveredTooltip.style.top);
+
+        if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+          x += TOOLTIP_OFFSET;
+          y += TOOLTIP_OFFSET;
+          if (x + rect.width > window.innerWidth) x = e.clientX - rect.width - TOOLTIP_OFFSET;
+          if (y + rect.height > window.innerHeight) y = e.clientY - rect.height - TOOLTIP_OFFSET;
+          hoveredTooltip.style.left = `${x}px`;
+          hoveredTooltip.style.top = `${y}px`;
+        }
+      });
+    }
+
+    // 搜索网站
     function searchSiteByKeyword(keyword) {
       if (!keyword || !window.siteConfig || !Array.isArray(window.siteConfig)) {
         siteResult.innerHTML = '<div style="width:100%;text-align:center;color:#999;">暂无匹配网站</div>';
@@ -582,7 +730,6 @@
       }).sort((a, b) => (a.qz || 0) - (b.qz || 0));
 
       siteResult.innerHTML = '';
-
       if (matchedSites.length === 0) {
         siteResult.innerHTML = '<div style="width:100%;text-align:center;color:#999;">暂无匹配网站</div>';
         return;
@@ -591,7 +738,6 @@
       matchedSites.forEach(site => {
         const siteResultItemWrap = document.createElement('div');
         siteResultItemWrap.className = 'site-result-item-wrap';
-
         const siteResultItem = document.createElement('div');
         siteResultItem.className = 'site-result-item';
 
@@ -608,7 +754,6 @@
         }
         const faviconUrl = `${domain}/favicon.ico`;
 
-        // 重构弹窗内网站项HTML
         siteResultItem.innerHTML = `
           <img class="site-result-icon" 
                src="${faviconUrl}" 
@@ -622,25 +767,17 @@
 
         siteResultItemWrap.appendChild(siteResultItem);
         siteResultItemWrap.appendChild(siteResultNameEl);
-
         siteResultItemWrap.addEventListener('click', () => {
           window.open(site.wz, '_self');
         });
-
         siteResult.appendChild(siteResultItemWrap);
       });
     }
 
-    // 切换弹窗标签
+    // 切换搜索弹窗标签
     function switchPopupTab(index) {
       currentPopupTabIndex = index;
-      popupTabs.forEach((tab, i) => {
-        if (i === index) {
-          tab.classList.add('active');
-        } else {
-          tab.classList.remove('active');
-        }
-      });
+      popupTabs.forEach((tab, i) => tab.classList.toggle('active', i === index));
       const tabType = POPUP_TABS[index];
       if (tabType === 'history') {
         historyList.style.display = 'flex';
@@ -652,16 +789,14 @@
       }
     }
 
-    // 检查是否点击了弹窗/搜索栏外部
+    // 检查是否点击搜索区域外
     function isClickOutsideSearchArea(event) {
-      const isClickOnSearchBox = searchBox.contains(event.target);
-      const isClickOnPopup = searchPopup.contains(event.target);
-      return !isClickOnSearchBox && !isClickOnPopup;
+      return !searchBox.contains(event.target) && !searchPopup.contains(event.target);
     }
 
-    // 绑定所有事件
+    // 绑定事件
     function bindEvents() {
-      // 点击空白处关闭弹窗
+      // 点击空白处关闭搜索弹窗
       document.addEventListener('click', (e) => {
         if (isClickOutsideSearchArea(e)) {
           searchPopup.style.display = 'none';
@@ -669,7 +804,7 @@
         }
       });
 
-      // 键盘切换逻辑
+      // 键盘操作
       document.addEventListener('keydown', (e) => {
         if (searchPopup.style.display === 'block' && document.activeElement === searchInput) {
           if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
@@ -685,20 +820,18 @@
 
         if (!window.categoryConfig || !Array.isArray(window.categoryConfig)) return;
         const categoryCount = window.categoryConfig.length;
-        if (categoryCount === 0) return;
+        if (categoryCount === 0 || document.activeElement === searchInput) return;
 
-        if (document.activeElement !== searchInput) {
-          if (e.key === 'ArrowLeft') {
-            e.preventDefault();
-            currentCategoryIndex = (currentCategoryIndex - 1 + categoryCount) % categoryCount;
-            renderCategoryList();
-            renderSiteList(currentCategoryIndex);
-          } else if (e.key === 'ArrowRight') {
-            e.preventDefault();
-            currentCategoryIndex = (currentCategoryIndex + 1) % categoryCount;
-            renderCategoryList();
-            renderSiteList(currentCategoryIndex);
-          }
+        if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          currentCategoryIndex = (currentCategoryIndex - 1 + categoryCount) % categoryCount;
+          renderCategoryList();
+          renderSiteList(currentCategoryIndex);
+        } else if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          currentCategoryIndex = (currentCategoryIndex + 1) % categoryCount;
+          renderCategoryList();
+          renderSiteList(currentCategoryIndex);
         }
       });
 
@@ -712,7 +845,7 @@
         }
       });
 
-      // 搜索栏点击
+      // 搜索框点击
       searchBox.addEventListener('click', () => {
         searchInput.focus();
         searchPopup.style.display = 'block';
@@ -724,15 +857,9 @@
         }
       });
 
-      // 输入框失焦
-      searchInput.addEventListener('blur', (e) => {
-        e.stopPropagation();
-      });
-
-      // 弹窗点击阻止冒泡
-      searchPopup.addEventListener('click', (e) => {
-        e.stopPropagation();
-      });
+      // 阻止失焦冒泡
+      searchInput.addEventListener('blur', (e) => e.stopPropagation());
+      searchPopup.addEventListener('click', (e) => e.stopPropagation());
 
       // 清除搜索内容
       searchClear.addEventListener('click', () => {
@@ -742,23 +869,15 @@
         switchPopupTab(0);
       });
 
-      // 搜索按钮点击
-      searchBtn.addEventListener('click', () => {
-        doSearch();
-      });
-
-      // 回车搜索
+      // 搜索按钮/回车
+      searchBtn.addEventListener('click', doSearch);
       searchInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          doSearch();
-        }
+        if (e.key === 'Enter') doSearch();
       });
 
-      // 弹窗标签切换
+      // 搜索弹窗标签切换
       popupTabs.forEach((tab, index) => {
-        tab.addEventListener('click', () => {
-          switchPopupTab(index);
-        });
+        tab.addEventListener('click', () => switchPopupTab(index));
       });
     }
 
@@ -766,7 +885,6 @@
     function doSearch() {
       const keyword = searchInput.value.trim();
       if (!keyword) return;
-
       saveSearchHistory(keyword);
       window.open(`https://cn.bing.com/search?q=${encodeURIComponent(keyword)}`, '_self');
     }
@@ -776,9 +894,7 @@
       let history = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]');
       history = history.filter(item => item !== keyword);
       history.unshift(keyword);
-      if (history.length > MAX_HISTORY_COUNT) {
-        history = history.slice(0, MAX_HISTORY_COUNT);
-      }
+      if (history.length > MAX_HISTORY_COUNT) history = history.slice(0, MAX_HISTORY_COUNT);
       localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(history));
       renderSearchHistory();
     }
@@ -787,7 +903,6 @@
     function renderSearchHistory() {
       let history = JSON.parse(localStorage.getItem(SEARCH_HISTORY_KEY) || '[]');
       historyList.innerHTML = '';
-
       if (history.length === 0) {
         historyList.innerHTML = '<div style="width:100%;text-align:center;color:#999;">暂无搜索历史</div>';
         return;
