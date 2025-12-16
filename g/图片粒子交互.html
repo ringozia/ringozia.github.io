@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D 粒子交互 - 物理下坠版</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #050505; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: white; }
+        canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
+
+        /* UI 控件样式 */
+        .controls {
+            position: absolute;
+            top: 10px; right: 10px; width: 260px;
+            background: rgba(20, 20, 20, 0.85);
+            backdrop-filter: blur(8px);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            max-height: 90vh; overflow-y: auto; z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .controls.collapsed { transform: translateX(calc(100% + 20px)); }
+        
+        .controls::-webkit-scrollbar { width: 4px; }
+        .controls::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
+
+        .toggle-btn {
+            position: absolute; top: 10px; right: 10px; z-index: 101;
+            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.1);
+            color: #eee; padding: 8px 12px; border-radius: 6px;
+            cursor: pointer; font-size: 14px; transition: background 0.2s;
+        }
+        .toggle-btn:hover { background: rgba(255, 255, 255, 0.2); }
+
+        .section-title {
+            font-size: 12px; font-weight: bold; color: #00d2ff;
+            margin: 10px 0 5px 0; text-transform: uppercase; letter-spacing: 1px;
+            border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 2px;
+        }
+
+        .control-group { margin-bottom: 12px; }
+        .control-group label { display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px; color: #ccc; }
+        
+        select {
+            width: 100%; padding: 6px; background: #333; color: white;
+            border: 1px solid #555; border-radius: 4px; font-size: 12px;
+            cursor: pointer; outline: none;
+        }
+        select:hover { border-color: #00d2ff; }
+
+        .checkbox-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px; color: #ccc; }
+        .checkbox-group input { width: 16px; height: 16px; accent-color: #00d2ff; cursor: pointer; }
+
+        input[type="range"] {
+            width: 100%; height: 4px; background: #333; border-radius: 2px; -webkit-appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none; width: 14px; height: 14px; background: #00d2ff; border-radius: 50%; cursor: pointer; transition: transform 0.1s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+        .upload-btn {
+            display: block; width: 100%; padding: 10px;
+            background: linear-gradient(135deg, #00d2ff, #3a7bd5);
+            color: white; text-align: center; border-radius: 6px;
+            cursor: pointer; font-weight: bold; margin-bottom: 10px; font-size: 13px;
+            transition: opacity 0.2s;
+        }
+        .upload-btn:hover { opacity: 0.9; }
+        #fileInput { display: none; }
+        
+        .zoom-tip {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            color: rgba(255,255,255,0.3); font-size: 12px; pointer-events: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <button class="toggle-btn" id="toggleBtn">🛠️ 设置</button>
+    <div class="zoom-tip">滚轮 / 双指缩放 | 拖拽触发特效</div>
+
+    <div class="controls" id="controls">
+        <label class="upload-btn">
+            📷 上传图片
+            <input type="file" id="fileInput" accept="image/*">
+        </label>
+
+        <div class="section-title">交互模式</div>
+        <div class="control-group">
+            <select id="interactionMode">
+                <option value="repulse" selected>💥 扰动 (斥力)</option>
+                <option value="gravity">⬇️ 物理下坠 (重力)</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>触发半径 <span id="val-radius">3000</span></label>
+            <input type="range" id="radius" min="1000" max="15000" value="3000" step="500">
+        </div>
+
+        <div class="control-group">
+            <label>扰动/下坠力度 <span id="val-ease">0.15</span></label>
+            <input type="range" id="ease" min="0.01" max="0.5" value="0.15" step="0.01">
+        </div>
+
+        <div class="control-group">
+            <label>复位速度 (回弹快慢) <span id="val-friction">0.10</span></label>
+            <input type="range" id="friction" min="0.01" max="0.3" value="0.1" step="0.01">
+        </div>
+
+        <div class="section-title">3D 设置</div>
+        
+        <div class="checkbox-group">
+            <span>自动循环摇摆</span>
+            <input type="checkbox" id="autoRotate" checked>
+        </div>
+        <div class="checkbox-group">
+            <span>视角跟随鼠标</span>
+            <input type="checkbox" id="mouseRotate">
+        </div>
+
+        <div class="control-group">
+            <label>Z轴散布 (模糊度) <span id="val-zSpread">0</span></label>
+            <input type="range" id="zSpread" min="0" max="200" value="0" step="1">
+        </div>
+
+        <div class="section-title">粒子属性</div>
+
+        <div class="control-group">
+            <label>粒子密度 (Gap) <span id="val-gap">3</span></label>
+            <input type="range" id="gap" min="1" max="10" value="3" step="1">
+        </div>
+
+        <div class="control-group">
+            <label>粒子大小 <span id="val-size">2.0</span></label>
+            <input type="range" id="size" min="0.5" max="5" value="2.0" step="0.1">
+        </div>
+    </div>
+
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // --- 全局状态 ---
+        let particlesArray = [];
+        let imageElement = null; 
+        let animationId;
+        
+        // 3D 引擎参数
+        const camera = { focalLength: 800, cx: 0, cy: 0 };
+        const scene = { 
+            angleY: 0, 
+            autoRotateSpeed: 0.005, 
+            targetAngleY: 0,
+            zoom: 1.0,      
+            minZoom: 0.2,   
+            maxZoom: 5.0    
+        };
+        const mouse = { x: undefined, y: undefined, radius: 3000, isPressed: false, screenX: 0, screenY: 0 };
+
+        // 触摸缩放状态
+        let initialPinchDistance = 0;
+        let initialZoom = 1;
+        let isPinching = false;
+
+        // --- 设置 ---
+        const settings = {
+            gap: 3,
+            particleSize: 2,
+            friction: 0.1,    
+            ease: 0.15,
+            clickPower: 60,
+            zSpread: 0,
+            autoRotate: true,
+            mouseRotate: false,
+            interactionMode: 'repulse' // 'repulse' or 'gravity'
+        };
+
+        // --- 核心数学工具 ---
+        function project3D(x, y, z) {
+            const cos = Math.cos(scene.angleY);
+            const sin = Math.sin(scene.angleY);
+            
+            const rotX = x * cos - z * sin;
+            const rotZ = x * sin + z * cos;
+            
+            const depth = camera.focalLength + rotZ;
+            const scale = depth > 0 ? camera.focalLength / depth : 0;
+            
+            return {
+                x: rotX * scale * scene.zoom + camera.cx,
+                y: y * scale * scene.zoom + camera.cy,
+                scale: scale * scene.zoom,
+                depth: depth
+            };
+        }
+
+        // --- 粒子类 ---
+        class Particle {
+            constructor(x, y, color) {
+                // 目标位置
+                this.originX = x;
+                this.originY = y;
+                this.originZ = (Math.random() - 0.5) * settings.zSpread; 
+                
+                // 物理位置
+                this.physX = x;
+                this.physY = y;
+                this.physZ = this.originZ;
+                
+                this.color = color;
+                this.vx = 0; this.vy = 0; this.vz = 0;
+                
+                // 投影后的屏幕坐标
+                this.screenX = 0; this.screenY = 0; this.scale = 1;
+
+                // 状态机：是否处于自由下坠状态
+                this.isFalling = false;
+            }
+
+            update() {
+                // 1. 3D 投影计算 (每一帧都需要算，以确定鼠标是否碰到)
+                const p = project3D(this.physX, this.physY, this.physZ);
+                this.screenX = p.x;
+                this.screenY = p.y;
+                this.scale = p.scale;
+
+                // 2. 状态分流处理
+                if (this.isFalling) {
+                    // --- 状态：自由落体 (被击落) ---
+                    
+                    // 施加重力加速度
+                    this.vy += 0.8 + (settings.ease * 2); 
+                    
+                    // 应用速度
+                    this.physX += this.vx;
+                    this.physY += this.vy;
+                    this.physZ += this.vz;
+
+                    // 边界检查：如果掉得足够深 (例如 Y > 2000)，重置为复位状态
+                    // 这里使用一个较大的阈值，确保它真的掉出了屏幕可见范围
+                    if (this.physY > 2000) {
+                        this.isFalling = false;
+                        // 为了防止瞬间反弹速度过大，可以稍微重置一下速度
+                        // 或者保持动量让弹簧慢慢拉回 (视觉效果更像橡皮筋)
+                        this.vx *= 0.5;
+                        this.vy *= 0.1; 
+                    }
+
+                } else {
+                    // --- 状态：正常悬浮 & 响应鼠标 ---
+
+                    // A. 计算鼠标交互
+                    const dx = mouse.x - this.screenX;
+                    const dy = mouse.y - this.screenY;
+                    const distanceSq = dx * dx + dy * dy;
+
+                    let forceX = 0;
+                    let forceY = 0;
+                    
+                    let currentRadius = mouse.radius; 
+                    let currentPower = mouse.radius;
+                    
+                    if(mouse.isPressed) {
+                        currentRadius *= 4; 
+                        currentPower *= 5; 
+                    }
+
+                    // 仅在单指操作且在范围内时触发
+                    if (!isPinching && distanceSq < currentRadius && mouse.x !== undefined) {
+                        
+                        if (settings.interactionMode === 'repulse') {
+                            // [扰动模式]: 计算斥力
+                            const force = -currentPower / distanceSq * settings.ease;
+                            const angle = Math.atan2(dy, dx);
+                            forceX = force * Math.cos(angle) * 10;
+                            forceY = force * Math.sin(angle) * 10;
+                        } else if (settings.interactionMode === 'gravity') {
+                            // [下坠模式]: 触发自由落体
+                            // 一旦触发，进入 Falling 状态，接下来的帧将忽略弹簧力，只受重力影响
+                            this.isFalling = true;
+                            
+                            // 给予初始爆发速度 (向四周炸开)
+                            // 水平方向随机散射
+                            this.vx = (Math.random() - 0.5) * 20 * settings.ease;
+                            // 垂直方向给予一个向下的初速度
+                            this.vy = Math.random() * 10 + 5; 
+                            
+                            // Z轴也给一点随机，增加立体感
+                            this.vz = (Math.random() - 0.5) * 20;
+
+                            return; // 直接结束这一帧的 update
+                        }
+                    }
+
+                    // B. 弹簧复位物理 (Hooke's Law)
+                    // 当 isFalling 为 false 时，粒子总是试图回到 origin
+                    const springX = this.originX - this.physX;
+                    const springY = this.originY - this.physY;
+                    const targetZ = this.originZ * (settings.zSpread > 0 ? 1 : 0); 
+                    const springZ = targetZ - this.physZ;
+
+                    const stiffness = settings.friction; // 复位速度/劲度系数
+
+                    this.vx += forceX + springX * stiffness;
+                    this.vy += forceY + springY * stiffness;
+                    this.vz += springZ * stiffness;
+
+                    // C. 阻尼 (摩擦力)
+                    // 阻尼随着复位速度变化，防止永远弹跳
+                    const damping = 1 - (settings.friction * 0.9); 
+
+                    this.vx *= damping;
+                    this.vy *= damping;
+                    this.vz *= damping;
+
+                    // D. 应用位置
+                    this.physX += this.vx;
+                    this.physY += this.vy;
+                    this.physZ += this.vz;
+                    
+                    // Z轴动态散布刷新
+                    if (Math.abs(this.originZ) > settings.zSpread / 2 && settings.zSpread > 0) {
+                        this.originZ = (Math.random() - 0.5) * settings.zSpread;
+                    }
+                }
+            }
+
+            draw() {
+                if (this.scale <= 0) return;
+                ctx.fillStyle = this.color;
+                // 深度透明
+                ctx.globalAlpha = Math.min(1, Math.max(0.2, this.scale)); 
+                const size = settings.particleSize * this.scale;
+                ctx.beginPath();
+                ctx.rect(this.screenX, this.screenY, size, size);
+                ctx.fill();
+            }
+        }
+
+        // --- 生成默认场景 ---
+        function createDefaultSceneCanvas() {
+            const w = 600; const h = 600;
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = w; tempCanvas.height = h;
+            const tCtx = tempCanvas.getContext('2d');
+            const centerX = w / 2;
+            const centerY = h / 2 - 50;
+            const radius = 80;
+            const grad = tCtx.createLinearGradient(centerX - 50, centerY - 50, centerX + 50, centerY + 50);
+            grad.addColorStop(0, '#ff4b4b'); grad.addColorStop(1, '#b30000');
+            tCtx.fillStyle = grad;
+            tCtx.beginPath();
+            tCtx.moveTo(centerX, centerY - radius * 0.8);
+            tCtx.bezierCurveTo(centerX - radius, centerY - radius * 1.3, centerX - radius * 1.5, centerY + radius * 0.2, centerX, centerY + radius);
+            tCtx.bezierCurveTo(centerX + radius * 1.5, centerY + radius * 0.2, centerX + radius, centerY - radius * 1.3, centerX, centerY - radius * 0.8);
+            tCtx.fill();
+            tCtx.fillStyle = '#4caf50'; tCtx.beginPath();
+            tCtx.ellipse(centerX + 15, centerY - radius * 0.9, 15, 8, -Math.PI/4, 0, Math.PI * 2); tCtx.fill();
+            tCtx.fillStyle = '#cccccc'; tCtx.font = "bold 40px 'Microsoft YaHei', sans-serif";
+            tCtx.textAlign = "center"; tCtx.fillText("请上传图片", centerX, centerY + radius + 60);
+            tCtx.fillStyle = '#666666'; tCtx.font = "20px sans-serif";
+            tCtx.fillText("试着选择[物理下坠]模式", centerX, centerY + radius + 100);
+            return tempCanvas;
+        }
+
+        // --- 初始化粒子 ---
+        function initParticles() {
+            particlesArray = [];
+            scene.zoom = 1.0; 
+            
+            let sourceCanvas;
+            let sWidth, sHeight;
+
+            if (imageElement) {
+                const imgRatio = imageElement.width / imageElement.height;
+                sWidth = 800; sHeight = sWidth / imgRatio;
+                sourceCanvas = document.createElement('canvas');
+                sourceCanvas.width = sWidth; sourceCanvas.height = sHeight;
+                const sCtx = sourceCanvas.getContext('2d');
+                sCtx.drawImage(imageElement, 0, 0, sWidth, sHeight);
+            } else {
+                sourceCanvas = createDefaultSceneCanvas();
+                sWidth = sourceCanvas.width; sHeight = sourceCanvas.height;
+            }
+            
+            const gap = parseInt(settings.gap);
+            const sCtx = sourceCanvas.getContext('2d');
+            const imageData = sCtx.getImageData(0, 0, sWidth, sHeight);
+
+            for (let y = 0; y < sHeight; y += gap) {
+                for (let x = 0; x < sWidth; x += gap) {
+                    const index = (y * sWidth + x) * 4;
+                    if (imageData.data[index + 3] > 128) {
+                        const color = `rgb(${imageData.data[index]},${imageData.data[index+1]},${imageData.data[index+2]})`;
+                        particlesArray.push(new Particle(x - sWidth / 2, y - sHeight / 2, color));
+                    }
+                }
+            }
+        }
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            camera.cx = canvas.width / 2;
+            camera.cy = canvas.height / 2;
+        }
+
+        function updateScene() {
+            if (settings.autoRotate && !settings.mouseRotate) {
+                scene.angleY += scene.autoRotateSpeed;
+                if (scene.angleY > 0.6 || scene.angleY < -0.6) scene.autoRotateSpeed *= -1;
+            } else if (settings.mouseRotate) {
+                const target = (mouse.screenX - 0.5) * 1.5;
+                scene.angleY += (target - scene.angleY) * 0.05;
+            } else {
+                scene.angleY += (0 - scene.angleY) * 0.05;
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            updateScene();
+            particlesArray.forEach(p => { p.update(); p.draw(); });
+            ctx.globalAlpha = 1;
+            animationId = requestAnimationFrame(animate);
+        }
+
+        // --- 事件监听 ---
+
+        window.addEventListener('resize', resize);
+        resize();
+
+        function bindInput(id, settingKey, displayId, isCheckbox = false) {
+            const el = document.getElementById(id);
+            const disp = displayId ? document.getElementById(displayId) : null;
+            el.addEventListener(isCheckbox ? 'change' : 'input', (e) => {
+                const val = isCheckbox ? e.target.checked : parseFloat(e.target.value);
+                settings[settingKey] = val;
+                if(disp) disp.innerText = val;
+                if (settingKey === 'gap') { clearTimeout(window.resizeTimer); window.resizeTimer = setTimeout(initParticles, 100); }
+                if (settingKey === 'zSpread') particlesArray.forEach(p => p.originZ = (Math.random() - 0.5) * val);
+                if (settingKey === 'mouseRotate' && val === true) { document.getElementById('autoRotate').checked = false; settings.autoRotate = false; }
+                if (settingKey === 'autoRotate' && val === true) { document.getElementById('mouseRotate').checked = false; settings.mouseRotate = false; }
+            });
+        }
+
+        bindInput('gap', 'gap', 'val-gap');
+        bindInput('size', 'particleSize', 'val-size');
+        bindInput('friction', 'friction', 'val-friction');
+        bindInput('ease', 'ease', 'val-ease');
+        bindInput('autoRotate', 'autoRotate', null, true);
+        bindInput('mouseRotate', 'mouseRotate', null, true);
+        bindInput('zSpread', 'zSpread', 'val-zSpread');
+        
+        document.getElementById('interactionMode').addEventListener('change', (e) => {
+            settings.interactionMode = e.target.value;
+        });
+
+        document.getElementById('radius').addEventListener('input', (e) => {
+            mouse.radius = parseFloat(e.target.value);
+            document.getElementById('val-radius').innerText = mouse.radius;
+        });
+
+        document.getElementById('toggleBtn').addEventListener('click', () => {
+            document.getElementById('controls').classList.toggle('collapsed');
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (evt) => {
+                const img = new Image();
+                img.onload = () => {
+                    imageElement = img;
+                    settings.gap = 3; 
+                    document.getElementById('gap').value = 3;
+                    document.getElementById('val-gap').innerText = 3;
+                    initParticles();
+                    if(window.innerWidth < 768) document.getElementById('controls').classList.add('collapsed');
+                };
+                img.src = evt.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function updateMouse(x, y) {
+            mouse.x = x;
+            mouse.y = y;
+            mouse.screenX = x / canvas.width;
+            mouse.screenY = y / canvas.height;
+        }
+
+        window.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const zoomSpeed = 0.0015;
+            const delta = -e.deltaY * zoomSpeed;
+            let newZoom = scene.zoom + delta;
+            newZoom = Math.max(scene.minZoom, Math.min(scene.maxZoom, newZoom));
+            scene.zoom = newZoom;
+        }, { passive: false });
+
+        window.addEventListener('mousemove', e => updateMouse(e.x, e.y));
+        window.addEventListener('mousedown', () => mouse.isPressed = true);
+        window.addEventListener('mouseup', () => mouse.isPressed = false);
+        window.addEventListener('mouseout', () => { mouse.x = undefined; mouse.isPressed = false; });
+
+        const getDistance = (p1, p2) => Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
+
+        window.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 2) {
+                isPinching = true;
+                initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
+                initialZoom = scene.zoom;
+                mouse.x = undefined;
+            } else {
+                isPinching = false;
+                updateMouse(e.touches[0].clientX, e.touches[0].clientY);
+                mouse.isPressed = true;
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (e.touches.length === 2 && isPinching) {
+                const currentDistance = getDistance(e.touches[0], e.touches[1]);
+                if (initialPinchDistance > 0) {
+                    const scaleFactor = currentDistance / initialPinchDistance;
+                    let newZoom = initialZoom * scaleFactor;
+                    newZoom = Math.max(scene.minZoom, Math.min(scene.maxZoom, newZoom));
+                    scene.zoom = newZoom;
+                }
+            } else {
+                updateMouse(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', (e) => {
+            if (e.touches.length < 2) isPinching = false;
+            if (e.touches.length === 0) {
+                mouse.x = undefined;
+                mouse.isPressed = false;
+            }
+        });
+
+        initParticles(); 
+        animate();
+
+    </script>
+</body>
+</html>
