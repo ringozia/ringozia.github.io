@@ -3,37 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>3D 粒子交互 - 物理下坠版</title>
+    <title>图片粒子交互</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: #050505; overflow: hidden; font-family: 'Segoe UI', sans-serif; color: white; }
+        
+        /* Canvas 禁止默认手势，但 controls 需要允许 */
         canvas { display: block; width: 100vw; height: 100vh; touch-action: none; }
 
         /* UI 控件样式 */
         .controls {
             position: absolute;
             top: 10px; right: 10px; width: 260px;
-            background: rgba(20, 20, 20, 0.85);
+            background: rgba(20, 20, 20, 0.9); /*稍微加深背景防止误触*/
             backdrop-filter: blur(8px);
             padding: 15px;
             border-radius: 12px;
             border: 1px solid rgba(255, 255, 255, 0.15);
             transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-            max-height: 90vh; overflow-y: auto; z-index: 100;
+            max-height: 85vh; /* 留出一点底部空间 */
+            overflow-y: auto; 
+            z-index: 1000; /* 确保层级最高 */
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            
+            /* 关键：允许控制面板内部的默认触摸行为 */
+            touch-action: pan-y; 
         }
-        .controls.collapsed { transform: translateX(calc(100% + 20px)); }
+
+        /* 默认收起状态：将面板移出屏幕 */
+        .controls.collapsed { 
+            transform: translateX(calc(100% + 20px)); 
+        }
         
         .controls::-webkit-scrollbar { width: 4px; }
         .controls::-webkit-scrollbar-thumb { background: #444; border-radius: 2px; }
 
         .toggle-btn {
-            position: absolute; top: 10px; right: 10px; z-index: 101;
-            background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255,255,255,0.1);
-            color: #eee; padding: 8px 12px; border-radius: 6px;
-            cursor: pointer; font-size: 14px; transition: background 0.2s;
+            position: absolute; top: 10px; right: 10px; z-index: 1001; /* 比面板高 */
+            background: rgba(255, 255, 255, 0.15); 
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff; padding: 8px 12px; border-radius: 6px;
+            cursor: pointer; font-size: 14px; 
+            transition: background 0.2s;
+            /* 同样允许点击 */
+            touch-action: manipulation;
         }
-        .toggle-btn:hover { background: rgba(255, 255, 255, 0.2); }
+        .toggle-btn:hover { background: rgba(255, 255, 255, 0.3); }
 
         .section-title {
             font-size: 12px; font-weight: bold; color: #00d2ff;
@@ -49,33 +64,39 @@
             border: 1px solid #555; border-radius: 4px; font-size: 12px;
             cursor: pointer; outline: none;
         }
-        select:hover { border-color: #00d2ff; }
-
+        
         .checkbox-group { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; font-size: 12px; color: #ccc; }
         .checkbox-group input { width: 16px; height: 16px; accent-color: #00d2ff; cursor: pointer; }
 
         input[type="range"] {
-            width: 100%; height: 4px; background: #333; border-radius: 2px; -webkit-appearance: none;
+            width: 100%; height: 20px; /* 增加点击热区高度 */
+            background: transparent; /* 背景透明 */
+            -webkit-appearance: none;
+        }
+        /* 自定义滑块轨道 */
+        input[type="range"]::-webkit-slider-runnable-track {
+            width: 100%; height: 4px; background: #333; border-radius: 2px;
         }
         input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none; width: 14px; height: 14px; background: #00d2ff; border-radius: 50%; cursor: pointer; transition: transform 0.1s;
+            -webkit-appearance: none; 
+            margin-top: -6px; /* 垂直居中 */
+            width: 16px; height: 16px; 
+            background: #00d2ff; border-radius: 50%; 
+            cursor: pointer;
         }
-        input[type="range"]::-webkit-slider-thumb:hover { transform: scale(1.2); }
 
         .upload-btn {
             display: block; width: 100%; padding: 10px;
             background: linear-gradient(135deg, #00d2ff, #3a7bd5);
             color: white; text-align: center; border-radius: 6px;
             cursor: pointer; font-weight: bold; margin-bottom: 10px; font-size: 13px;
-            transition: opacity 0.2s;
         }
-        .upload-btn:hover { opacity: 0.9; }
         #fileInput { display: none; }
         
         .zoom-tip {
             position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
             color: rgba(255,255,255,0.3); font-size: 12px; pointer-events: none;
-            text-align: center;
+            text-align: center; width: 100%;
         }
     </style>
 </head>
@@ -84,7 +105,8 @@
     <button class="toggle-btn" id="toggleBtn">🛠️ 设置</button>
     <div class="zoom-tip">滚轮 / 双指缩放 | 拖拽触发特效</div>
 
-    <div class="controls" id="controls">
+    <!-- 关键修改：默认加上 collapsed 类 -->
+    <div class="controls collapsed" id="controls">
         <label class="upload-btn">
             📷 上传图片
             <input type="file" id="fileInput" accept="image/*">
@@ -109,7 +131,7 @@
         </div>
 
         <div class="control-group">
-            <label>复位速度 (回弹快慢) <span id="val-friction">0.10</span></label>
+            <label>复位速度 <span id="val-friction">0.10</span></label>
             <input type="range" id="friction" min="0.01" max="0.3" value="0.1" step="0.01">
         </div>
 
@@ -153,47 +175,31 @@
         let imageElement = null; 
         let animationId;
         
-        // 3D 引擎参数
         const camera = { focalLength: 800, cx: 0, cy: 0 };
         const scene = { 
-            angleY: 0, 
-            autoRotateSpeed: 0.005, 
-            targetAngleY: 0,
-            zoom: 1.0,      
-            minZoom: 0.2,   
-            maxZoom: 5.0    
+            angleY: 0, autoRotateSpeed: 0.005, targetAngleY: 0,
+            zoom: 1.0, minZoom: 0.2, maxZoom: 5.0    
         };
         const mouse = { x: undefined, y: undefined, radius: 3000, isPressed: false, screenX: 0, screenY: 0 };
 
-        // 触摸缩放状态
         let initialPinchDistance = 0;
         let initialZoom = 1;
         let isPinching = false;
 
-        // --- 设置 ---
         const settings = {
-            gap: 3,
-            particleSize: 2,
-            friction: 0.1,    
-            ease: 0.15,
-            clickPower: 60,
-            zSpread: 0,
-            autoRotate: true,
-            mouseRotate: false,
-            interactionMode: 'repulse' // 'repulse' or 'gravity'
+            gap: 3, particleSize: 2, friction: 0.1, ease: 0.15,
+            clickPower: 60, zSpread: 0, autoRotate: true, mouseRotate: false,
+            interactionMode: 'repulse'
         };
 
         // --- 核心数学工具 ---
         function project3D(x, y, z) {
             const cos = Math.cos(scene.angleY);
             const sin = Math.sin(scene.angleY);
-            
             const rotX = x * cos - z * sin;
             const rotZ = x * sin + z * cos;
-            
             const depth = camera.focalLength + rotZ;
             const scale = depth > 0 ? camera.focalLength / depth : 0;
-            
             return {
                 x: rotX * scale * scene.zoom + camera.cx,
                 y: y * scale * scene.zoom + camera.cy,
@@ -205,128 +211,66 @@
         // --- 粒子类 ---
         class Particle {
             constructor(x, y, color) {
-                // 目标位置
-                this.originX = x;
-                this.originY = y;
+                this.originX = x; this.originY = y;
                 this.originZ = (Math.random() - 0.5) * settings.zSpread; 
-                
-                // 物理位置
-                this.physX = x;
-                this.physY = y;
-                this.physZ = this.originZ;
-                
+                this.physX = x; this.physY = y; this.physZ = this.originZ;
                 this.color = color;
                 this.vx = 0; this.vy = 0; this.vz = 0;
-                
-                // 投影后的屏幕坐标
                 this.screenX = 0; this.screenY = 0; this.scale = 1;
-
-                // 状态机：是否处于自由下坠状态
                 this.isFalling = false;
             }
 
             update() {
-                // 1. 3D 投影计算 (每一帧都需要算，以确定鼠标是否碰到)
                 const p = project3D(this.physX, this.physY, this.physZ);
-                this.screenX = p.x;
-                this.screenY = p.y;
-                this.scale = p.scale;
+                this.screenX = p.x; this.screenY = p.y; this.scale = p.scale;
 
-                // 2. 状态分流处理
                 if (this.isFalling) {
-                    // --- 状态：自由落体 (被击落) ---
-                    
-                    // 施加重力加速度
                     this.vy += 0.8 + (settings.ease * 2); 
-                    
-                    // 应用速度
-                    this.physX += this.vx;
-                    this.physY += this.vy;
-                    this.physZ += this.vz;
-
-                    // 边界检查：如果掉得足够深 (例如 Y > 2000)，重置为复位状态
-                    // 这里使用一个较大的阈值，确保它真的掉出了屏幕可见范围
+                    this.physX += this.vx; this.physY += this.vy; this.physZ += this.vz;
                     if (this.physY > 2000) {
                         this.isFalling = false;
-                        // 为了防止瞬间反弹速度过大，可以稍微重置一下速度
-                        // 或者保持动量让弹簧慢慢拉回 (视觉效果更像橡皮筋)
-                        this.vx *= 0.5;
-                        this.vy *= 0.1; 
+                        this.vx *= 0.5; this.vy *= 0.1; 
                     }
-
                 } else {
-                    // --- 状态：正常悬浮 & 响应鼠标 ---
-
-                    // A. 计算鼠标交互
                     const dx = mouse.x - this.screenX;
                     const dy = mouse.y - this.screenY;
                     const distanceSq = dx * dx + dy * dy;
 
-                    let forceX = 0;
-                    let forceY = 0;
-                    
+                    let forceX = 0; let forceY = 0;
                     let currentRadius = mouse.radius; 
                     let currentPower = mouse.radius;
                     
-                    if(mouse.isPressed) {
-                        currentRadius *= 4; 
-                        currentPower *= 5; 
-                    }
+                    if(mouse.isPressed) { currentRadius *= 4; currentPower *= 5; }
 
-                    // 仅在单指操作且在范围内时触发
                     if (!isPinching && distanceSq < currentRadius && mouse.x !== undefined) {
-                        
                         if (settings.interactionMode === 'repulse') {
-                            // [扰动模式]: 计算斥力
                             const force = -currentPower / distanceSq * settings.ease;
                             const angle = Math.atan2(dy, dx);
                             forceX = force * Math.cos(angle) * 10;
                             forceY = force * Math.sin(angle) * 10;
                         } else if (settings.interactionMode === 'gravity') {
-                            // [下坠模式]: 触发自由落体
-                            // 一旦触发，进入 Falling 状态，接下来的帧将忽略弹簧力，只受重力影响
                             this.isFalling = true;
-                            
-                            // 给予初始爆发速度 (向四周炸开)
-                            // 水平方向随机散射
                             this.vx = (Math.random() - 0.5) * 20 * settings.ease;
-                            // 垂直方向给予一个向下的初速度
                             this.vy = Math.random() * 10 + 5; 
-                            
-                            // Z轴也给一点随机，增加立体感
                             this.vz = (Math.random() - 0.5) * 20;
-
-                            return; // 直接结束这一帧的 update
+                            return; 
                         }
                     }
 
-                    // B. 弹簧复位物理 (Hooke's Law)
-                    // 当 isFalling 为 false 时，粒子总是试图回到 origin
                     const springX = this.originX - this.physX;
                     const springY = this.originY - this.physY;
                     const targetZ = this.originZ * (settings.zSpread > 0 ? 1 : 0); 
                     const springZ = targetZ - this.physZ;
-
-                    const stiffness = settings.friction; // 复位速度/劲度系数
+                    const stiffness = settings.friction; 
 
                     this.vx += forceX + springX * stiffness;
                     this.vy += forceY + springY * stiffness;
                     this.vz += springZ * stiffness;
-
-                    // C. 阻尼 (摩擦力)
-                    // 阻尼随着复位速度变化，防止永远弹跳
-                    const damping = 1 - (settings.friction * 0.9); 
-
-                    this.vx *= damping;
-                    this.vy *= damping;
-                    this.vz *= damping;
-
-                    // D. 应用位置
-                    this.physX += this.vx;
-                    this.physY += this.vy;
-                    this.physZ += this.vz;
                     
-                    // Z轴动态散布刷新
+                    const damping = 1 - (settings.friction * 0.9); 
+                    this.vx *= damping; this.vy *= damping; this.vz *= damping;
+                    this.physX += this.vx; this.physY += this.vy; this.physZ += this.vz;
+                    
                     if (Math.abs(this.originZ) > settings.zSpread / 2 && settings.zSpread > 0) {
                         this.originZ = (Math.random() - 0.5) * settings.zSpread;
                     }
@@ -336,7 +280,6 @@
             draw() {
                 if (this.scale <= 0) return;
                 ctx.fillStyle = this.color;
-                // 深度透明
                 ctx.globalAlpha = Math.min(1, Math.max(0.2, this.scale)); 
                 const size = settings.particleSize * this.scale;
                 ctx.beginPath();
@@ -345,15 +288,13 @@
             }
         }
 
-        // --- 生成默认场景 ---
+        // --- 场景与初始化 ---
         function createDefaultSceneCanvas() {
             const w = 600; const h = 600;
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = w; tempCanvas.height = h;
             const tCtx = tempCanvas.getContext('2d');
-            const centerX = w / 2;
-            const centerY = h / 2 - 50;
-            const radius = 80;
+            const centerX = w / 2; const centerY = h / 2 - 50; const radius = 80;
             const grad = tCtx.createLinearGradient(centerX - 50, centerY - 50, centerX + 50, centerY + 50);
             grad.addColorStop(0, '#ff4b4b'); grad.addColorStop(1, '#b30000');
             tCtx.fillStyle = grad;
@@ -371,14 +312,9 @@
             return tempCanvas;
         }
 
-        // --- 初始化粒子 ---
         function initParticles() {
-            particlesArray = [];
-            scene.zoom = 1.0; 
-            
-            let sourceCanvas;
-            let sWidth, sHeight;
-
+            particlesArray = []; scene.zoom = 1.0; 
+            let sourceCanvas, sWidth, sHeight;
             if (imageElement) {
                 const imgRatio = imageElement.width / imageElement.height;
                 sWidth = 800; sHeight = sWidth / imgRatio;
@@ -390,11 +326,9 @@
                 sourceCanvas = createDefaultSceneCanvas();
                 sWidth = sourceCanvas.width; sHeight = sourceCanvas.height;
             }
-            
             const gap = parseInt(settings.gap);
             const sCtx = sourceCanvas.getContext('2d');
             const imageData = sCtx.getImageData(0, 0, sWidth, sHeight);
-
             for (let y = 0; y < sHeight; y += gap) {
                 for (let x = 0; x < sWidth; x += gap) {
                     const index = (y * sWidth + x) * 4;
@@ -409,8 +343,7 @@
         function resize() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
-            camera.cx = canvas.width / 2;
-            camera.cy = canvas.height / 2;
+            camera.cx = canvas.width / 2; camera.cy = canvas.height / 2;
         }
 
         function updateScene() {
@@ -433,7 +366,7 @@
             animationId = requestAnimationFrame(animate);
         }
 
-        // --- 事件监听 ---
+        // --- 事件监听与输入绑定 ---
 
         window.addEventListener('resize', resize);
         resize();
@@ -459,11 +392,7 @@
         bindInput('autoRotate', 'autoRotate', null, true);
         bindInput('mouseRotate', 'mouseRotate', null, true);
         bindInput('zSpread', 'zSpread', 'val-zSpread');
-        
-        document.getElementById('interactionMode').addEventListener('change', (e) => {
-            settings.interactionMode = e.target.value;
-        });
-
+        document.getElementById('interactionMode').addEventListener('change', (e) => settings.interactionMode = e.target.value);
         document.getElementById('radius').addEventListener('input', (e) => {
             mouse.radius = parseFloat(e.target.value);
             document.getElementById('val-radius').innerText = mouse.radius;
@@ -481,9 +410,7 @@
                 const img = new Image();
                 img.onload = () => {
                     imageElement = img;
-                    settings.gap = 3; 
-                    document.getElementById('gap').value = 3;
-                    document.getElementById('val-gap').innerText = 3;
+                    settings.gap = 3; document.getElementById('gap').value = 3; document.getElementById('val-gap').innerText = 3;
                     initParticles();
                     if(window.innerWidth < 768) document.getElementById('controls').classList.add('collapsed');
                 };
@@ -492,17 +419,15 @@
             reader.readAsDataURL(file);
         });
 
+        // --- 鼠标/触摸统一处理 ---
         function updateMouse(x, y) {
-            mouse.x = x;
-            mouse.y = y;
-            mouse.screenX = x / canvas.width;
-            mouse.screenY = y / canvas.height;
+            mouse.x = x; mouse.y = y;
+            mouse.screenX = x / canvas.width; mouse.screenY = y / canvas.height;
         }
 
         window.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const zoomSpeed = 0.0015;
-            const delta = -e.deltaY * zoomSpeed;
+            const delta = -e.deltaY * 0.0015;
             let newZoom = scene.zoom + delta;
             newZoom = Math.max(scene.minZoom, Math.min(scene.maxZoom, newZoom));
             scene.zoom = newZoom;
@@ -515,8 +440,19 @@
 
         const getDistance = (p1, p2) => Math.hypot(p1.clientX - p2.clientX, p1.clientY - p2.clientY);
 
+        // --- 关键修复：触摸事件判断 ---
+        // 检查事件目标是否在控制面板内，如果是，则不阻止默认行为，也不触发粒子逻辑
+        function isUITarget(target) {
+            return target.closest('.controls') || target.closest('.toggle-btn');
+        }
+
         window.addEventListener('touchstart', (e) => {
+            // 修复：如果点的是 UI，直接返回，交给浏览器处理（这样滑块就能动了）
+            if (isUITarget(e.target)) return;
+
+            // 如果是 Canvas，则阻止默认行为（防滚动）并运行粒子逻辑
             e.preventDefault();
+
             if (e.touches.length === 2) {
                 isPinching = true;
                 initialPinchDistance = getDistance(e.touches[0], e.touches[1]);
@@ -530,7 +466,10 @@
         }, { passive: false });
 
         window.addEventListener('touchmove', (e) => {
+            if (isUITarget(e.target)) return;
+            
             e.preventDefault();
+
             if (e.touches.length === 2 && isPinching) {
                 const currentDistance = getDistance(e.touches[0], e.touches[1]);
                 if (initialPinchDistance > 0) {
@@ -545,6 +484,7 @@
         }, { passive: false });
 
         window.addEventListener('touchend', (e) => {
+            // Touchend 不需要像 start/move 那样严格过滤 UI，因为手指离开通常没有副作用
             if (e.touches.length < 2) isPinching = false;
             if (e.touches.length === 0) {
                 mouse.x = undefined;
