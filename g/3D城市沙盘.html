@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>3D城市沙盘 - 终极修复版</title>
+    <style>
+        body { margin: 0; overflow: hidden; background-color: #2c3e50; font-family: 'Segoe UI', sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; }
+        canvas { display: block; outline: none; }
+        
+        #ui-layer {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        #hud {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(15, 23, 42, 0) 100%);
+            color: white;
+            padding: 10px 15px;
+            pointer-events: auto;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding-top: max(10px, env(safe-area-inset-top));
+            z-index: 10;
+            padding-right: 60px; 
+        }
+        .stat-group { display: flex; align-items: center; gap: 6px; }
+        .stat-val { font-size: 16px; font-weight: bold; color: #f1c40f; text-shadow: 1px 1px 2px black; font-family: monospace; min-width: 40px; }
+        .stat-label { font-size: 10px; opacity: 0.8; color: #bdc3c7; }
+        
+        #top-right-controls {
+            position: absolute;
+            top: 10px; right: 10px;
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 40;
+        }
+        .icon-btn {
+            width: 40px; height: 40px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            border: 1px solid rgba(255,255,255,0.2);
+            backdrop-filter: blur(4px);
+        }
+
+        #settings-modal {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            width: 280px;
+            pointer-events: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            display: none;
+            z-index: 200; /* 最高层级 */
+            color: #2c3e50;
+        }
+        #settings-modal.show { display: block; }
+        .setting-row { margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; }
+        .setting-title { font-size: 14px; font-weight: bold; margin-bottom: 5px; }
+        .color-opts { display: flex; gap: 8px; width: 100%; margin-top: 5px; }
+        .color-opt { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid #ddd; }
+        .color-opt.active { border-color: #333; transform: scale(1.1); }
+        input[type=range] { width: 100%; }
+        
+        .toggle-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #3498db; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
+        #income-msg {
+            position: absolute;
+            top: 80px; left: 15px;
+            background: rgba(0,0,0,0.7);
+            color: #2ecc71;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s;
+            pointer-events: none;
+            border-left: 4px solid #2ecc71;
+            z-index: 20;
+        }
+        #income-msg.deficit { color: #e74c3c; border-left-color: #e74c3c; }
+
+        #demand-panel {
+            position: absolute;
+            bottom: 110px; left: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: auto;
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 20;
+        }
+        .demand-row { display: flex; align-items: center; gap: 8px; }
+        .demand-label { width: 15px; font-size: 12px; text-align: center; }
+        .demand-bar-bg { width: 80px; height: 8px; background: #333; border-radius: 4px; overflow: hidden; }
+        .demand-bar-fill { height: 100%; width: 50%; transition: width 0.5s ease-out; }
+
+        #view-modes {
+            position: absolute;
+            top: 70px; right: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            pointer-events: auto;
+            /* 关键修复：提高层级，防止被 HUD 或 Controls 的透明区域遮挡 */
+            z-index: 50; 
+        }
+        .view-btn {
+            background: rgba(0,0,0,0.7);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 6px 12px;
+            font-size: 12px;
+            cursor: pointer; /* 确保显示手型 */
+            border-radius: 6px;
+            text-align: right;
+            backdrop-filter: blur(4px);
+            pointer-events: auto; /* 双重保险 */
+        }
+        .view-btn:hover { background: rgba(0,0,0,0.9); }
+        .view-btn.active { background: #3498db; border-color: #3498db; box-shadow: 0 0 8px #3498db; }
+
+        #toolbar-container {
+            pointer-events: auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
+            z-index: 20;
+        }
+
+        #drawer {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px 12px 0 0;
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            margin-bottom: -100px; 
+            transition: margin-bottom 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 -5px 15px rgba(0,0,0,0.1);
+            z-index: 5;
+            opacity: 0;
+        }
+        #drawer.open { margin-bottom: 0; opacity: 1; }
+
+        #toolbar {
+            background: rgba(255, 255, 255, 0.98);
+            padding: 10px;
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            width: 100%;
+            justify-content: center;
+            box-shadow: 0 -4px 15px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+        #toolbar::-webkit-scrollbar { display: none; }
+
+        .tool-btn {
+            flex: 0 0 68px;
+            height: 72px;
+            background: #f1f2f6;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid transparent;
+            transition: all 0.1s;
+            position: relative;
+        }
+        .tool-btn:active { transform: scale(0.95); }
+        .tool-btn.active { border-color: #3498db; background: #eaf2f8; }
+        .tool-btn.drawer-trigger::after { content: '...'; position: absolute; bottom: 2px; font-size: 10px; color: #7f8c8d; }
+        .tool-color { width: 26px; height: 26px; border-radius: 6px; margin-bottom: 4px; box-shadow: 0 2px 4px rgba(0,0,0,0.15); display: flex; align-items: center; justify-content: center; font-size: 16px;}
+        .tool-name { font-size: 11px; font-weight: bold; color: #2c3e50; }
+        .tool-cost { font-size: 10px; color: #7f8c8d; }
+
+        #message {
+            position: absolute;
+            top: 40%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.85);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+            font-size: 14px;
+            z-index: 100;
+            text-align: center;
+        }
+        
+        #overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.3); z-index: 90; display: none;
+            pointer-events: auto;
+        }
+        #overlay.show { display: block; }
+    </style>
+</head>
+<body>
+
+    <div id="canvas-container"></div>
+
+    <div id="ui-layer">
+        <div id="hud">
+            <div class="stat-group"><span>💰</span><div class="stat-info"><div class="stat-val" id="money">0</div><div class="stat-label">资金</div></div></div>
+            <div class="stat-group"><span>👥</span><div class="stat-info"><div class="stat-val" id="pop">0</div><div class="stat-label">人口</div></div></div>
+            <div class="stat-group"><span>⚡</span><div class="stat-info"><div class="stat-val" id="energy">0</div><div class="stat-label">电力</div></div></div>
+            <div class="stat-group"><span>💧</span><div class="stat-info"><div class="stat-val" id="water">0</div><div class="stat-label">水源</div></div></div>
+            <div class="stat-group"><span>🏭</span><div class="stat-info"><div class="stat-val" id="gdp">0</div><div class="stat-label">GDP</div></div></div>
+        </div>
+        
+        <div id="top-right-controls">
+            <div class="icon-btn" onclick="toggleSettings()">⚙️</div>
+        </div>
+
+        <div id="income-msg"></div>
+
+        <div id="demand-panel">
+            <div class="demand-row" title="住宅需求"><div class="demand-label">🏠</div><div class="demand-bar-bg"><div class="demand-bar-fill" id="bar-res" style="background: #FFCDD2;"></div></div></div>
+            <div class="demand-row" title="商业需求"><div class="demand-label">🛒</div><div class="demand-bar-bg"><div class="demand-bar-fill" id="bar-com" style="background: #BBDEFB;"></div></div></div>
+            <div class="demand-row" title="办公需求"><div class="demand-label">💼</div><div class="demand-bar-bg"><div class="demand-bar-fill" id="bar-off" style="background: #E1BEE7;"></div></div></div>
+            <div class="demand-row" title="工业需求"><div class="demand-label">🏭</div><div class="demand-bar-bg"><div class="demand-bar-fill" id="bar-ind" style="background: #FFE0B2;"></div></div></div>
+        </div>
+
+        <div id="view-modes">
+            <div class="view-btn active" onclick="switchView('normal')">标准视图</div>
+            <div class="view-btn" onclick="switchView('level')">等级视图</div>
+            <div class="view-btn" onclick="switchView('amenity')">配套视图</div>
+            <div class="view-btn" onclick="switchView('pollution')">污染视图</div>
+            <div class="view-btn" onclick="switchView('power')">供电视图</div>
+            <div class="view-btn" onclick="switchView('water')">供水视图</div>
+        </div>
+
+        <div id="message"></div>
+
+        <div id="toolbar-container">
+            <div id="drawer"></div>
+            <div id="toolbar"></div>
+        </div>
+    </div>
+    
+    <div id="overlay" onclick="toggleSettings()"></div>
+    <div id="settings-modal">
+        <h3 style="margin-top:0">画面设置</h3>
+        
+        <div class="setting-row">
+            <span class="setting-title">光照角度</span>
+            <input type="range" min="0" max="360" value="45" oninput="updateSunAngle(this.value)">
+        </div>
+
+        <!-- 网格开关 -->
+        <div class="setting-row">
+            <span class="setting-title">显示网格</span>
+            <label class="toggle-switch">
+                <input type="checkbox" onchange="toggleGrid(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="setting-row" style="display:block">
+            <span class="setting-title">土地颜色</span>
+            <div class="color-opts" id="ground-colors"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as THREE from 'https://unpkg.com/three@0.126.0/build/three.module.js';
+        import { TWEEN } from 'https://unpkg.com/three@0.126.0/examples/jsm/libs/tween.module.min.js';
+
+        const CONFIG = {
+            gridSize: 32,
+            tileSize: 10,
+            colors: {
+                ground: 0x76c893, 
+                highlight: 0xFFFF00,
+                skyClear: 0xdff9fb,
+                skyDark: 0x7f8c8d,
+                fogClear: 0xdff9fb,
+                fogDark: 0x95a5a6
+            },
+            groundOptions: [
+                { hex: 0x76c893, name: '草绿' },
+                { hex: 0xf5f6fa, name: '白' },
+                { hex: 0xf8a5c2, name: '粉' },
+                { hex: 0x74b9ff, name: '蓝' },
+                { hex: 0xbdc3c7, name: '灰' }
+            ]
+        };
+
+        const BUILDINGS = {
+            'cursor': { type: 'none', name: '浏览', cost: 0, color: 0xffffff },
+            'demolish': { type: 'tool', name: '拆除', cost: 0, color: 0xD63031 },
+            'road': { type: 'road', name: '道路', cost: 2, color: 0x555555, height: 0.2 },
+            
+            'house': { type: 'residential', name: '住宅', cost: 15, color: 0xFFCDD2, height: 5, power: -2, water: -2, pop: 60, income: 3 },
+            'shop': { type: 'commercial', name: '商业', cost: 30, color: 0xBBDEFB, height: 8, power: -4, water: -3, pop: 20, income: 12 },
+            'office': { type: 'office', name: '办公', cost: 50, color: 0xE1BEE7, height: 12, power: -6, water: -4, pop: 120, income: 18 },
+            'factory': { type: 'industrial', name: '工厂', cost: 40, color: 0xFFE0B2, height: 6, power: -10, water: -10, pop: 80, income: 25, pollution: 8 },
+            
+            'park': { type: 'service', subType: 'park', name: '公园', cost: 20, color: 0x00B894, height: 1, radius: 4, reducePollution: 5 },
+            'school': { type: 'service', subType: 'school', name: '学校', cost: 100, color: 0xF1C40F, height: 4, radius: 8 },
+            'hospital': { type: 'service', subType: 'hospital', name: '医院', cost: 150, color: 0xE74C3C, height: 6, radius: 10 },
+            'church': { type: 'service', subType: 'church', name: '教堂', cost: 80, color: 0x9B59B6, height: 5, radius: 6 },
+            
+            'power': { type: 'utility', name: '电厂', cost: 100, color: 0xFDCB6E, height: 7, power: 100, pop: 10, income: -20, pollution: 4 },
+            'water': { type: 'utility', name: '水厂', cost: 100, color: 0x0984e3, height: 5, water: 100, pop: 5, income: -15 },
+        };
+
+        const TOOLBAR_LAYOUT = [
+            'cursor', 'demolish', 'road', 
+            'house', 'shop', 'office', 'factory',
+            { name: '服务', items: ['park', 'school', 'hospital', 'church'] },
+            { name: '水电', items: ['power', 'water'] }
+        ];
+
+        let state = {
+            money: 6000,
+            population: 0,
+            power: { used: 0, total: 20 },
+            water: { used: 0, total: 20 },
+            gdp: 0,
+            fluctuation: 1.0, 
+            viewMode: 'normal',
+            selectedTool: 'cursor',
+            map: {}, 
+            cars: [],
+            gridData: [], 
+            demand: { residential: 100, commercial: 100, office: 100, industrial: 100 },
+            weather: { active: false, timer: 0 },
+            gridHelper: null
+        };
+
+        let scene, camera, renderer, raycaster, mouse;
+        let groundTiles = [], buildingsGroup, carsGroup, labelsGroup;
+        let hoverCursor;
+        let isDragging = false, dragStart = new THREE.Vector2(), hasMoved = false;
+
+        function init() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(CONFIG.colors.skyClear);
+            scene.fog = new THREE.Fog(CONFIG.colors.fogClear, 120, 500);
+
+            const aspect = window.innerWidth / window.innerHeight;
+            const d = 110;
+            camera = new THREE.OrthographicCamera(-d * aspect, d * aspect, d, -d, 1, 1000);
+            camera.position.set(100, 100, 100);
+            camera.lookAt(scene.position);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap; 
+            document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambient);
+            
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(100, 200, 80); 
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 4096; dirLight.shadow.mapSize.height = 4096;
+            const shadowD = 250;
+            dirLight.shadow.camera.left = -shadowD; dirLight.shadow.camera.right = shadowD;
+            dirLight.shadow.camera.top = shadowD; dirLight.shadow.camera.bottom = -shadowD;
+            dirLight.shadow.bias = -0.0005;
+            scene.add(dirLight);
+            state.sun = dirLight; 
+
+            // Init Grid
+            const groundGroup = new THREE.Group();
+            const geo = new THREE.PlaneGeometry(CONFIG.tileSize, CONFIG.tileSize);
+            geo.rotateX(-Math.PI / 2);
+            for(let x=0; x<CONFIG.gridSize; x++) {
+                state.gridData[x] = [];
+                for(let z=0; z<CONFIG.gridSize; z++) {
+                    state.gridData[x][z] = { pollution: 0, amenity: 0, flags: {} };
+                    const mat = new THREE.MeshLambertMaterial({ color: CONFIG.colors.ground });
+                    const tile = new THREE.Mesh(geo, mat);
+                    tile.position.set(x * CONFIG.tileSize, 0, z * CONFIG.tileSize);
+                    tile.receiveShadow = true;
+                    tile.userData = { x, z };
+                    groundTiles.push(tile);
+                    groundGroup.add(tile);
+                }
+            }
+            groundGroup.position.set(0, -0.1, 0);
+            scene.add(groundGroup);
+
+            // Grid Helper (默认隐藏)
+            const gridHelper = new THREE.GridHelper(CONFIG.gridSize*CONFIG.tileSize, CONFIG.gridSize, 0xbdc3c7, 0xbdc3c7);
+            gridHelper.position.set((CONFIG.gridSize*CONFIG.tileSize)/2 - CONFIG.tileSize/2, 0.05, (CONFIG.gridSize*CONFIG.tileSize)/2 - CONFIG.tileSize/2);
+            gridHelper.material.opacity = 0.2;
+            gridHelper.material.transparent = true;
+            gridHelper.visible = false; // 默认为隐藏
+            state.gridHelper = gridHelper;
+            scene.add(gridHelper);
+
+            buildingsGroup = new THREE.Group(); scene.add(buildingsGroup);
+            carsGroup = new THREE.Group(); scene.add(carsGroup);
+            labelsGroup = new THREE.Group(); scene.add(labelsGroup);
+
+            hoverCursor = new THREE.Mesh(new THREE.BoxGeometry(CONFIG.tileSize, 0.5, CONFIG.tileSize), new THREE.MeshBasicMaterial({ color: CONFIG.colors.highlight, opacity: 0.5, transparent: true }));
+            hoverCursor.visible = false;
+            scene.add(hoverCursor);
+
+            initEvents();
+            initUI();
+            initSettingsUI();
+
+            const center = (CONFIG.gridSize * CONFIG.tileSize) / 2;
+            camera.position.set(center + 100, 100, center + 100);
+            camera.lookAt(center, 0, center);
+
+            requestAnimationFrame(animate);
+            setInterval(gameLogicSecond, 1000); 
+            setInterval(gameLogicIncome, 10000); 
+            setInterval(weatherCheck, 60000); 
+            setInterval(() => {
+                state.fluctuation = 0.97 + Math.random() * 0.06;
+                updateUI();
+            }, 5000);
+        }
+
+        // --- 逻辑核心 ---
+        function gameLogicSecond() {
+            let stats = { residential: 0, commercial: 0, office: 0, industrial: 0 }; 
+            let pTotal = 20, pUsed = 0;
+            let wTotal = 20, wUsed = 0;
+            let pop = 0;
+
+            for(let x=0; x<CONFIG.gridSize; x++) {
+                for(let z=0; z<CONFIG.gridSize; z++) {
+                    state.gridData[x][z].pollution = 0;
+                    state.gridData[x][z].amenity = 0;
+                    state.gridData[x][z].flags = {
+                        hasPark: false, hasSchool: false, hasHospital: false, hasChurch: false,
+                        hasShop: false, hasOffice: false, inRange: false
+                    };
+                }
+            }
+
+            for (let key in state.map) {
+                const b = state.map[key];
+                if (b.isRuin) continue;
+                const def = BUILDINGS[b.type];
+                
+                if (def.power > 0) pTotal += def.power;
+                if (def.power < 0 && b.level > 0) pUsed += Math.abs(def.power * b.level);
+                if (def.water > 0) wTotal += def.water;
+                if (def.water < 0 && b.level > 0) wUsed += Math.abs(def.water * b.level);
+
+                if (b.level > 0) {
+                    const multiplier = Math.pow(1.5, b.level - 1);
+                    pop += def.pop ? Math.floor(def.pop * multiplier) : 0;
+                    if (stats[def.type] !== undefined) stats[def.type] += b.level;
+                    
+                    if (def.pollution) {
+                        const radius = 4;
+                        for (let i = -radius; i <= radius; i++) {
+                            for (let j = -radius; j <= radius; j++) {
+                                const tx = b.x + i, tz = b.z + j;
+                                if (isValid(tx, tz)) {
+                                    const dist = Math.abs(i) + Math.abs(j);
+                                    if(dist <= radius) state.gridData[tx][tz].pollution += Math.max(0, def.pollution - dist);
+                                }
+                            }
+                        }
+                    }
+
+                    if (['service', 'commercial', 'office'].includes(def.type)) {
+                        const radius = def.radius || (def.type==='commercial'?3 : 2);
+                        const range = Math.ceil(radius);
+                        for (let i = -range; i <= range; i++) {
+                            for (let j = -range; j <= range; j++) {
+                                const tx = b.x + i, tz = b.z + j;
+                                if (isValid(tx, tz)) {
+                                    if (Math.hypot(i, j) <= radius) {
+                                        const f = state.gridData[tx][tz].flags;
+                                        if (def.subType === 'park') f.hasPark = true;
+                                        if (def.subType === 'school') f.hasSchool = true;
+                                        if (def.subType === 'hospital') f.hasHospital = true;
+                                        if (def.subType === 'church') f.hasChurch = true;
+                                        if (def.type === 'commercial') f.hasShop = true;
+                                        if (def.type === 'office') f.hasOffice = true;
+                                        f.inRange = true; 
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            state.population = pop;
+            state.power = { total: pTotal, used: pUsed };
+            state.water = { total: wTotal, used: wUsed };
+            const hasPower = pTotal >= pUsed;
+            const hasWater = wTotal >= wUsed;
+
+            const suppression = {
+                residential: stats.residential * 2.5,
+                commercial: stats.commercial * 3,
+                office: stats.office * 3,
+                industrial: stats.industrial * 3
+            };
+            const totalSuppression = suppression.residential + suppression.commercial + suppression.office + suppression.industrial;
+            state.demand.residential = Math.floor(100 - suppression.residential + (totalSuppression - suppression.residential)/3);
+            state.demand.commercial = Math.floor(100 - suppression.commercial + (totalSuppression - suppression.commercial)/3);
+            state.demand.office = Math.floor(100 - suppression.office + (totalSuppression - suppression.office)/3);
+            state.demand.industrial = Math.floor(100 - suppression.industrial + (totalSuppression - suppression.industrial)/3);
+            for(let k in state.demand) if(state.demand[k] < 0) state.demand[k] = 0;
+
+            for (let key in state.map) {
+                const b = state.map[key];
+                if (b.type === 'road' || b.type === 'tool') continue;
+                
+                const gridCell = state.gridData[b.x][b.z];
+                const def = BUILDINGS[b.type];
+                const flags = gridCell.flags;
+                
+                let amenityScore = 0;
+                if (def.type === 'industrial') {
+                    if (flags.hasShop) amenityScore += 1;
+                    if (flags.hasPark) amenityScore += 1;
+                    if (flags.hasHospital) amenityScore += 1;
+                    if (flags.hasChurch) amenityScore += 1;
+                } else if (['residential', 'commercial', 'office'].includes(def.type)) {
+                    if (flags.hasPark) amenityScore += 1;
+                    if (flags.hasSchool) amenityScore += 1;
+                    if (flags.hasHospital) amenityScore += 1;
+                    if (flags.hasChurch) amenityScore += 1;
+                    if (flags.hasShop || flags.hasOffice) amenityScore += 1; 
+                    if (def.type !== 'residential' && checkRoadAdj(b.x, b.z)) amenityScore += 1;
+                    
+                    if (gridCell.pollution > 0) {
+                        const penalty = Math.min(3, Math.ceil(gridCell.pollution / 5));
+                        amenityScore -= penalty;
+                    }
+                }
+                gridCell.amenity = Math.max(0, Math.min(12, amenityScore));
+
+                if (b.level === 0 && !b.isRuin) {
+                    const d = state.demand[def.type];
+                    if (d > 0 && Math.random() < (d/1000)) {
+                        b.level = 1; b.lastUpgrade = Date.now();
+                        createBuildingMesh(b);
+                    }
+                } else if (b.level > 0 && !b.isRuin) {
+                    let resourceLack = (def.power < 0 && !hasPower) || (def.water < 0 && !hasWater);
+                    if (resourceLack) b.damageTick = (b.damageTick||0) + 1;
+                    else b.damageTick = Math.max(0, (b.damageTick||0) - 1);
+
+                    if (b.damageTick > 60) {
+                        convertToRuin(b);
+                        showMessage("缺水/缺电过久，建筑已废弃！");
+                        continue;
+                    }
+
+                    if (['residential', 'commercial', 'office', 'industrial'].includes(def.type) && b.level < 5) {
+                        if (Date.now() - b.lastUpgrade > 60000) { 
+                            const maxAllowedLevel = Math.max(1, Math.floor(gridCell.amenity / 2));
+                            
+                            if (b.level < maxAllowedLevel) {
+                                const demandVal = state.demand[def.type];
+                                const prob = (demandVal / 100 * 0.5) + (gridCell.amenity / 12 * 0.5);
+                                
+                                if (prob > 0.2 + (b.level*0.1)) { 
+                                    if (Math.random() < prob * 0.2) { 
+                                        b.level++;
+                                        b.lastUpgrade = Date.now();
+                                        createBuildingMesh(b);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            updateUI();
+            updateVisuals();
+        }
+
+        // --- Visuals ---
+        function updateVisuals() {
+            labelsGroup.clear();
+            groundTiles.forEach(tile => {
+                const {x, z} = tile.userData;
+                const d = state.gridData[x][z];
+                
+                if (state.viewMode === 'pollution') {
+                    const p = Math.min(20, d.pollution) / 20;
+                    tile.material.color.lerpColors(new THREE.Color(CONFIG.colors.ground), new THREE.Color(0x5D4037), p);
+                } else if (state.viewMode === 'amenity') {
+                    const val = d.amenity;
+                    const c = new THREE.Color();
+                    if(val===0) c.setHex(0xecf0f1);
+                    else c.setHSL(0.3, 0.5 + val/24, 0.8 - val/20);
+
+                    if (d.flags.inRange) c.lerp(new THREE.Color(0xffffff), 0.3);
+                    tile.material.color.copy(c);
+                } else {
+                    tile.material.color.setHex(CONFIG.colors.ground);
+                }
+            });
+
+            for (let key in state.map) {
+                const b = state.map[key];
+                const def = BUILDINGS[b.type];
+                if (!b.mesh || b.isRuin) continue;
+
+                b.mesh.traverse(c => {
+                    if (c.isMesh) {
+                        if (!c.userData.base) c.userData.base = c.material.color.clone();
+                        if (state.viewMode === 'power') {
+                            if (def.power < 0 && b.level > 0) c.material.color.setHex(state.power.total >= state.power.used ? 0x2ecc71 : 0xff4444);
+                            else if (def.power > 0) c.material.color.setHex(0xf1c40f);
+                            else c.material.color.setHex(0x95a5a6);
+                        } else if (state.viewMode === 'water') {
+                            if (def.water < 0 && b.level > 0) c.material.color.setHex(state.water.total >= state.water.used ? 0x3498db : 0xff4444);
+                            else if (def.water > 0) c.material.color.setHex(0x0984e3);
+                            else c.material.color.setHex(0x95a5a6);
+                        } else c.material.color.copy(c.userData.base);
+                    }
+                });
+
+                const showLabel = ['residential', 'commercial', 'office', 'industrial'].includes(def.type);
+                if (showLabel) {
+                    let txt = "";
+                    if (state.viewMode === 'level' && b.level>0) txt = "Lv."+b.level;
+                    if (state.viewMode === 'amenity' && b.level>0) txt = state.gridData[b.x][b.z].amenity;
+                    if(txt!=="") {
+                        const s = createLabel(txt);
+                        const h = def.height + (b.level-1)*3;
+                        s.position.set(b.x*CONFIG.tileSize, h+5, b.z*CONFIG.tileSize);
+                        labelsGroup.add(s);
+                    }
+                }
+            }
+        }
+
+        function createBuildingMesh(b) {
+            if (b.mesh) buildingsGroup.remove(b.mesh);
+            const def = BUILDINGS[b.type];
+            const size = CONFIG.tileSize;
+            let mesh;
+            
+            if (b.level === 0 && !b.isRuin) {
+                const geo = new THREE.PlaneGeometry(size * 0.9, size * 0.9); geo.rotateX(-Math.PI / 2);
+                mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: def.color, transparent: true, opacity: 0.5 }));
+                mesh.position.set(b.x * size, 0.1, b.z * size); mesh.receiveShadow = true;
+                b.mesh = mesh; buildingsGroup.add(mesh); return;
+            }
+            if (b.isRuin) {
+                const g = new THREE.Group();
+                g.add(new THREE.Mesh(new THREE.BoxGeometry(size*0.8, 1, size*0.8), new THREE.MeshLambertMaterial({color: 0x555})));
+                for(let i=0;i<3;i++) {
+                    const m = new THREE.Mesh(new THREE.BoxGeometry(2,2,2), new THREE.MeshLambertMaterial({color:0x333}));
+                    m.position.set((Math.random()-.5)*5, 1, (Math.random()-.5)*5); g.add(m);
+                }
+                mesh = g;
+            } else if (def.type === 'service') {
+                const g = new THREE.Group();
+                const base = new THREE.Mesh(new THREE.BoxGeometry(size*0.9, 1, size*0.9), new THREE.MeshLambertMaterial({color: 0xecf0f1}));
+                base.position.y = 0.5; g.add(base);
+                let top;
+                if (def.subType === 'park') {
+                    const v = b.variant !== undefined ? b.variant : 0;
+                    if (v === 0) {
+                        base.material.color.setHex(0x00b894);
+                        top = new THREE.Mesh(new THREE.ConeGeometry(3.5, 7, 8), new THREE.MeshLambertMaterial({color: 0x27ae60})); top.position.y = 4;
+                    } else if (v === 1) {
+                        top = new THREE.Group();
+                        const pool = new THREE.Mesh(new THREE.CylinderGeometry(3.5, 3.5, 0.5, 16), new THREE.MeshLambertMaterial({color: 0x3498db})); pool.position.y = 0.8;
+                        const spray = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 3, 8), new THREE.MeshLambertMaterial({color: 0xecf0f1})); spray.position.y = 2.5;
+                        top.add(pool); top.add(spray);
+                    } else {
+                        top = new THREE.Group();
+                        const plinth = new THREE.Mesh(new THREE.BoxGeometry(3, 1, 3), new THREE.MeshLambertMaterial({color: 0x95a5a6})); plinth.position.y = 1.5;
+                        const statue = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5), new THREE.MeshLambertMaterial({color: 0xf1c40f})); statue.position.y = 3.5;
+                        top.add(plinth); top.add(statue);
+                    }
+                } else if (def.subType === 'church') {
+                    top = new THREE.Mesh(new THREE.ConeGeometry(2, 8, 4), new THREE.MeshLambertMaterial({color: 0x9b59b6})); top.position.y = 4.5;
+                } else if (def.subType === 'school') {
+                    top = new THREE.Mesh(new THREE.BoxGeometry(6, 4, 4), new THREE.MeshLambertMaterial({color: 0xf1c40f})); top.position.y = 3;
+                } else { 
+                    top = new THREE.Group();
+                    const v = new THREE.Mesh(new THREE.BoxGeometry(2, 6, 2), new THREE.MeshLambertMaterial({color: 0xe74c3c}));
+                    const h = new THREE.Mesh(new THREE.BoxGeometry(6, 2, 2), new THREE.MeshLambertMaterial({color: 0xe74c3c}));
+                    top.add(v); top.add(h); top.position.y = 4;
+                }
+                g.add(top); mesh = g;
+            } else if (def.type === 'road') {
+                mesh = new THREE.Mesh(new THREE.PlaneGeometry(size, size), new THREE.MeshLambertMaterial({color: def.color}));
+                mesh.rotation.x = -Math.PI/2; mesh.position.y = 0.05;
+            } else {
+                const h = def.height + (b.level-1)*3;
+                mesh = new THREE.Mesh(new THREE.BoxGeometry(size*0.8, h, size*0.8), new THREE.MeshLambertMaterial({color: def.color}));
+                mesh.position.y = h/2;
+            }
+            mesh.position.x = b.x * size; mesh.position.z = b.z * size;
+            if(b.level>0) { mesh.castShadow = true; mesh.receiveShadow = true; }
+            b.mesh = mesh; buildingsGroup.add(mesh);
+            mesh.scale.set(0.1, 0.1, 0.1); new TWEEN.Tween(mesh.scale).to({x:1, y:1, z:1}, 400).easing(TWEEN.Easing.Back.Out).start();
+        }
+
+        function placeBuilding(x, z) {
+            const toolKey = state.selectedTool;
+            if (!toolKey || toolKey === 'cursor') return;
+            const key = `${x},${z}`;
+            const tool = BUILDINGS[toolKey];
+            if (tool.type === 'tool') { 
+                if (state.map[key]) {
+                    if (state.money >= tool.cost) {
+                        state.money -= tool.cost;
+                        if(state.map[key].mesh) buildingsGroup.remove(state.map[key].mesh);
+                        delete state.map[key];
+                        updateUI();
+                    }
+                }
+                return;
+            }
+            if (state.map[key]) { showMessage("此处已有建筑"); return; }
+            if (state.money < tool.cost) { showMessage("资金不足"); return; }
+            state.money -= tool.cost;
+            const isZone = ['residential', 'commercial', 'office', 'industrial'].includes(tool.type);
+            const b = { 
+                x, z, type: toolKey, 
+                level: isZone ? 0 : 1, 
+                lastUpgrade: Date.now(), 
+                isRuin: false,
+                variant: tool.subType === 'park' ? Math.floor(Math.random()*3) : 0 
+            };
+            state.map[key] = b;
+            createBuildingMesh(b);
+            updateUI();
+        }
+
+        function convertToRuin(b) { b.isRuin = true; b.level = 1; createBuildingMesh(b); }
+
+        function gameLogicIncome() {
+            let totalIncome = 0;
+            for (let key in state.map) {
+                const b = state.map[key];
+                if (b.isRuin) { totalIncome -= 5; continue; }
+                if (b.level === 0) continue;
+                const def = BUILDINGS[b.type];
+                if (def.income) totalIncome += def.income * Math.pow(1.5, b.level - 1);
+            }
+            state.money += Math.floor(totalIncome);
+            if(state.money < 0) state.money = 0;
+            state.gdp = Math.floor(state.population * 10 + Math.max(0, totalIncome)*50);
+            
+            const msgEl = document.getElementById('income-msg');
+            msgEl.innerText = totalIncome >= 0 ? `+ $${Math.floor(totalIncome)}` : `- $${Math.abs(Math.floor(totalIncome))}`;
+            msgEl.className = totalIncome >= 0 ? '' : 'deficit';
+            msgEl.style.opacity = 1;
+            setTimeout(() => msgEl.style.opacity = 0, 3000);
+        }
+
+        function weatherCheck() {
+            if (state.weather.active) return;
+            if (Math.random() < 0.3) {
+                state.weather.active = true;
+                showMessage("天气转阴...");
+                new TWEEN.Tween(scene.background).to(new THREE.Color(CONFIG.colors.skyDark), 2000).start();
+                new TWEEN.Tween(scene.fog.color).to(new THREE.Color(CONFIG.colors.fogDark), 2000).start();
+                new TWEEN.Tween(scene.fog).to({ near: 50, far: 300 }, 2000).start(); 
+                new TWEEN.Tween(state.sun).to({ intensity: 0.5 }, 2000).start();
+                setTimeout(() => {
+                    state.weather.active = false; showMessage("天气转晴");
+                    new TWEEN.Tween(scene.background).to(new THREE.Color(CONFIG.colors.skyClear), 2000).start();
+                    new TWEEN.Tween(scene.fog.color).to(new THREE.Color(CONFIG.colors.fogClear), 2000).start();
+                    new TWEEN.Tween(scene.fog).to({ near: 120, far: 500 }, 2000).start();
+                    new TWEEN.Tween(state.sun).to({ intensity: 0.8 }, 2000).start();
+                }, 20000);
+            }
+        }
+
+        window.toggleSettings = function() {
+            const m = document.getElementById('settings-modal');
+            const o = document.getElementById('overlay');
+            m.classList.toggle('show');
+            o.classList.toggle('show');
+        }
+        
+        window.updateSunAngle = function(val) {
+            const angle = val * (Math.PI / 180);
+            const radius = 200; 
+            state.sun.position.x = Math.sin(angle) * radius;
+            state.sun.position.z = Math.cos(angle) * radius;
+            state.sun.position.y = 200; 
+        }
+
+        window.toggleGrid = function(checked) {
+            if(state.gridHelper) state.gridHelper.visible = checked;
+        }
+
+        window.switchView = function(mode) {
+            state.viewMode = mode;
+            document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            updateVisuals();
+        }
+
+        function initSettingsUI() {
+            const container = document.getElementById('ground-colors');
+            CONFIG.groundOptions.forEach(opt => {
+                const d = document.createElement('div');
+                d.className = 'color-opt';
+                d.style.backgroundColor = '#' + opt.hex.toString(16).padStart(6, '0');
+                if(opt.hex === CONFIG.colors.ground) d.classList.add('active');
+                d.onclick = () => {
+                    CONFIG.colors.ground = opt.hex;
+                    document.querySelectorAll('.color-opt').forEach(el=>el.classList.remove('active'));
+                    d.classList.add('active');
+                    updateVisuals(); 
+                };
+                container.appendChild(d);
+            });
+        }
+
+        function updateUI() {
+            document.getElementById('money').innerText = state.money;
+            document.getElementById('pop').innerText = Math.floor(state.population * state.fluctuation);
+            document.getElementById('gdp').innerText = Math.floor(state.gdp * state.fluctuation);
+
+            const p = state.power.total - state.power.used;
+            const elP = document.getElementById('energy');
+            elP.innerText = (p>=0?'+':'') + p; elP.style.color = p<0 ? '#ff4444' : '#2ecc71';
+            const w = state.water.total - state.water.used;
+            const elW = document.getElementById('water');
+            elW.innerText = (w>=0?'+':'') + w; elW.style.color = w<0 ? '#ff4444' : '#0984e3';
+            
+            const getPct = (v) => Math.max(0, Math.min(100, v)) + '%';
+            document.getElementById('bar-res').style.width = getPct(state.demand.residential);
+            document.getElementById('bar-com').style.width = getPct(state.demand.commercial);
+            document.getElementById('bar-off').style.width = getPct(state.demand.office);
+            document.getElementById('bar-ind').style.width = getPct(state.demand.industrial);
+        }
+
+        // --- Standard Helpers ---
+        function isValid(x, z) { return x>=0 && x<CONFIG.gridSize && z>=0 && z<CONFIG.gridSize; }
+        function checkRoadAdj(x, z) {
+            const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+            for(let d of dirs) {
+                const k = `${x+d[0]},${z+d[1]}`;
+                if (state.map[k] && state.map[k].type === 'road') return true;
+            }
+            return false;
+        }
+        function createLabel(str) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 32;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = "rgba(0,0,0,0.6)"; ctx.fillRect(0,0,64,32);
+            ctx.fillStyle = "white"; ctx.font = "20px Arial"; ctx.textAlign="center"; ctx.textBaseline="middle";
+            ctx.fillText(str, 32, 16);
+            const s = new THREE.Sprite(new THREE.SpriteMaterial({map: new THREE.CanvasTexture(canvas), depthTest:false}));
+            s.scale.set(10,5,1); return s;
+        }
+        function createToolBtn(key) {
+            const b = BUILDINGS[key];
+            const btn = document.createElement('div');
+            btn.className = 'tool-btn';
+            if (key==='cursor') btn.classList.add('active');
+            let icon = `<div class="tool-color" style="background:#${b.color.toString(16).padStart(6,'0')}"></div>`;
+            if(key==='cursor') icon = `<div class="tool-color" style="background:#fff;border:1px solid #ccc">👆</div>`;
+            if(key==='demolish') icon = `<div class="tool-color" style="background:#e74c3c">🔨</div>`;
+            btn.innerHTML = `${icon}<div class="tool-name">${b.name}</div><div class="tool-cost">${b.cost>0?'$'+b.cost:'-'}</div>`;
+            btn.onclick = () => {
+                document.querySelectorAll('.tool-btn').forEach(t=>t.classList.remove('active'));
+                btn.classList.add('active'); state.selectedTool = key;
+                if(key==='cursor') hoverCursor.visible = false;
+                if(!btn.closest('#drawer')) document.getElementById('drawer').classList.remove('open');
+            };
+            return btn;
+        }
+        function openDrawer(items) {
+            const d = document.getElementById('drawer');
+            d.innerHTML = ''; items.forEach(k => d.appendChild(createToolBtn(k))); d.classList.add('open');
+        }
+        function showMessage(msg) {
+            const m = document.getElementById('message');
+            m.innerText = msg; m.style.opacity = 1; setTimeout(()=>m.style.opacity=0, 2000);
+        }
+        function updateCursor() {
+            if(state.selectedTool==='cursor') { hoverCursor.visible=false; return; }
+            raycaster = new THREE.Raycaster(); raycaster.setFromCamera(mouse, camera);
+            const hits = raycaster.intersectObjects(groundTiles);
+            if(hits.length>0) {
+                const {x,z} = hits[0].object.userData;
+                hoverCursor.position.set(x*CONFIG.tileSize, 0.5, z*CONFIG.tileSize); hoverCursor.visible = true;
+            } else hoverCursor.visible = false;
+        }
+        function handleClick() {
+            if(hoverCursor.visible) placeBuilding(Math.round(hoverCursor.position.x/CONFIG.tileSize), Math.round(hoverCursor.position.z/CONFIG.tileSize));
+        }
+        function initUI() {
+            const bar = document.getElementById('toolbar');
+            TOOLBAR_LAYOUT.forEach(item => {
+                if (typeof item === 'string') bar.appendChild(createToolBtn(item));
+                else {
+                    const btn = document.createElement('div');
+                    btn.className = 'tool-btn drawer-trigger';
+                    btn.innerHTML = `<div class="tool-color" style="background:#bdc3c7">📂</div><div class="tool-name">${item.name}</div>`;
+                    btn.onclick = () => openDrawer(item.items);
+                    bar.appendChild(btn);
+                }
+            });
+        }
+        function initEvents() {
+            const cvs = renderer.domElement;
+            cvs.addEventListener('mousedown', e => { isDragging=true; hasMoved=false; dragStart.set(e.clientX, e.clientY); });
+            cvs.addEventListener('mousemove', e => {
+                mouse = new THREE.Vector2((e.clientX/window.innerWidth)*2-1, -(e.clientY/window.innerHeight)*2+1);
+                if(!isDragging) updateCursor();
+                else {
+                    if(Math.hypot(e.clientX-dragStart.x, e.clientY-dragStart.y)>5) hasMoved=true;
+                    dragStart.set(e.clientX, e.clientY);
+                    const s = 0.5/camera.zoom;
+                    camera.position.x -= (e.movementX + e.movementY)*s; camera.position.z -= (e.movementY - e.movementX)*s;
+                }
+            });
+            cvs.addEventListener('mouseup', () => { isDragging=false; if(!hasMoved) handleClick(); });
+            cvs.addEventListener('wheel', e => {
+                e.preventDefault(); camera.zoom = Math.max(0.3, Math.min(4, camera.zoom - e.deltaY * 0.001));
+                camera.updateProjectionMatrix();
+            }, {passive:false});
+            window.addEventListener('resize', () => {
+                const aspect = window.innerWidth/window.innerHeight;
+                camera.left = -110*aspect; camera.right = 110*aspect;
+                camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        }
+        function spawnCar() {
+            const roads = Object.values(state.map).filter(b => b.type === 'road');
+            if (roads.length === 0) return;
+            if (state.cars.length > Math.min(50, roads.length / 2)) return;
+            const r = roads[Math.floor(Math.random() * roads.length)];
+            const car = new THREE.Mesh(new THREE.BoxGeometry(3, 1.8, 5), new THREE.MeshLambertMaterial({ color: Math.random() * 0xffffff }));
+            car.position.set(r.x * CONFIG.tileSize, 1, r.z * CONFIG.tileSize);
+            car.castShadow = true;
+            car.userData = { gridX: r.x, gridZ: r.z, targetX: r.x, targetZ: r.z, moving: false, lastDir: null };
+            carsGroup.add(car); state.cars.push(car);
+        }
+        function updateCars(dt) {
+            if (Math.random() < 0.03) spawnCar();
+            for (let i = state.cars.length - 1; i >= 0; i--) {
+                const car = state.cars[i];
+                const u = car.userData;
+                if (!u.moving) {
+                    const dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+                    const candidates = [];
+                    for(let d of dirs) {
+                        if (u.lastDir && d[0] === -u.lastDir[0] && d[1] === -u.lastDir[1]) continue;
+                        const nx = u.gridX + d[0], nz = u.gridZ + d[1];
+                        const k = `${nx},${nz}`;
+                        if (state.map[k] && state.map[k].type === 'road') candidates.push({x: nx, z: nz, dir: d});
+                    }
+                    if (candidates.length === 0 && u.lastDir) { 
+                        const nx = u.gridX - u.lastDir[0], nz = u.gridZ - u.lastDir[1];
+                        const k = `${nx},${nz}`;
+                        if (state.map[k] && state.map[k].type === 'road') candidates.push({x: nx, z: nz, dir: [-u.lastDir[0], -u.lastDir[1]]});
+                    }
+                    if (candidates.length > 0) {
+                        const pick = candidates[Math.floor(Math.random() * candidates.length)];
+                        u.targetX = pick.x; u.targetZ = pick.z; u.lastDir = pick.dir; u.moving = true;
+                        car.lookAt(pick.x * CONFIG.tileSize, 1, pick.z * CONFIG.tileSize);
+                    } else {
+                        carsGroup.remove(car); state.cars.splice(i, 1);
+                    }
+                } else {
+                    const speed = 25 * dt;
+                    const destX = u.targetX * CONFIG.tileSize, destZ = u.targetZ * CONFIG.tileSize;
+                    if (Math.hypot(destX - car.position.x, destZ - car.position.z) < speed) {
+                        car.position.set(destX, 1, destZ);
+                        u.gridX = u.targetX; u.gridZ = u.targetZ; u.moving = false;
+                    } else car.translateZ(speed);
+                }
+            }
+        }
+
+        let lastTime = 0;
+        function animate(time) {
+            requestAnimationFrame(animate);
+            const dt = (time - lastTime)/1000 || 0.016; lastTime = time;
+            TWEEN.update(time); updateCars(dt); renderer.render(scene, camera);
+        }
+
+        init();
+    </script>
+</body>
+</html>
