@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>群聊抢红包游戏</title>
+    <style>
+        /* -------- 极简样式重置 -------- */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: #f5f5f5;
+            overflow: hidden;
+            -webkit-user-select: none;
+            user-select: none
+        }
+
+        /* -------- 顶部信息栏 -------- */
+        .header {
+            background: #fff;
+            padding: 10px 15px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            flex-shrink: 0;
+            font-size: 14px;
+            color: #666
+        }
+
+        .header-value {
+            color: #333;
+            font-weight: 500
+        }
+
+        /* -------- 聊天区域 -------- */
+        .chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background: #ededed
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start
+        }
+
+        .message.self {
+            flex-direction: row-reverse
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 10px;
+            flex-shrink: 0;
+            font-size: 20px
+        }
+
+        .message-info {
+            min-width: 25%;
+            max-width: 70%;
+            /* 你的值 */
+            overflow-wrap: anywhere;
+            word-break: break-all;
+            /* 强制任意字符断行，不再撑破 */
+        }
+
+        .nickname {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 4px
+        }
+
+        .message.self .nickname {
+            text-align: right
+        }
+
+        /* 文本气泡：超出宽度才换行 */
+        .bubble {
+            background: #fff;
+            padding: 10px 15px;
+            border-radius: 10px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, .1);
+
+            max-width: 100%;
+        }
+
+        .message.self .bubble:not(.redpacket-bubble) {
+            background: #95ec69;
+            /* 只染文本，不染红包 */
+        }
+
+        /* 表情卡片：独立圆角，窄屏完整显示 */
+        .emoji-card {
+            width: 90px;
+            height: 90px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 4px;
+            flex-shrink: 0
+        }
+
+        .emoji-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover
+        }
+
+        /* 红包气泡：扁矩形红底金字 */
+        .redpacket-bubble {
+            background: linear-gradient(135deg, #d93030 0%, #fd505e 100%);
+            color: #ffdb75;
+            border-radius: 8px;
+            min-height: 20px;
+            min-width: 240px;
+            display: inline-flex;
+            flex-direction: column;
+        }
+
+
+        .redpacket-line0 {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .redpacket-line1 {
+            display: flex;
+            align-items: center;
+        }
+
+
+
+
+        .redpacket-icon {
+            font-size: 42px;
+            margin-right: 8px
+        }
+
+        .redpacket-type-name {
+            font-size: 15px;
+            font-weight: 500;
+            color: #ffdb75
+        }
+
+        .redpacket-type-count {
+            font-size: 12px;
+            color: #fff;
+        }
+
+        .redpacket-note {
+            font-size: 12px;
+            color: #fff;
+            margin-bottom: 0px;
+            opacity: .9
+        }
+
+        .redpacket-status {
+            font-size: 12px;
+            color: #fff;
+            margin-bottom: 0px
+        }
+
+        .grab-btn {
+            width: 100%;
+            height: 32px;
+            /* 按需给高度 */
+            display: flex;
+            align-items: center;
+            /* 垂直居中 */
+            justify-content: center;
+            /* 水平居中 */
+            background: #ffdb70;
+            color: #d93030;
+            border: 1px solid #ffdb75;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .grab-btn:disabled {
+            background: none;
+            border-color: #ccc;
+            color: #ccc;
+            cursor: not-allowed
+        }
+
+        /* -------- 底部操作区 -------- */
+        .input-area {
+            background: #fff;
+            padding: 10px 15px;
+            border-top: 1px solid #e0e0e0;
+            flex-shrink: 0
+        }
+
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            position: relative
+        }
+
+        .emoji-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            margin-right: 10px;
+            color: #666
+        }
+
+        .message-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px
+        }
+
+        .send-btn {
+            background: #07c160;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            margin-left: 10px;
+            font-size: 14px
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px
+        }
+
+        .action-btn {
+            background: #07c160;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            flex: 1
+        }
+
+        /* -------- 表情弹窗 -------- */
+        .emoji-modal {
+            display: none;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #fff;
+            border-top: 1px solid #e0e0e0;
+            border-radius: 12px 12px 0 0;
+            max-height: 60vh;
+            z-index: 300;
+            flex-direction: column
+        }
+
+        .emoji-modal.show {
+            display: flex
+        }
+
+        .emoji-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 15px;
+            border-bottom: 1px solid #f0f0f0
+        }
+
+        .emoji-title {
+            font-size: 16px;
+            font-weight: 500
+        }
+
+        .emoji-close {
+            font-size: 24px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #666
+        }
+
+        .emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            padding: 12px;
+            overflow-y: auto
+        }
+
+        .emoji-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer
+        }
+
+        .emoji-item img {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px
+        }
+
+        .emoji-name {
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
+            text-align: center;
+            max-width: 60px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis
+        }
+
+        /* -------- 通用弹窗 -------- */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, .5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center
+        }
+
+        .modal-content {
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 50%;
+            max-height: 80%;
+            overflow-y: auto;
+            width: 400px
+        }
+
+        .modal-header {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 20px;
+            text-align: center
+        }
+
+        .modal-body {
+            margin-bottom: 20px
+        }
+
+        .form-group {
+            margin-bottom: 15px
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: #333
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            font-size: 14px
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 15px
+        }
+
+        .radio-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer
+        }
+
+        .radio-label input[type=radio] {
+            margin-right: 5px
+        }
+
+        .modal-footer {
+            display: flex;
+            gap: 10px
+        }
+
+        .modal-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px
+        }
+
+        .modal-btn-primary {
+            background: #07c160;
+            color: #fff
+        }
+
+        .modal-btn-default {
+            background: #f0f0f0;
+            color: #333
+        }
+
+        /* -------- 红包详情 -------- */
+        .redpacket-detail {
+            text-align: center;
+
+        }
+
+        .redpacket-amount {
+            font-size: 36px;
+            color: #f44336;
+            font-weight: bold;
+            margin: 15px 0
+        }
+
+        .redpacket-records {
+            max-height: 180px;
+
+            overflow-y: auto;
+            margin-top: 15px
+        }
+
+        .record-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 12px;
+            color: #666
+        }
+
+        @media (max-width:767px) {
+            .header-value {
+                font-size: 14px
+            }
+
+            .bubble {
+                max-width: 70%
+            }
+
+            .action-btn,
+            .grab-btn,
+            .send-btn {
+                min-height: 44px
+            }
+
+            .modal-content {
+                width: 90%
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 顶部信息栏 -->
+    <div class="header">
+        <div class="header-item">
+            <div class="header-label">群人数</div>
+            <div class="header-value" id="memberCount">100</div>
+        </div>
+        <div class="header-item">
+            <div class="header-label">已抢红包</div>
+            <div class="header-value" id="grabbedCount">0</div>
+        </div>
+        <div class="header-item">
+            <div class="header-label">现金余额</div>
+            <div class="header-value" id="balance">¥50.00</div>
+        </div>
+    </div>
+
+    <!-- 聊天区域 -->
+    <div class="chat-container" id="chatContainer"></div>
+
+    <!-- 底部操作区 -->
+    <div class="input-area">
+        <div class="input-wrapper">
+            <button class="emoji-btn" id="emojiBtn">😊</button>
+            <input type="text" class="message-input" id="messageInput" placeholder="输入消息..." maxlength="500">
+            <button class="send-btn" id="sendBtn">发送</button>
+        </div>
+        <div class="action-buttons">
+            <button class="action-btn" id="redpacketBtn">发红包</button>
+            <button class="action-btn" id="clearBtn">清空聊天</button>
+        </div>
+    </div>
+
+    <!-- 表情弹窗 -->
+    <div class="emoji-modal" id="emojiModal">
+        <div class="emoji-header">
+            <div class="emoji-title">表情包</div>
+            <button class="emoji-close" id="emojiClose">&times;</button>
+        </div>
+        <div class="emoji-grid" id="emojiGrid"></div>
+    </div>
+
+    <!-- 发红包弹窗 -->
+    <div class="modal" id="redpacketModal">
+        <div class="modal-content">
+            <div class="modal-header">发红包</div>
+            <div class="modal-body">
+                <div class="radio-group">
+                    <label class="radio-label"><input type="radio" name="redpacketType" value="luck"
+                            checked>拼手气红包</label>
+                    <label class="radio-label"><input type="radio" name="redpacketType" value="normal">普通红包</label>
+                </div>
+                <div class="form-group"><label class="form-label">金额</label><input type="number" class="form-input"
+                        id="redpacketAmount" placeholder="0.00" step="0.01"></div>
+                <div class="form-group"><label class="form-label">份数</label><input type="number" class="form-input"
+                        id="redpacketCount" placeholder="1" min="1"></div>
+                <div class="form-group"><label class="form-label">备注（≤10汉字）</label><input type="text" class="form-input"
+                        id="redpacketNote" placeholder="恭喜发财" maxlength="10"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-default" id="cancelRedpacket">取消</button>
+                <button class="modal-btn modal-btn-primary" id="confirmRedpacket">发送</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 红包详情弹窗 -->
+    <div class="modal" id="redpacketDetailModal">
+        <div class="modal-content">
+            <div class="modal-header" id="detailTitle">红包详情</div>
+            <div class="modal-body" id="detailContent"></div>
+            <div class="modal-footer"><button class="modal-btn modal-btn-primary" id="closeDetail">关闭</button></div>
+        </div>
+    </div>
+
+    <script>
+        /* -------------------- 配置参数（中文注释） -------------------- */
+        const CONFIG = {
+            minRedpacketAmount: 0.01,       // 红包最小金额（元）
+            minRedpacketCount: 1,           // 红包最小份数
+            memberCount: 230,               // 初始群人数
+            initialBalance: 50,             // 玩家初始余额（元）
+            messageFrequency: 1000,         // 群友发言间隔（ms）
+            redpacketFrequency: 800,       // 群友发红包间隔（ms）
+            maxMessages: 50,               // 聊天消息最大保留条数
+            redpacketTimeout: 8000,        // 红包超时自动抢光时间（ms）
+            maxTextLength: 500,             // 文本消息最大字数
+            emojiSendProb: 0.35,            // 群友发言时发表情概率
+            redpacketNoteProb: 0.85         // 群友发红包带备注概率
+        };
+
+        /* -------------------- 全局状态 -------------------- */
+        let state = {
+            memberCount: CONFIG.memberCount,
+            balance: CONFIG.initialBalance,
+            grabbedCount: 0,
+            messages: [],
+            redpackets: {},
+            members: []
+        };
+
+        /* -------------------- 工具函数 -------------------- */
+        const $ = s => document.querySelector(s);
+        const $$ = s => document.querySelectorAll(s);
+        const rand = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
+        const randAmount = (min, max) => Math.floor(Math.random() * (max - min) * 100) / 100 + min;
+
+        /* -------------------- 群友池 -------------------- */
+        const firstNames = ['唐', '林', '王', '李', '张', '刘', '陈', '杨', '赵', '黄', '周', '吴', '徐', '孙', '胡',
+            '朱', '高', '何', '郭', '马', '司徒', '欧阳', '东方', '司马', '上官', '上原', '皇甫', '大', '陈',
+            'AAA水管批发老', 'AAA五金批发老', 'AAA马桶圈批发小', 'AAA垃圾批发阿', 'AAA三轮车批发老', 'AAA贝塔批发老娜 '
+            , '翟革英', '那艺娜', '三梦奇缘', '胡艺莲', '万人迷', '开心姐', '娜姐的小', '三梦的小', '那艺娜的大'
+            , '开心姐', '开心姐的', '开心姐的大', '那艺娜的臭', '开心姐的臭', '饭伟骑的', '淋淋的', '脚淋的'
+            , '楼兰古国的', '摆地摊的', '送外卖的'];
+
+        const lastNames = ['徐坤', '傻逼', '小狗', '国', '建', '文', '平', '志', '强', '军', '勇', '健', '刚', '峰',
+            '超', '波', '辉', '红包', '屁', '大便', '子安', '鸡', '光头', '大爷', '大妈', '奶奶', '爷爷', '婆婆', '孙子',
+            '交交', '尖尖', '大叔', '大嫂', '大头', '狗子', '猫', '熊', '蛋', '铁柱', '翠花', '二妞', '老子', '老板',
+            '东西', '贱货', '贱人', '拉拉', '太祖', '贝塔', '黑贝塔', '大贝塔', '聚吧', '勾巴', '达柔帮', '的老子'
+            , '的走地鸡', '的屁垫', '的三角篓子', '的婆婆', '的老婆', '的老公', '的监护人', '的爸爸'
+            , '的娘亲', '的奴婢', '的哀家'
+
+            , '的音春', '的音地', '的麻岩', '的营水', '的如偷'
+
+        ];
+
+        const avatars = ['😀', '😃', '😄', '😁', '😆', '😅', '😂', '🤣', '😊', '😇', '🙂', '🙃', '😉', '😌', '😍', '🥰', '😘', '😗', '😙', '😚', '😋', '😛', '😜', '🤪', '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '😬', '🤥', '😔', '😕', '🙁', '☹️', '😣', '😖', '😫', '😩', '🥺', '😢', '😭', '😤', '😠', '😡', '🤬', '🤯', '😳', '🥵', '🥶', '😱', '😨', '😰', '😥', '😓'];
+        const messagePool = ['大家好！大家好！大家好！大家好！大家好！大家好！大家好！大家好！', '别吵了', '谁发红包啊', '666', '不是哥们儿', '啥意思', '大家好啊'];
+        const redpacketNotePool = ['恭喜发财', '大吉大利', '谢谢老板', '好运连连', '心想事成', '万事如意', '财源滚滚', '笑口常开', '步步高升', '福星高照'];
+
+        /* -------------------- 表情配置（已替换为指定外链） -------------------- */
+        const EMOJI_LIST = [
+            { name: '1', src: 'https://s41.ax1x.com/2025/12/06/pZmJQaD.jpg' },
+            { name: '2', src: 'https://s41.ax1x.com/2025/12/19/pZ1jWHP.jpg' },
+            { name: '3', src: 'https://s41.ax1x.com/2025/12/08/pZnYQDx.jpg' }
+        ];
+
+        /* -------------------- 初始化群友 -------------------- */
+        function initMembers() {
+            for (let i = 0; i < CONFIG.memberCount; i++) {
+                const nickname = firstNames[rand(0, firstNames.length - 1)] + lastNames[rand(0, lastNames.length - 1)];
+                state.members.push({ id: i, nickname, avatar: avatars[rand(0, avatars.length - 1)] });
+            }
+        }
+
+        /* -------------------- 顶部信息 -------------------- */
+        function updateHeader() {
+            $('#memberCount').textContent = state.memberCount;
+            $('#grabbedCount').textContent = state.grabbedCount;
+            $('#balance').textContent = `¥${state.balance.toFixed(2)}`;
+        }
+
+        /* -------------------- 消息管理 -------------------- */
+        function addMessage(msg) {
+            state.messages.push(msg);
+            if (state.messages.length > CONFIG.maxMessages) state.messages.shift();
+            renderMessages();
+        }
+        function renderMessages() {
+            const box = $('#chatContainer');
+            box.innerHTML = '';
+
+
+            state.messages.forEach(msg => {
+                const row = document.createElement('div');
+                row.className = `message ${msg.isSelf ? 'self' : ''}`;
+
+                if (msg.type === 'text') {
+                    row.innerHTML = `
+        <div class="avatar">${msg.avatar}</div>
+        <div class="message-info">
+          <div class="nickname">${msg.nickname}</div>
+          <div class="bubble">${msg.content}</div>
+        </div>`;
+                }
+                else if (msg.type === 'emoji') {
+                    row.innerHTML = `
+        <div class="avatar">${msg.avatar}</div>
+        <div class="message-info">
+          <div class="nickname">${msg.nickname}</div>
+          <div class="emoji-card"><img src="${msg.src}" alt="表情"></div>
+        </div>`;
+                }
+                else if (msg.type === 'redpacket') {
+                    const rp = state.redpackets[msg.redpacketId];
+                    const expired = Date.now() - msg.timestamp > CONFIG.redpacketTimeout;
+                    const selfGrab = rp.grabbedUsers.some(u => u.userId === -1);
+                    const done = rp.grabbedCount >= rp.count;
+                    const statusText = expired || done ? '已抢完' : `剩余${rp.count - rp.grabbedCount}个`;
+                    const noteHtml = rp.note ? `<div class="redpacket-note">${rp.note}</div>` : '';
+                    let btnHtml = '';
+                    if (!expired && !done && !selfGrab) {
+                        btnHtml = `<button class="grab-btn" onclick="grabRedpacket(event,'${msg.redpacketId}')">抢红包</button>`;
+                    } else if (selfGrab) {
+                        const amt = rp.grabbedUsers.find(u => u.userId === -1).amount;
+                        btnHtml = `<div class="grab-btn" style="border:none;">抢到¥${amt.toFixed(2)}</div>`;
+                    } else {
+                        // btnHtml = `<div class="grab-btn" style="border:none;">已抢完</div>`;
+                    }
+
+                    row.innerHTML = `
+        <div class="avatar">${msg.avatar}</div>
+        <div class="message-info">
+          <div class="nickname">${msg.nickname}</div>
+
+          <div class="bubble redpacket-bubble" onclick="showRedpacketDetail('${msg.redpacketId}')">
+
+            <div class="redpacket-line0">
+                <div class="redpacket-line1">
+                    <span class="redpacket-icon">🧧</span>
+
+                    <div class="redpacket-title">
+                        <div class="redpacket-type-name">${rp.type === 'luck' ? '拼手气红包' : '普通红包'}<span class="redpacket-type-count"> * ${rp.count} 个</span><br>${noteHtml}</div>
+                    </div>
+
+              
+               
+                </div>
+                    ${btnHtml}
+                <div class="redpacket-status">${statusText}</div>
+                
+            </div>
+
+
+            
+           
+          </div>
+        </div>`;
+                }
+                box.appendChild(row);
+            });
+            box.scrollTop = box.scrollHeight;
+
+
+
+        }
+
+        /* -------------------- 表情弹窗 -------------------- */
+        function renderEmojiGrid() {
+            const grid = $('#emojiGrid'); grid.innerHTML = '';
+            EMOJI_LIST.forEach(em => {
+                const item = document.createElement('div'); item.className = 'emoji-item';
+                item.innerHTML = `<img src="${em.src}" alt="表情"><div class="emoji-name">${em.name}</div>`;
+                item.onclick = () => sendEmoji(em.src);
+                grid.appendChild(item);
+            });
+        }
+        function sendEmoji(src) {
+            addMessage({ type: 'emoji', nickname: '大六六', avatar: '🎃', src, isSelf: true, timestamp: Date.now() });
+            $('#emojiModal').classList.remove('show');
+        }
+        $('#emojiBtn').onclick = () => { renderEmojiGrid(); $('#emojiModal').classList.add('show'); };
+        $('#emojiClose').onclick = () => $('#emojiModal').classList.remove('show');
+        $('#emojiModal').onclick = e => { if (e.target.id === 'emojiModal') $('#emojiModal').classList.remove('show'); };
+
+        /* -------------------- 文字发送 -------------------- */
+        $('#sendBtn').onclick = () => {
+            const inp = $('#messageInput');
+            const txt = inp.value.trim();
+            if (!txt) return;
+            if (txt.length > CONFIG.maxTextLength) { alert(`消息不能超过${CONFIG.maxTextLength}字`); return; }
+            addMessage({ type: 'text', nickname: '大六六', avatar: '🎃', content: txt, isSelf: true, timestamp: Date.now() });
+            inp.value = '';
+        };
+        $('#messageInput').onkeypress = e => { if (e.key === 'Enter') $('#sendBtn').onclick(); };
+
+        /* -------------------- 发红包 -------------------- */
+        $('#redpacketBtn').onclick = () => {
+            const modal = $('#redpacketModal');
+            modal.style.display = 'flex';
+            $('#redpacketAmount').value = randAmount(1, 10).toFixed(2);
+            $('#redpacketCount').value = rand(1, 5);
+            $('#redpacketCount').max = state.memberCount;
+        };
+        $('#cancelRedpacket').onclick = () => $('#redpacketModal').style.display = 'none';
+        $('#confirmRedpacket').onclick = () => {
+            const type = document.querySelector('input[name="redpacketType"]:checked').value;
+            const amount = parseFloat($('#redpacketAmount').value);
+            const count = parseInt($('#redpacketCount').value);
+            const note = $('#redpacketNote').value.trim().slice(0, 10);
+
+            if (!amount || amount < CONFIG.minRedpacketAmount) { alert(`金额不能小于${CONFIG.minRedpacketAmount}`); return; }
+            if (!count || count < CONFIG.minRedpacketCount) { alert(`份数不能小于${CONFIG.minRedpacketCount}`); return; }
+            if (count > state.memberCount) { alert(`份数不能超过当前群人数（${state.memberCount}）`); return; }
+            let total = type === 'luck' ? amount : amount * count;
+            if (type === 'luck' && amount < count * CONFIG.minRedpacketAmount) { alert(`总金额需≥${(count * CONFIG.minRedpacketAmount).toFixed(2)}`); return; }
+            if (state.balance < total) { alert('余额不足'); return; }
+
+            const rpId = Date.now().toString();
+            const rp = { id: rpId, type, senderId: -1, senderName: '大六六', totalAmount: total, count, grabbedCount: 0, grabbedUsers: [], createdAt: Date.now(), note };
+            // 分配金额
+            if (type === 'luck') {
+                let rema = total, cnt = count; rp.amounts = [];
+                for (let i = 0; i < count - 1; i++) {
+                    const maxAmt = rema - cnt * CONFIG.minRedpacketAmount + CONFIG.minRedpacketAmount;
+                    const amt = randAmount(CONFIG.minRedpacketAmount, maxAmt);
+                    rp.amounts.push(amt); rema -= amt; cnt--;
+                }
+                rp.amounts.push(rema);
+            } else rp.amounts = new Array(count).fill(amount);
+
+            state.redpackets[rpId] = rp;
+            state.balance -= total;
+            updateHeader();
+            addMessage({ type: 'redpacket', nickname: '大六六', avatar: '🎃', redpacketId: rpId, isSelf: true, timestamp: Date.now() });
+            $('#redpacketModal').style.display = 'none';
+            scheduleRedpacketGrabs(rpId);
+        };
+
+        /* -------------------- 抢红包 -------------------- */
+        function grabRedpacket(e, rpId) {
+            e.stopPropagation();
+            const rp = state.redpackets[rpId];
+            if (!rp || rp.grabbedCount >= rp.count) return;
+            if (rp.grabbedUsers.some(u => u.userId === -1)) return;
+            const amt = rp.amounts[rp.grabbedCount];
+            rp.grabbedCount++;
+            rp.grabbedUsers.push({ userId: -1, nickname: '大六六', amount: amt });
+            state.balance += amt; state.grabbedCount++;
+            updateHeader(); renderMessages();
+        }
+
+        /* -------------------- 陆续抢红包 -------------------- */
+        function scheduleRedpacketGrabs(rpId) {
+            const rp = state.redpackets[rpId];
+            if (!rp) return;
+            const times = [];
+            for (let i = 0; i < rp.count; i++) times.push(rand(1000, CONFIG.redpacketTimeout - 1000));
+            times.sort((a, b) => a - b);
+            times.forEach(t => {
+                setTimeout(() => {
+                    if (rp.grabbedCount < rp.count) {
+                        const m = state.members[rand(0, state.memberCount - 1)];
+                        const amt = rp.amounts[rp.grabbedCount];
+                        rp.grabbedCount++;
+                        rp.grabbedUsers.push({ userId: m.id, nickname: m.nickname, amount: amt });
+                        renderMessages();
+                    }
+                }, t);
+            });
+        }
+
+        /* -------------------- 红包详情 -------------------- */
+        function showRedpacketDetail(rpId) {
+            const rp = state.redpackets[rpId]; if (!rp) return;
+            const selfGrab = rp.grabbedUsers.some(u => u.userId === -1);
+            const myAmt = selfGrab ? rp.grabbedUsers.find(u => u.userId === -1).amount : 0;
+            const noteHtml = rp.note ? `<div style="color:#666;font-size:14px;margin:8px 0;">${rp.note}</div>` : '';
+            $('#detailTitle').textContent = rp.type === 'luck' ? '拼手气红包' : '普通红包';
+            $('#detailContent').innerHTML = `
+    <div class="redpacket-detail">
+      <div style="color:#666;font-size:14px;">${rp.senderName}</div>
+      ${noteHtml}
+      ${selfGrab ? `<div class="redpacket-amount">¥${myAmt.toFixed(2)}</div>` : ''}
+      <div style="color:#666;font-size:14px;">总额¥${rp.totalAmount.toFixed(2)} · 共${rp.count}份${rp.grabbedCount < rp.count ? ` · 剩余${rp.count - rp.grabbedCount}份` : ''}</div>
+      <div class="redpacket-records">
+        ${rp.grabbedUsers.map(u => `<div class="record-item"><span>${u.nickname}</span><span>¥${u.amount.toFixed(2)}</span></div>`).join('')}
+      </div>
+    </div>`;
+            $('#redpacketDetailModal').style.display = 'flex';
+        }
+        $('#closeDetail').onclick = () => $('#redpacketDetailModal').style.display = 'none';
+
+        /* -------------------- 群友随机行为 -------------------- */
+        function randomMemberSpeak() {
+            if (Math.random() < 0.3) {
+                const m = state.members[rand(0, state.memberCount - 1)];
+                if (Math.random() < CONFIG.emojiSendProb) {
+                    const em = EMOJI_LIST[rand(0, EMOJI_LIST.length - 1)];
+                    addMessage({ type: 'emoji', nickname: m.nickname, avatar: m.avatar, src: em.src, isSelf: false, timestamp: Date.now() });
+                } else {
+                    const txt = messagePool[rand(0, messagePool.length - 1)];
+                    addMessage({ type: 'text', nickname: m.nickname, avatar: m.avatar, content: txt, isSelf: false, timestamp: Date.now() });
+                }
+            }
+        }
+        function randomMemberSendRedpacket() {
+            if (Math.random() < 0.2) {
+                const m = state.members[rand(0, state.memberCount - 1)];
+                const type = Math.random() < 0.7 ? 'luck' : 'normal';
+                const count = rand(1, Math.min(5, state.memberCount));
+                let amount; if (type === 'luck') amount = randAmount(count * 0.01, count * 2); else amount = randAmount(0.01, 2);
+                const rpId = Date.now().toString();
+                const rp = { id: rpId, type, senderId: m.id, senderName: m.nickname, totalAmount: type === 'luck' ? amount : amount * count, count, grabbedCount: 0, grabbedUsers: [], createdAt: Date.now() };
+                if (Math.random() < CONFIG.redpacketNoteProb) rp.note = redpacketNotePool[rand(0, redpacketNotePool.length - 1)];
+                if (type === 'luck') {
+                    let rema = rp.totalAmount, cnt = count; rp.amounts = [];
+                    for (let i = 0; i < count - 1; i++) {
+                        const maxAmt = rema - cnt * CONFIG.minRedpacketAmount + CONFIG.minRedpacketAmount;
+                        const amt = randAmount(CONFIG.minRedpacketAmount, maxAmt);
+                        rp.amounts.push(amt); rema -= amt; cnt--;
+                    }
+                    rp.amounts.push(rema);
+                } else rp.amounts = new Array(count).fill(amount);
+                state.redpackets[rpId] = rp;
+                addMessage({ type: 'redpacket', nickname: m.nickname, avatar: m.avatar, redpacketId: rpId, isSelf: false, timestamp: Date.now() });
+                scheduleRedpacketGrabs(rpId);
+            }
+        }
+        function fluctuateMembers() {
+            if (Math.random() < 0.3) {
+                const change = (Math.random() < 0.5 ? -1 : 1) * rand(1, 5);
+                state.memberCount = Math.max(50, Math.min(150, state.memberCount + change));
+                updateHeader();
+            }
+        }
+
+        /* -------------------- 清空聊天 -------------------- */
+        $('#clearBtn').onclick = () => { if (confirm('确定清空聊天记录？')) { state.messages = []; renderMessages(); } };
+
+        /* -------------------- 弹窗外部关闭 -------------------- */
+        $$('.modal').forEach(m => m.onclick = e => { if (e.target === m) m.style.display = 'none'; });
+
+        /* -------------------- 初始化 & 定时任务 -------------------- */
+        initMembers(); updateHeader(); renderEmojiGrid();
+        setInterval(randomMemberSpeak, CONFIG.messageFrequency);
+        setInterval(randomMemberSendRedpacket, CONFIG.redpacketFrequency);
+        setInterval(fluctuateMembers, 3000);
+        setTimeout(() => {
+            addMessage({ type: 'text', nickname: '系统', avatar: '🤖', content: '欢迎来到群聊抢红包游戏！', isSelf: false, timestamp: Date.now() });
+        }, 1000);
+    </script>
+</body>
+
+</html>
