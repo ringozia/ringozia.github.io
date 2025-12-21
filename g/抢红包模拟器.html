@@ -449,6 +449,7 @@
 			overflow-y: auto;
 			line-height: 1.4;
 			color: #333;
+
 		}
 
 		#msg-input:empty:before {
@@ -914,6 +915,15 @@
 					</div>
 				</div>
 				<button id="clear-chat-btn">清空聊天记录</button>
+
+				<label style="
+				  display: block;
+				  text-align: center;
+				  color: #999;
+				  font-size: 12px;
+				  margin-top: 24px;
+				">版本V1.0.2&emsp;|&emsp;2025.12.22<br>@瞌睡猫</label>
+				<!-- 版本号作者信息 -->
 			</div>
 			<div class="modal-footer">
 				<button class="btn-cancel" onclick="closeSettings()">取消</button>
@@ -927,7 +937,7 @@
 		const CONFIG = {
 			// --- 玩家基础配置 ---
 			USER: {
-				name: "大六六", // 玩家昵称
+				name: "玩家4326", // 玩家昵称
 				avatar: "🎃",   // 玩家头像
 				initialBalance: 50.00 // 初始余额
 			},
@@ -935,7 +945,7 @@
 			// --- 群聊基础配置 ---
 			GROUP: {
 				name: "抢红包①群", // 群名称
-				initialCount: 100, // 初始人数
+				initialCount: 208, // 初始人数
 				fluctuationInterval: 8000, // 人数波动检测间隔(ms)
 				maxFluctuation: 2 // 每次波动最大人数
 			},
@@ -948,10 +958,10 @@
 				redPacketProbability: 0.25, // 发红包概率(0-1)
 
 				// 机器人发红包参数
-				rpCountMin: 3, // 最小份数
-				rpCountMax: 10, // 最大份数
-				rpTotalMin: 1.00, // 最小总金额(元)
-				rpTotalMax: 10.00, // 最大总金额(元)
+				rpCountMin: 1, // 最小份数
+				rpCountMax: 25, // 最大份数
+				rpTotalMin: 0.20, // 最小总金额(元)
+				rpTotalMax: 24.00, // 最大总金额(元)
 
 				// 机器人抢红包参数
 				grabDelayMin: 100,  // 最小抢红包延迟(ms) - 已修改
