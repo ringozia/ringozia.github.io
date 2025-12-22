@@ -11,29 +11,17 @@
            ========================================= */
 		:root {
 			--primary-green: #07c160;
-			/* 微信绿 */
 			--bg-color: #ededed;
-			/* 聊天背景灰 */
 			--panel-white: #ffffff;
-			/* 纯白底色 */
 			--text-dark: #191919;
-			/* 深灰文字 */
 			--text-light: #b2b2b2;
-			/* 浅灰文字 */
 			--border-color: #dcdcdc;
-			/* 分割线 */
 			--rp-bg: #d95940;
-			/* 红包红 */
 			--rp-gold: #f3d997;
-			/* 红包金 */
 			--my-bubble: #95ec69;
-			/* 自己发的绿色气泡 */
 			--bot-bubble: #ffffff;
-			/* 别人发的白色气泡 */
 			--link-blue: #576b95;
-			/* 链接/高亮蓝 */
 			--sys-msg-bg: rgba(0, 0, 0, 0.1);
-			/* 系统消息背景 */
 		}
 
 		* {
@@ -44,6 +32,7 @@
 			-webkit-tap-highlight-color: transparent;
 		}
 
+		/* 3. 禁止双端页面选取复制功能 */
 		body {
 			font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
 			background-color: var(--bg-color);
@@ -52,6 +41,14 @@
 			flex-direction: column;
 			overflow: hidden;
 			color: var(--text-dark);
+			-webkit-user-select: none;
+			/* Safari */
+			-moz-user-select: none;
+			/* Firefox */
+			-ms-user-select: none;
+			/* IE10+/Edge */
+			user-select: none;
+			/* Standard */
 		}
 
 		::-webkit-scrollbar {
@@ -68,14 +65,13 @@
 			border-radius: 2px;
 		}
 
-		/* 高亮文本样式 (@人) */
 		.at-text {
 			color: var(--link-blue);
 			font-weight: 500;
 		}
 
 		/* =========================================
-           顶部标题栏 (含群名和人数)
+           顶部标题栏
            ========================================= */
 		#top-header {
 			height: 44px;
@@ -98,7 +94,7 @@
 			padding: 5px;
 		}
 
-		/* 悬浮胶囊信息栏 (精简版) */
+		/* 悬浮胶囊信息栏 */
 		#stats-capsule {
 			position: absolute;
 			top: 54px;
@@ -106,15 +102,18 @@
 			transform: translateX(-50%);
 			background: rgba(255, 255, 255, 0.85);
 			backdrop-filter: blur(10px);
-			padding: 6px 16px;
+			padding: 4px 6px 4px 16px;
+			/* 调整padding适配按钮 */
 			border-radius: 20px;
 			font-size: 12px;
 			color: #666;
 			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 			z-index: 15;
 			display: flex;
-			gap: 15px;
-			pointer-events: none;
+			align-items: center;
+			gap: 10px;
+			pointer-events: auto;
+			/* 允许点击按钮 */
 			white-space: nowrap;
 		}
 
@@ -125,6 +124,18 @@
 
 		#stats-capsule .money {
 			color: var(--rp-bg);
+			margin-right: 5px;
+		}
+
+		/* 历史按钮样式 */
+		#history-btn {
+			background: var(--link-blue);
+			color: #fff;
+			border: none;
+			padding: 4px 10px;
+			border-radius: 12px;
+			font-size: 11px;
+			cursor: pointer;
 		}
 
 		/* =========================================
@@ -140,7 +151,6 @@
 			gap: 15px;
 		}
 
-		/* 系统消息 (进群/退群) */
 		.sys-msg-row {
 			display: flex;
 			justify-content: center;
@@ -157,7 +167,6 @@
 			text-align: center;
 		}
 
-		/* 普通消息行容器 */
 		.message-row {
 			display: flex;
 			align-items: flex-start;
@@ -165,7 +174,6 @@
 			width: 100%;
 		}
 
-		/* 头像 */
 		.avatar {
 			width: 40px;
 			height: 40px;
@@ -180,7 +188,6 @@
 			cursor: pointer;
 		}
 
-		/* 昵称与内容容器 */
 		.msg-content-wrapper {
 			max-width: 70%;
 			display: flex;
@@ -205,8 +212,6 @@
 			box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 			min-height: 40px;
 		}
-
-		/* --- 核心排版逻辑 --- */
 
 		/* 群友（左侧） */
 		.message-row.left {
@@ -237,7 +242,7 @@
 			margin-top: -6px;
 		}
 
-		/* 玩家（右侧） - 头像在最右 */
+		/* 玩家（右侧） */
 		.message-row.right {
 			flex-direction: row-reverse;
 		}
@@ -271,7 +276,6 @@
 			margin-top: -6px;
 		}
 
-		/* 表情图片卡片 */
 		.sticker-card {
 			border-radius: 8px;
 			overflow: hidden;
@@ -449,7 +453,6 @@
 			overflow-y: auto;
 			line-height: 1.4;
 			color: #333;
-
 		}
 
 		#msg-input:empty:before {
@@ -623,17 +626,22 @@
 			background: rgba(7, 193, 96, 0.1);
 		}
 
-		#clear-chat-btn {
-			width: 100%;
+		.danger-btn {
+			width: 48%;
 			background: #fff;
 			border: 1px solid #fa5151;
 			color: #fa5151;
-			margin-top: 15px;
 			height: 44px;
 			border-radius: 6px;
 			font-weight: bold;
 			cursor: pointer;
-			font-size: 15px;
+			font-size: 14px;
+		}
+
+		.settings-btn-row {
+			display: flex;
+			justify-content: space-between;
+			margin-top: 15px;
 		}
 
 		/* 表情弹窗 */
@@ -767,6 +775,33 @@
 			color: #333;
 		}
 
+		/* 历史数据弹窗样式 */
+		.history-list {
+			list-style: none;
+			padding: 0;
+		}
+
+		.history-item {
+			display: flex;
+			justify-content: space-between;
+			padding: 10px 0;
+			border-bottom: 1px solid #eee;
+			font-size: 14px;
+		}
+
+		.history-item:last-child {
+			border-bottom: none;
+		}
+
+		.history-label {
+			color: #666;
+		}
+
+		.history-value {
+			font-weight: bold;
+			color: #333;
+		}
+
 		@media (max-width: 768px) {
 			#top-header {
 				font-size: 16px;
@@ -802,7 +837,7 @@
 			}
 		}
 	</style>
-	<!-- 引入外部配置 (非必须，如果存在会自动加载) -->
+	<!-- 引入外部配置 -->
 	<script src="抢红包配置.js" onerror="console.log('未加载外部配置，使用默认配置')"></script>
 </head>
 
@@ -814,10 +849,10 @@
 		<div id="settings-btn" onclick="openSettings()">⚙</div>
 	</div>
 
-	<!-- 悬浮信息胶囊 (仅显示已抢和余额) -->
+	<!-- 悬浮信息胶囊 -->
 	<div id="stats-capsule">
-		<div>已抢 <span id="grab-count">0</span></div>
 		<div>余额 <span id="user-balance" class="money">¥50.00</span></div>
+		<button id="history-btn" onclick="openHistoryModal()">历史</button>
 	</div>
 
 	<!-- 聊天内容区 -->
@@ -895,6 +930,36 @@
 		</div>
 	</div>
 
+	<!-- 历史数据弹窗 -->
+	<div class="modal-overlay" id="history-modal">
+		<div class="modal-content">
+			<div class="modal-header" id="history-header-title">历史数据</div>
+			<div class="modal-body">
+				<ul class="history-list">
+					<li class="history-item"><span class="history-label">已发红包数</span><span class="history-value"
+							id="hist-sent-count">0</span></li>
+					<li class="history-item"><span class="history-label">已抢红包数</span><span class="history-value"
+							id="hist-grab-count">0</span></li>
+					<li class="history-item"><span class="history-label">发单个最高总金额</span><span class="history-value"
+							id="hist-max-sent">0.00</span></li>
+					<li class="history-item"><span class="history-label">抢单个最高金额</span><span class="history-value"
+							id="hist-max-grab">0.00</span></li>
+					<li class="history-item"><span class="history-label">发红包总金额</span><span class="history-value"
+							id="hist-total-sent">0.00</span></li>
+					<li class="history-item"><span class="history-label">抢红包总金额</span><span class="history-value"
+							id="hist-total-grab">0.00</span></li>
+					<!-- 信任值 -->
+					<li class="history-item"><span class="history-label">信任值</span><span class="history-value"
+							id="hist-trust-val">100%</span></li>
+				</ul>
+			</div>
+			<div class="modal-footer">
+				<button class="btn-cancel"
+					onclick="document.getElementById('history-modal').classList.remove('active')">关闭</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- 设置弹窗 -->
 	<div class="modal-overlay" id="settings-modal">
 		<div class="modal-content">
@@ -914,7 +979,11 @@
 						<!-- JS生成头像选项 -->
 					</div>
 				</div>
-				<button id="clear-chat-btn">清空聊天记录</button>
+
+				<div class="settings-btn-row">
+					<button class="danger-btn" id="clear-chat-btn">清空聊天记录</button>
+					<button class="danger-btn" id="clear-save-btn" onclick="resetData()">清空存档</button>
+				</div>
 
 				<label style="
 				  display: block;
@@ -922,8 +991,7 @@
 				  color: #999;
 				  font-size: 12px;
 				  margin-top: 24px;
-				">版本V1.0.2&emsp;|&emsp;2025.12.22<br>@瞌睡猫</label>
-				<!-- 版本号作者信息 -->
+				">版本V1.0.4&emsp;|&emsp;2025.12.23<br>@瞌睡猫</label>
 			</div>
 			<div class="modal-footer">
 				<button class="btn-cancel" onclick="closeSettings()">取消</button>
@@ -937,59 +1005,67 @@
 		const CONFIG = {
 			// --- 玩家基础配置 ---
 			USER: {
-				name: "玩家4326", // 玩家昵称
-				avatar: "🎃",   // 玩家头像
-				initialBalance: 50.00 // 初始余额
+				name: "玩家4326",
+				avatar: "🎃",
+				initialBalance: 50.00
 			},
 
 			// --- 群聊基础配置 ---
 			GROUP: {
-				name: "抢红包①群", // 群名称
-				initialCount: 208, // 初始人数
-				fluctuationInterval: 8000, // 人数波动检测间隔(ms)
-				maxFluctuation: 2 // 每次波动最大人数
+				name: "抢红包①群",
+				initialCount: 208,
+				fluctuationInterval: 8000,
+				maxFluctuation: 2
 			},
 
-			// --- 机器人(群友)行为配置 ---
+			// 红包备注
+			RP_NOTES: ["恭喜发财", "大吉大利"],
+
+			// --- 金池系统配置 ---
+			GOLD_POOL: {
+				initial: 100, // 初始金池
+				multiplier: 10, // 玩家发红包乘数
+				urgeIntervalMin: 2000, // 催促最小间隔(ms)
+				urgeIntervalMax: 8000, // 催促最大间隔(ms)
+				urgeTexts: ["快发红包", "轮到你发红包了", "老板发红包吧", "快点发包", "等你好久了", "别老是抢又不发红包",
+					"发个红包呗", "等你的红包哟~", " .", "发红包求你了", "多少给点吧~", "我没钱了，你发吧", "你不发红包我也不发",
+					"来个红包", "看来彻底没人发红包了", "你赶紧发，等下我发个大的", "大家都在等你的红包诶", "发一分钱也行"] // 催促文案
+			},
+
+			// --- 机器人行为配置 ---
 			BOT: {
-				msgIntervalMin: 200, // 发消息最小间隔(ms)
-				msgIntervalMax: 6000, // 发消息最大间隔(ms)
-				stickerProbability: 0.35, // 发表情概率(0-1)
-				redPacketProbability: 0.25, // 发红包概率(0-1)
+				msgIntervalMin: 200,// 机器人消息最小间隔(ms)
+				msgIntervalMax: 6000,// 机器人消息最大间隔(ms)
+				stickerProbability: 0.35,// 机器人发送贴纸概率
+				redPacketProbability: 0.3,// 机器人发送红包概率
 
-				// 机器人发红包参数
-				rpCountMin: 1, // 最小份数
-				rpCountMax: 25, // 最大份数
-				rpTotalMin: 0.20, // 最小总金额(元)
-				rpTotalMax: 24.00, // 最大总金额(元)
+				rpCountMin: 1,// 红包个数最小值
+				rpCountMax: 20,// 红包个数最大值
+				rpTotalMin: 0.20,// 红包总金额最小值
+				rpTotalMax: 100.00,// 红包总金额最大值
 
-				// 机器人抢红包参数
-				grabDelayMin: 100,  // 最小抢红包延迟(ms) - 已修改
-				grabDelayMax: 500, // 最大抢红包延迟(ms) - 已修改
+				grabDelayMin: 10,// 红包抢完延迟最小值(ms)
+				grabDelayMax: 500,// 红包抢完延迟最大值(ms)
 
-				// 互动文案配置 (会被外部js扩展)
-				thanksTexts: ["多谢老板", "老板大气", "谢谢老板红包", "老板好人"], // 抢到红包感谢语
-				thanksProb: 0.5, // 感谢概率
+				// 机器人感谢
+				thanksTexts: ["多谢老板", "老板大气", "谢谢老板红包", "老板好人"],
+				thanksProb: 0.5,
 
-				replyTexts: ["确实", "笑死", "赞同", "哈哈哈"], // 普通回复语
-				replyProb: 0.15, // 回复概率
+				// 机器人回复@
+				replyTexts: ["确实", "笑死", "赞同", "哈哈哈"],
+				replyProb: 0.15,
 
-				randomInteractTexts: ["哈哈", "怎么了", "笑死我了", "干嘛呢", "同感"], // 随机@路人语
-				randomInteractProb: 0.10 // 随机@路人概率
+				// 机器人回复玩家
+				randomInteractTexts: ["哈哈", "怎么了", "笑死我了", "干嘛呢", "同感"],
+				randomInteractProb: 0.10
 			},
 
-			// --- 名字库 ---
-			NAMES_A: ["唐", "林", "叶"], // 姓
-			NAMES_B: ["明", "华", "强"], // 名
-
-			// --- 头像库 ---
-			AVATARS: ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆"], // 群友头像池
-			PLAYER_AVATARS: ["🎃", "👻", "👽", "🤖", "💩", "🤡", "👹", "👿", "🤠", "😎"], // 玩家可选头像
-
-			// --- 文本消息池 ---
+			// --- 资源库 ---
+			NAMES_A: ["唐", "林", "叶"],
+			NAMES_B: ["明", "华", "强"],
+			AVATARS: ["🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔", "🐧", "🐦", "🐤", "🦆"],
+			PLAYER_AVATARS: ["🎃", "👻", "👽", "🤖", "💩", "🤡", "👹", "👿", "🤠", "😎"],
 			TEXT_MSGS: ["今天天气真不错", "哈哈哈哈", "？"],
-
-			// --- 表情包池 (仅 name, url) ---
 			STICKERS: [
 				{ name: '不服', url: 'https://s41.ax1x.com/2025/12/06/pZmJQaD.jpg' },
 				{ name: '那艺娜', url: 'https://s41.ax1x.com/2025/12/19/pZ1jWHP.jpg' },
@@ -997,33 +1073,19 @@
 				{ name: '京枝', url: 'https://s41.ax1x.com/2025/12/21/pZ3crnA.jpg' },
 				{ name: '迪爷爷', url: 'https://s41.ax1x.com/2025/12/21/pZ3cBXd.jpg' }
 			],
-
-			// --- 红包备注池 ---
-			RP_NOTES: ["恭喜发财", "大吉大利"]
 		};
 
-		/* ================= 外部配置加载逻辑 ================= */
-		// 如果 window.EXTRA_CONFIG 存在 (即外部JS加载成功)，则合并数组
 		if (window.EXTRA_CONFIG) {
-			// 辅助合并函数
-			const mergeArray = (target, source) => {
-				if (source && Array.isArray(source)) {
-					return target.concat(source);
-				}
-				return target;
-			};
-
-			// 合并各个列表
+			const mergeArray = (target, source) => source && Array.isArray(source) ? target.concat(source) : target;
 			CONFIG.BOT.thanksTexts = mergeArray(CONFIG.BOT.thanksTexts, window.EXTRA_CONFIG.thanksTexts);
 			CONFIG.BOT.replyTexts = mergeArray(CONFIG.BOT.replyTexts, window.EXTRA_CONFIG.replyTexts);
 			CONFIG.BOT.randomInteractTexts = mergeArray(CONFIG.BOT.randomInteractTexts, window.EXTRA_CONFIG.randomInteractTexts);
-
 			CONFIG.NAMES_A = mergeArray(CONFIG.NAMES_A, window.EXTRA_CONFIG.NAMES_A);
 			CONFIG.NAMES_B = mergeArray(CONFIG.NAMES_B, window.EXTRA_CONFIG.NAMES_B);
 			CONFIG.TEXT_MSGS = mergeArray(CONFIG.TEXT_MSGS, window.EXTRA_CONFIG.TEXT_MSGS);
 			CONFIG.STICKERS = mergeArray(CONFIG.STICKERS, window.EXTRA_CONFIG.STICKERS);
 			CONFIG.RP_NOTES = mergeArray(CONFIG.RP_NOTES, window.EXTRA_CONFIG.RP_NOTES);
-
+			if (window.EXTRA_CONFIG.GOLD_POOL) Object.assign(CONFIG.GOLD_POOL, window.EXTRA_CONFIG.GOLD_POOL);
 			console.log("外部配置已加载并合并");
 		}
 
@@ -1035,7 +1097,16 @@
 			grabbedCount: 0,
 			messages: [],
 			redPackets: {},
-			rpIdCounter: 1
+			rpIdCounter: 1,
+			goldPool: CONFIG.GOLD_POOL.initial, // 金池余额
+			history: {
+				sentCount: 0,
+				grabCount: 0,
+				maxSent: 0,
+				maxGrab: 0,
+				totalSent: 0,
+				totalGrab: 0
+			}
 		};
 
 		/* ================= UTILS 工具函数 ================= */
@@ -1045,11 +1116,53 @@
 		function createRandomUser() { return { name: randArr(CONFIG.NAMES_A) + randArr(CONFIG.NAMES_B), avatar: randArr(CONFIG.AVATARS) }; }
 		function generateRandomName() { return randArr(CONFIG.NAMES_A) + randArr(CONFIG.NAMES_B); }
 
+		/* ================= SAVE/LOAD 存档功能 ================= */
+		const SAVE_KEY = 'rp_simulator_save_v1';
+
+		function loadData() {
+			const saved = localStorage.getItem(SAVE_KEY);
+			if (saved) {
+				try {
+					const data = JSON.parse(saved);
+					if (data.groupName) state.groupName = data.groupName;
+					if (data.playerName) CONFIG.USER.name = data.playerName;
+					if (data.playerAvatar) CONFIG.USER.avatar = data.playerAvatar;
+					if (data.balance !== undefined) state.balance = parseFloat(data.balance);
+					if (data.grabbedCount !== undefined) state.grabbedCount = parseInt(data.grabbedCount);
+					if (data.goldPool !== undefined) state.goldPool = parseFloat(data.goldPool);
+					if (data.history) state.history = { ...state.history, ...data.history };
+					console.log("存档已加载");
+				} catch (e) {
+					console.error("存档加载失败", e);
+				}
+			}
+		}
+
+		function saveData() {
+			const data = {
+				groupName: state.groupName,
+				playerName: CONFIG.USER.name,
+				playerAvatar: CONFIG.USER.avatar,
+				balance: state.balance,
+				grabbedCount: state.grabbedCount,
+				goldPool: state.goldPool,
+				history: state.history
+			};
+			localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+		}
+
+		function resetData() {
+			if (confirm("确定要清空存档并恢复默认设置吗？")) {
+				localStorage.removeItem(SAVE_KEY);
+				location.reload();
+			}
+		}
+
 		/* ================= UI RENDER 渲染逻辑 ================= */
 		function updateStats() {
 			document.getElementById('header-title').innerText = `${state.groupName}(${state.groupCount})`;
-			document.getElementById('grab-count').innerText = state.grabbedCount;
 			document.getElementById('user-balance').innerText = "¥" + formatMoney(state.balance);
+			saveData();
 		}
 
 		function scrollToBottom() {
@@ -1062,9 +1175,13 @@
 			return safeText.replace(/@([\u4e00-\u9fa5a-zA-Z0-9]+)\s/g, '<span class="at-text">@$1 </span>');
 		}
 
-		// 核心渲染函数
 		function appendMessage(msgData) {
 			const chatArea = document.getElementById('chat-area');
+
+			// 1. 滚动状态检测
+			const threshold = 50;
+			const isAtBottom = chatArea.scrollHeight - chatArea.scrollTop - chatArea.clientHeight <= threshold;
+
 			if (chatArea.children.length >= 100) chatArea.removeChild(chatArea.firstElementChild);
 
 			const row = document.createElement('div');
@@ -1107,7 +1224,10 @@
         `;
 
 			chatArea.appendChild(row);
-			scrollToBottom();
+
+			if (isAtBottom) {
+				scrollToBottom();
+			}
 		}
 
 		function appendSystemMessage(text) {
@@ -1123,6 +1243,7 @@
 		function createRedPacketData(sender, type, inputAmount, count, note) {
 			const id = 'rp_' + (state.rpIdCounter++);
 			let totalAmount = inputAmount, distribution = [];
+
 			if (type === 'normal') {
 				totalAmount = inputAmount * count;
 				for (let i = 0; i < count; i++) distribution.push(inputAmount);
@@ -1136,6 +1257,7 @@
 				}
 				distribution.push(Math.round(remain * 100) / 100);
 			}
+
 			const rpData = { id, sender, type, totalAmount, totalCount: count, remainingCount: count, remainingAmount: totalAmount, note: note || "恭喜发财", grabbers: [], distribution };
 			state.redPackets[id] = rpData;
 			initBotGrabScheduler(id);
@@ -1161,7 +1283,21 @@
 			const money = rp.distribution.pop();
 			rp.remainingCount--; rp.remainingAmount -= money;
 			rp.grabbers.push({ name: user.name, avatar: user.avatar, amount: money, isUser, time: new Date().toLocaleTimeString() });
-			if (isUser) { state.balance += money; state.grabbedCount++; updateStats(); }
+
+			if (isUser) {
+				state.balance += money;
+				state.grabbedCount++;
+
+				// 玩家抢红包消耗金池
+				state.goldPool -= money;
+
+				// 历史记录统计
+				state.history.grabCount++;
+				state.history.totalGrab += money;
+				if (money > state.history.maxGrab) state.history.maxGrab = money;
+
+				updateStats();
+			}
 			updateRpBubbleUI(rpId);
 			return money;
 		}
@@ -1185,7 +1321,6 @@
 		}
 
 		/* ================= INTERACTION 互动事件 ================= */
-		// 1. 发红包后感谢
 		function triggerRedPacketReaction(rpData) {
 			if (rpData.sender !== CONFIG.USER || rpData.totalCount < 3) return;
 			if (Math.random() < CONFIG.BOT.thanksProb) {
@@ -1194,22 +1329,18 @@
 			}
 		}
 
-		// 2. 玩家发言后随机回复
 		function triggerMsgReaction() {
 			if (Math.random() < CONFIG.BOT.replyProb) setTimeout(() => appendMessage({ type: 'text', isUser: false, user: createRandomUser(), content: `@${CONFIG.USER.name} ${randArr(CONFIG.BOT.replyTexts)}` }), randInt(1000, 3000));
 		}
 
-		// 3. 路人随机互动
 		function triggerRandomInteraction() {
 			if (Math.random() < CONFIG.BOT.randomInteractProb) appendMessage({ type: 'text', isUser: false, user: createRandomUser(), content: `@${generateRandomName()} ${randArr(CONFIG.BOT.randomInteractTexts)}` });
 		}
 
-		// 4. 玩家@指定人后的定向回复 (新功能)
 		function triggerMentionReply(targetName) {
 			setTimeout(() => {
-				// 模拟被@的人 (头像随机)
 				const bot = { name: targetName, avatar: randArr(CONFIG.AVATARS) };
-				const replyText = randArr(CONFIG.BOT.replyTexts); // 套用replyTexts文案
+				const replyText = randArr(CONFIG.BOT.replyTexts);
 				appendMessage({
 					type: 'text',
 					isUser: false,
@@ -1219,18 +1350,18 @@
 			}, randInt(1000, 2000));
 		}
 
-		/* ================= SYSTEM EVENTS (JOIN/LEAVE) ================= */
+		/* ================= SYSTEM EVENTS ================= */
 		function triggerGroupFluctuationEvents(change) {
-			if (Math.random() > 0.3) return; // 30% 几率触发
+			if (Math.random() > 0.3) return;
 			const count = randInt(1, 3);
 			for (let i = 0; i < count; i++) {
 				setTimeout(() => {
 					let text = "";
 					const name1 = generateRandomName();
-					if (change > 0) { // 进群
+					if (change > 0) {
 						if (Math.random() < 0.5) text = `"${name1}"加入了群聊`;
 						else text = `"${generateRandomName()}"邀请"${name1}"加入了群聊`;
-					} else { // 退群
+					} else {
 						text = `"${name1}"退出了群聊`;
 					}
 					appendSystemMessage(text);
@@ -1241,6 +1372,22 @@
 		/* ================= INPUT & SEND 输入发送逻辑 ================= */
 		const msgInput = document.getElementById('msg-input');
 		const sendBtn = document.getElementById('send-btn');
+
+		// 4. 输入栏字数限制 (100字)
+		msgInput.addEventListener('keydown', (e) => {
+			const allowedKeys = [8, 13, 37, 38, 39, 40, 46];
+			if (msgInput.innerText.length >= 100 && !allowedKeys.includes(e.keyCode) && !e.ctrlKey && !e.metaKey) {
+				e.preventDefault();
+			}
+		});
+		msgInput.addEventListener('paste', (e) => {
+			e.preventDefault();
+			const text = (e.originalEvent || e).clipboardData.getData('text/plain');
+			const remaining = 100 - msgInput.innerText.length;
+			if (remaining > 0) {
+				document.execCommand('insertText', false, text.substring(0, remaining));
+			}
+		});
 
 		window.insertAt = (name) => {
 			msgInput.focus();
@@ -1254,19 +1401,15 @@
 		sendBtn.onclick = sendMsg;
 
 		function sendMsg() {
-			const text = msgInput.innerText.trim(); // 获取纯文本
+			const text = msgInput.innerText.trim();
 			if (text) {
 				appendMessage({ type: 'text', isUser: true, user: CONFIG.USER, content: text });
 				msgInput.innerHTML = ''; sendBtn.disabled = true;
 
-				// 检查是否@了某人
-				// 正则匹配 @Name (只取第一个)
 				const mentionMatch = text.match(/@([\u4e00-\u9fa5a-zA-Z0-9]+)/);
 				if (mentionMatch) {
-					// 如果@了人，触发特定互动
 					triggerMentionReply(mentionMatch[1]);
 				} else {
-					// 否则触发随机互动
 					triggerMsgReaction();
 				}
 			}
@@ -1312,12 +1455,23 @@
 			if (type === 'lucky' && amt / cnt < 0.01) return err.innerText = "单包过小";
 			if (state.balance < total) return err.innerText = "余额不足";
 
-			state.balance -= total; updateStats();
+			state.balance -= total;
+
+			// 2. 金池增值 (总金额 * 乘数)
+			state.goldPool += total * CONFIG.GOLD_POOL.multiplier;
+
+			// 6. 记录历史数据
+			state.history.sentCount++;
+			state.history.totalSent += total;
+			if (total > state.history.maxSent) state.history.maxSent = total;
+
+			updateStats();
 			const rpData = createRedPacketData(CONFIG.USER, type, amt, cnt, note);
 			appendMessage({ type: 'redpacket', isUser: true, user: CONFIG.USER, content: { id: rpData.id } });
 			closeRedPacketModal(); triggerRedPacketReaction(rpData);
 		}
 
+		/* 详情弹窗逻辑 */
 		const detailModal = document.getElementById('rp-detail-modal');
 		function showDetailModal(rpId) {
 			const rp = state.redPackets[rpId], myGrab = rp.grabbers.find(g => g.isUser);
@@ -1340,6 +1494,21 @@
 			detailModal.classList.add('active');
 		}
 		function closeDetailModal() { detailModal.classList.remove('active'); }
+
+		/* 历史弹窗逻辑 */
+		const historyModal = document.getElementById('history-modal');
+		function openHistoryModal() {
+			document.getElementById('history-header-title').innerText = `${CONFIG.USER.name}的历史数据`;
+			document.getElementById('hist-sent-count').innerText = state.history.sentCount;
+			document.getElementById('hist-grab-count').innerText = state.history.grabCount;
+			document.getElementById('hist-max-sent').innerText = formatMoney(state.history.maxSent);
+			document.getElementById('hist-max-grab').innerText = formatMoney(state.history.maxGrab);
+			document.getElementById('hist-total-sent').innerText = formatMoney(state.history.totalSent);
+			document.getElementById('hist-total-grab').innerText = formatMoney(state.history.totalGrab);
+			// 信任值
+			document.getElementById('hist-trust-val').innerText = formatMoney(state.goldPool) + '%';
+			historyModal.classList.add('active');
+		}
 
 		/* ================= SETTINGS 设置逻辑 ================= */
 		const settingsModal = document.getElementById('settings-modal');
@@ -1368,7 +1537,7 @@
 			updateStats(); closeSettings();
 		}
 		document.getElementById('clear-chat-btn').onclick = function () {
-			if (confirm("确定清空记录？")) {
+			if (confirm("确定清空聊天记录？")) {
 				document.getElementById('chat-area').innerHTML = '';
 				state.messages = [];
 				closeSettings();
@@ -1386,21 +1555,68 @@
 		emojiBtn.onclick = () => emojiPopup.classList.add('active');
 		document.querySelector('.close-emoji').onclick = () => emojiPopup.classList.remove('active');
 
+		// 独立的催促循环
+		function urgeLoop() {
+			const delay = randInt(CONFIG.GOLD_POOL.urgeIntervalMin, CONFIG.GOLD_POOL.urgeIntervalMax);
+			setTimeout(() => {
+				if (state.goldPool <= 0) {
+					const bot = createRandomUser();
+					appendMessage({
+						type: 'text',
+						isUser: false,
+						user: bot,
+						content: `@${CONFIG.USER.name} ${randArr(CONFIG.GOLD_POOL.urgeTexts)}`
+					});
+				}
+				urgeLoop();
+			}, delay);
+		}
+
+		// 常规聊天循环
 		function botLoop() {
 			setTimeout(() => {
-				const bot = createRandomUser(), roll = Math.random();
+				const bot = createRandomUser();
+				const roll = Math.random();
+
+				// 只有当金池 > 0 时才可能触发发红包逻辑
 				if (roll < CONFIG.BOT.redPacketProbability) {
-					const type = Math.random() < 0.5 ? 'lucky' : 'normal';
-					const count = randInt(3, 8);
-					const amt = type === 'normal' ? randInt(1, 100) / 100 : randInt(1, 5);
-					const rp = createRedPacketData(bot, type, amt, count, Math.random() < 0.25 ? randArr(CONFIG.RP_NOTES) : "");
-					appendMessage({ type: 'redpacket', isUser: false, user: bot, content: { id: rp.id } });
+					if (state.goldPool > 0) {
+						// 正常发红包
+						const type = Math.random() < 0.5 ? 'lucky' : 'normal';
+						const count = randInt(CONFIG.BOT.rpCountMin, CONFIG.BOT.rpCountMax);
+
+						const minFen = Math.round(CONFIG.BOT.rpTotalMin * 100);
+						const maxFen = Math.round(CONFIG.BOT.rpTotalMax * 100);
+
+						let amt;
+						if (type === 'normal') {
+							const maxSingleFen = Math.floor(maxFen / count);
+							const safeMaxFen = Math.max(minFen, maxSingleFen);
+							amt = randInt(minFen, safeMaxFen) / 100;
+						} else {
+							amt = randInt(minFen, maxFen) / 100;
+						};
+
+						const rp = createRedPacketData(bot, type, amt, count, Math.random() < 0.25 ? randArr(CONFIG.RP_NOTES) : "");
+						appendMessage({ type: 'redpacket', isUser: false, user: bot, content: { id: rp.id } });
+					} else {
+						// 金池不足，红包被抑制，转换为普通聊天或表情以保持活跃
+						if (Math.random() < 0.5) {
+							appendMessage({ type: 'sticker', isUser: false, user: bot, content: randArr(CONFIG.STICKERS) });
+						} else {
+							triggerRandomInteraction();
+							appendMessage({ type: 'text', isUser: false, user: bot, content: randArr(CONFIG.TEXT_MSGS) });
+						}
+					}
 				} else if (roll < CONFIG.BOT.redPacketProbability + CONFIG.BOT.stickerProbability) {
+					// 发表情
 					appendMessage({ type: 'sticker', isUser: false, user: bot, content: randArr(CONFIG.STICKERS) });
 				} else {
+					// 发文本
 					triggerRandomInteraction();
 					if (Math.random() > 0.3) appendMessage({ type: 'text', isUser: false, user: bot, content: randArr(CONFIG.TEXT_MSGS) });
 				}
+
 				botLoop();
 			}, randInt(CONFIG.BOT.msgIntervalMin, CONFIG.BOT.msgIntervalMax));
 		}
@@ -1416,10 +1632,24 @@
 		}, CONFIG.GROUP.fluctuationInterval);
 
 		window.onload = function () {
+			loadData(); // 加载存档
 			updateStats();
-			setTimeout(() => appendMessage({ type: 'text', isUser: false, user: createRandomUser(), content: "大家下午好呀" }), 500);
-			botLoop();
+
+			// 5. 入群欢迎：瞌睡猫
+			setTimeout(() => {
+				const welcomeBot = { name: "瞌睡猫", avatar: "🐱" };
+				appendMessage({
+					type: 'text',
+					isUser: false,
+					user: welcomeBot,
+					content: `@${CONFIG.USER.name} 欢迎来到${state.groupName}！`
+				});
+			}, 500);
+
+			botLoop();  // 启动常规聊天
+			urgeLoop(); // 启动催促检测
 		};
+
 		window.onclick = function (e) {
 			if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('active');
 			if (!emojiPopup.contains(e.target) && e.target !== emojiBtn) emojiPopup.classList.remove('active');
