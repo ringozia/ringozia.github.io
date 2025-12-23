@@ -273,16 +273,18 @@ window.EXTRA_CONFIG = {
 
   // --- 表情包配置 (仅需 name 和 url) ---
   STICKERS: [
-    { name: "2", url: "https://s41.ax1x.com/2025/12/06/pZmJQaD.jpg" },
-    { name: "2", url: "https://s41.ax1x.com/2025/12/19/pZ1jWHP.jpg" },
-    { name: "2", url: "https://s41.ax1x.com/2025/12/08/pZnYQDx.jpg" },
-    { name: "2", url: "https://s41.ax1x.com/2025/12/21/pZ3crnA.jpg" },
-    { name: "2", url: "https://s41.ax1x.com/2025/12/21/pZ3cBXd.jpg" },
-
-    { name: "不服", url: "https://s41.ax1x.com/2025/12/06/pZmJQaD.jpg" },
     { name: "那艺娜", url: "https://s41.ax1x.com/2025/12/19/pZ1jWHP.jpg" },
     { name: "交出来", url: "https://s41.ax1x.com/2025/12/08/pZnYQDx.jpg" },
     { name: "京枝", url: "https://s41.ax1x.com/2025/12/21/pZ3crnA.jpg" },
     { name: "迪爷爷", url: "https://s41.ax1x.com/2025/12/21/pZ3cBXd.jpg" },
+
+    { name: "", url: "https://s41.ax1x.com/2025/12/23/pZ84ZOU.jpg" },
+    { name: "没", url: "https://s41.ax1x.com/2025/12/24/pZGQZi6.jpg" },
+    { name: "圣诞娜娜", url: "https://s41.ax1x.com/2025/12/23/pZ84tmD.jpg" },
+    { name: "", url: "" },
+    { name: "", url: "" },
+    { name: "", url: "" },
+    { name: "", url: "" },
   ],
 };
+
