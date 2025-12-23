@@ -278,13 +278,21 @@ window.EXTRA_CONFIG = {
     { name: "京枝", url: "https://s41.ax1x.com/2025/12/21/pZ3crnA.jpg" },
     { name: "迪爷爷", url: "https://s41.ax1x.com/2025/12/21/pZ3cBXd.jpg" },
 
-    { name: "", url: "https://s41.ax1x.com/2025/12/23/pZ84ZOU.jpg" },
-    { name: "没", url: "https://s41.ax1x.com/2025/12/24/pZGQZi6.jpg" },
+    { name: "中分莲", url: "https://s41.ax1x.com/2025/12/23/pZ84ZOU.jpg" },
+    { name: "投降", url: "https://s41.ax1x.com/2025/12/24/pZGQZi6.jpg" },
     { name: "圣诞娜娜", url: "https://s41.ax1x.com/2025/12/23/pZ84tmD.jpg" },
-    { name: "", url: "" },
-    { name: "", url: "" },
-    { name: "", url: "" },
-    { name: "", url: "" },
+    { name: "开心姐", url: "https://s41.ax1x.com/2025/12/23/pZ84UTH.jpg" },
+    { name: "三梦", url: "https://s41.ax1x.com/2025/12/24/pZGQEIx.jpg" },
+    { name: "百万人鱼", url: "https://s41.ax1x.com/2025/12/21/pZ3c06H.jpg" },
+    { name: "给我道歉", url: "https://s41.ax1x.com/2025/12/21/pZ3cdpD.jpg" },
+    { name: "吐舌头", url: "https://s41.ax1x.com/2025/12/21/pZ3cUfO.jpg" },
+    { name: "讶异", url: "https://s41.ax1x.com/2025/12/24/pZGQeJK.jpg" },
+    { name: "人贩娜", url: "https://s41.ax1x.com/2025/12/24/pZGQnzD.jpg" },
+    { name: "翠花", url: "https://s41.ax1x.com/2025/12/24/pZGQmRO.jpg" },
+    
+
+    
   ],
 };
+
 
