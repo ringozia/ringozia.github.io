@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>沙盘大都会</title>
+    <style>
+        /* --- 全局样式 --- */
+        :root {
+            --bg-color: #ffffff;
+            --ui-bg: #ffffff;
+            --ui-border: 1px solid #e0e0e0;
+            --primary: #48dbfb;
+            --primary-hover: #0abde3;
+            --accent: #ff9f43;
+            --text: #2d3436;
+            --radius: 20px;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text);
+            user-select: none;
+        }
+
+        /* --- UI 容器 --- */
+        #game-ui {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        /* 顶部栏 (无圆角，无投影) */
+        .top-bar {
+            pointer-events: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: var(--ui-bg);
+            border-bottom: var(--ui-border);
+            margin: 0;
+        }
+
+        .title-area h1 {
+            margin: 0;
+            font-size: 22px;
+            color: #2d3436;
+            letter-spacing: 1px;
+        }
+
+        .icon-btn {
+            background: #f1f2f6;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            font-size: 20px;
+            transition: transform 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon-btn:hover {
+            background: #dfe4ea;
+            transform: rotate(90deg);
+        }
+
+        /* 左下角人口 (无投影) */
+        .stats-panel {
+            pointer-events: auto;
+            position: absolute;
+            top: 90px;
+            left: 30px;
+            background: var(--ui-bg);
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-weight: 800;
+            color: #1dd1a1;
+            border: var(--ui-border);
+            font-size: 16px;
+        }
+
+        /* 模式切换 (无投影) */
+        .mode-switcher {
+            pointer-events: auto;
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--ui-bg);
+            padding: 5px;
+            border-radius: 50px;
+            display: flex;
+            border: var(--ui-border);
+        }
+
+        .mode-btn {
+            border: none;
+            background: transparent;
+            padding: 8px 24px;
+            cursor: pointer;
+            font-weight: bold;
+            color: #b2bec3;
+            font-size: 14px;
+            border-radius: 50px;
+            transition: 0.2s;
+        }
+
+        .mode-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* 可视化面板 (右侧, 无投影) */
+        .visibility-panel {
+            pointer-events: auto;
+            position: absolute;
+            top: 90px;
+            right: 30px;
+            background: var(--ui-bg);
+            padding: 15px;
+            border-radius: var(--radius);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border: var(--ui-border);
+        }
+
+        .vis-toggle {
+            display: flex;
+            align-items: center;
+            font-size: 13px;
+            cursor: pointer;
+            color: #636e72;
+            font-weight: 600;
+        }
+
+        .vis-toggle input {
+            margin-right: 8px;
+            accent-color: var(--primary);
+            width: 16px;
+            height: 16px;
+        }
+
+        /* 底部工具栏 (无投影) */
+        .bottom-bar {
+            pointer-events: auto;
+            padding: 30px;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .action-btn {
+            background: var(--ui-bg);
+            border: 1px solid #eee;
+            padding: 14px 35px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #555;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: transform 0.1s;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            color: var(--primary);
+            border-color: var(--primary);
+        }
+
+        .action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .action-btn.move-active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        /* --- 弹窗 --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.1);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            pointer-events: auto;
+            z-index: 2000;
+        }
+
+        .modal-overlay.open {
+            display: flex;
+        }
+
+        .modal {
+            background: #fff;
+            padding: 25px;
+            border-radius: 24px;
+            width: 360px;
+            max-width: 90%;
+            border: 1px solid #eee;
+        }
+
+        .modal h2 {
+            margin: 0 0 20px 0;
+            color: #2d3436;
+            font-size: 20px;
+            text-align: center;
+            font-weight: 800;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #636e72;
+        }
+
+        .type-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .shape-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 6px;
+            margin-top: 5px;
+        }
+
+        .type-btn {
+            background: #f1f2f6;
+            padding: 10px 5px;
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            color: #636e72;
+            border: 2px solid transparent;
+            transition: 0.1s;
+        }
+
+        .type-btn:hover {
+            background: #dfe4ea;
+        }
+
+        .type-btn.selected {
+            border-color: var(--primary);
+            background: #e0f9ff;
+            color: var(--primary-hover);
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin-top: 5px;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #fff;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-swatch.selected {
+            border-color: #333;
+            transform: scale(1.1);
+        }
+
+        .btn-full {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 5px;
+            border-radius: 16px;
+            font-weight: 700;
+        }
+
+        .btn-full:hover {
+            background: var(--primary-hover);
+        }
+
+        /* 悬停 Tooltip */
+        #hover-tooltip {
+            position: absolute;
+            background: rgba(45, 52, 54, 0.95);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 13px;
+            pointer-events: none;
+            display: none;
+            z-index: 3000;
+            white-space: nowrap;
+            font-weight: 600;
+            line-height: 1.5;
+            text-align: left;
+        }
+
+        .coord-text {
+            font-size: 11px;
+            color: #bdc3c7;
+            font-weight: 400;
+            margin-top: 2px;
+        }
+
+        /* 命名标签 */
+        .label-container {
+            font-size: 13px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid #dfe6e9;
+            pointer-events: none;
+            white-space: nowrap;
+            color: #2d3436;
+        }
+
+        @media (max-width: 600px) {
+            .bottom-bar {
+                flex-direction: column;
+                padding: 15px;
+                width: 100%;
+                box-sizing: border-box;
+            }
+
+            .action-btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .visibility-panel {
+                display: none;
+            }
+
+            .stats-panel {
+                top: auto;
+                bottom: 250px;
+                left: 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="canvas-container"></div>
+    <div id="hover-tooltip"></div>
+
+    <div id="game-ui">
+        <div class="top-bar">
+            <div class="title-area">
+                <h1>🏙️ 沙盘大都会</h1>
+            </div>
+            <div>
+                <button class="icon-btn" onclick="openSettings()" title="设置">⚙️</button>
+            </div>
+        </div>
+
+        <div class="mode-switcher">
+            <button class="mode-btn active" onclick="setMode('edit')">🛠️ 编辑</button>
+            <button class="mode-btn" onclick="setMode('view')">👀 观赏</button>
+        </div>
+
+        <div class="stats-panel">
+            <span id="pop-display">👥 0</span>
+        </div>
+
+        <div class="visibility-panel">
+            <label class="vis-toggle"><input type="checkbox" checked onchange="toggleVis('grid', this.checked)"> 网格线
+                (10格范围)</label>
+            <label class="vis-toggle"><input type="checkbox" checked onchange="toggleVis('labels', this.checked)">
+                命名标签</label>
+            <label class="vis-toggle"><input type="checkbox" checked onchange="toggleVis('shadows', this.checked)">
+                阴影</label>
+            <label class="vis-toggle"><input type="checkbox" checked onchange="toggleVis('pedestrians', this.checked)">
+                路人</label>
+            <label class="vis-toggle"><input type="checkbox" onchange="toggleVis('hoverInfo', this.checked)">
+                悬停信息</label>
+        </div>
+
+        <div class="bottom-bar" id="edit-tools" style="display: none;">
+            <button class="action-btn" onclick="openBuildModal()">🏗️ 建造 / 修改</button>
+            <button class="action-btn" onclick="openNameModal()">🏷️ 命名</button>
+            <button class="action-btn" id="btn-move" onclick="toggleMoveMode()">✥ 移动</button>
+        </div>
+    </div>
+
+    <!-- 建造弹窗 -->
+    <div class="modal-overlay" id="build-modal">
+        <div class="modal">
+            <h2>建造配置</h2>
+            <div class="form-group">
+                <label>类型</label>
+                <div class="type-grid">
+                    <div class="type-btn selected" id="type-building" onclick="selectBuildType('building')">楼宇</div>
+                    <div class="type-btn" id="type-plot" onclick="selectBuildType('plot')">地块</div>
+                    <div class="type-btn" id="type-road" onclick="selectBuildType('road')">道路</div>
+                </div>
+            </div>
+
+            <!-- 楼宇 -->
+            <div id="settings-building">
+                <div class="form-group">
+                    <label>形状</label>
+                    <div class="shape-grid" id="shape-selector">
+                        <div class="type-btn selected" onclick="selectShape('square')">正方</div>
+                        <div class="type-btn" onclick="selectShape('diamond')">菱形</div>
+                        <div class="type-btn" onclick="selectShape('hexagon')">六边</div>
+                        <div class="type-btn" onclick="selectShape('rectH')">横长</div>
+                        <div class="type-btn" onclick="selectShape('rectV')">竖长</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>高度 (1-50层) : <span id="h-val" style="color:var(--primary)">5</span></label>
+                    <input type="range" min="1" max="50" value="5" id="building-height"
+                        style="width:100%; accent-color:var(--primary);"
+                        oninput="document.getElementById('h-val').innerText=this.value">
+                </div>
+                <div class="form-group">
+                    <label>颜色</label>
+                    <div class="color-grid" id="building-colors"></div>
+                    <input type="color" id="custom-building-color"
+                        style="width:100%; margin-top:8px; height:30px; border:none; padding:0; border-radius:8px;">
+                </div>
+            </div>
+
+            <!-- 地块 -->
+            <div id="settings-plot" style="display:none;">
+                <div class="form-group">
+                    <label>预设</label>
+                    <div class="type-grid">
+                        <div class="type-btn" onclick="setPlotPreset('#bdc3c7')">水泥</div>
+                        <div class="type-btn" onclick="setPlotPreset('#2ecc71')">草地</div>
+                        <div class="type-btn" onclick="setPlotPreset('#48dbfb')">水面</div>
+                    </div>
+                    <input type="color" id="custom-plot-color" value="#2ecc71"
+                        style="width:100%; margin-top:8px; height:30px; border:none; padding:0; border-radius:8px;">
+                </div>
+            </div>
+
+            <!-- 道路 -->
+            <div id="settings-road" style="display:none;">
+                <p style="font-size:13px; color:#636e72; background:#f1f2f6; padding:10px; border-radius:10px;">
+                    铺设道路将自动清理该区域的路人，并自动连接相邻路段。</p>
+            </div>
+
+            <button class="btn-full" onclick="confirmBuild()">完成</button>
+            <button class="btn-full" style="background:#f1f2f6; color:#636e72;" onclick="closeModals()">取消</button>
+        </div>
+    </div>
+
+    <!-- 命名弹窗 -->
+    <div class="modal-overlay" id="name-modal">
+        <div class="modal">
+            <h2>区域命名</h2>
+            <div class="form-group">
+                <div class="type-grid" style="grid-template-columns: repeat(4, 1fr);" id="name-types">
+                    <div class="type-btn" onclick="selectNameType(this, 'res', '🏠', '#ff9f43', '住宅')">住宅</div>
+                    <div class="type-btn" onclick="selectNameType(this, 'off', '🏢', '#54a0ff', '办公')">办公</div>
+                    <div class="type-btn" onclick="selectNameType(this, 'com', '🛍️', '#feca57', '商业')">商业</div>
+                    <div class="type-btn" onclick="selectNameType(this, 'ind', '🏭', '#8395a7', '工业')">工业</div>
+                    <div class="type-btn" onclick="selectNameType(this, 'park', '🌳', '#1dd1a1', '公园')">公园</div>
+                    <div class="type-btn" onclick="selectNameType(this, 'pub', '🏛️', '#5f27cd', '公共')">公共</div>
+                    <div class="type-btn" onclick="selectNameType(this, 'fun', '🎡', '#ff6b6b', '娱乐')">娱乐</div>
+                    <div class="type-btn" onclick="selectNameType(this, 'farm', '🌾', '#ff9ff3', '农业')">农业</div>
+                </div>
+            </div>
+            <input type="text" id="area-name-input" placeholder="输入名称..."
+                style="width: 100%; padding: 12px; border:1px solid #dfe6e9; border-radius:12px; box-sizing: border-box; font-size:14px; outline:none;">
+            <button class="btn-full" onclick="confirmName()">确定</button>
+            <button class="btn-full" style="background:#f1f2f6; color:#636e72;" onclick="closeModals()">取消</button>
+        </div>
+    </div>
+
+    <!-- 设置弹窗 -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="modal">
+            <h2>游戏设置</h2>
+
+            <div class="form-group">
+                <label>地面颜色 (接收阴影)</label>
+                <div class="type-grid">
+                    <div class="type-btn" onclick="setGroundColor('#ffffff')">白色</div>
+                    <div class="type-btn" onclick="setGroundColor('#2ecc71')">草地</div>
+                    <div class="type-btn" onclick="setGroundColor('#bdc3c7')">水泥</div>
+                </div>
+                <input type="color" id="custom-ground-color" oninput="setGroundColor(this.value)" value="#ffffff"
+                    style="width:100%; margin-top:8px; height:30px; border:none; border-radius:8px;">
+            </div>
+
+            <div class="form-group">
+                <label>背景颜色</label>
+                <input type="color" id="custom-bg-color" oninput="setBgColor(this.value)" value="#ffffff"
+                    style="width:100%; height:30px; border:none; border-radius:8px;">
+            </div>
+
+            <div class="form-group">
+                <label>光照方向</label>
+                <input type="range" min="0" max="360" value="45" style="width:100%; accent-color:var(--primary);"
+                    oninput="updateShadowAngle(this.value)">
+            </div>
+            <button class="btn-full" onclick="closeModals()">关闭</button>
+        </div>
+    </div>
+
+    <!-- Three.js -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { MapControls } from 'three/addons/controls/MapControls.js';
+        import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+        const CONFIG = {
+            gridSize: 10,
+            colors: [
+                "#ff9ff3", "#feca57", "#ff6b6b", "#48dbfb", "#1dd1a1", "#54a0ff",
+                "#5f27cd", "#c8d6e5", "#576574", "#8395a7", "#222f3e", "#00d2d3",
+                "#ff9f43", "#ee5253", "#0abde3", "#10ac84"
+            ],
+            roadColor: "#576574",
+            defaultGround: "#ffffff",
+            defaultBg: "#ffffff",
+            maxPedestrians: 986
+        };
+
+        const state = {
+            mode: 'edit',
+            subMode: 'normal',
+            selection: new Set(),
+            mapData: new Map(),
+            hoverKey: null,
+            isCtrlPressed: false,
+            currentBuildType: 'building',
+            currentShape: 'square',
+            currentNameType: { emoji: '🏠', color: '#ff9f43', typeLabel: '住宅' },
+            visibility: { grid: true, labels: true, shadows: true, pedestrians: true, hoverInfo: false },
+            population: 0,
+            pedestrians: [],
+            hoverTimer: null
+        };
+
+        // --- Init ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(CONFIG.defaultBg);
+        scene.fog = new THREE.Fog(CONFIG.defaultBg, 80, 500);
+
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(60, 80, 60);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const labelRenderer = new CSS2DRenderer();
+        labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        labelRenderer.domElement.style.position = 'absolute';
+        labelRenderer.domElement.style.top = '0px';
+        labelRenderer.domElement.style.pointerEvents = 'none';
+        document.getElementById('canvas-container').appendChild(labelRenderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        dirLight.position.set(100, 150, 100);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.set(2048, 2048);
+        dirLight.shadow.camera.top = 250;
+        dirLight.shadow.camera.bottom = -250;
+        dirLight.shadow.camera.left = -250;
+        dirLight.shadow.camera.right = 250;
+        scene.add(dirLight);
+
+        // --- 地面系统 (Z-Fighting Fix & PolygonOffset) ---
+        // 1. 颜色层 - Y = -0.3
+        const groundColorGeo = new THREE.PlaneGeometry(10000, 10000);
+        const groundColorMat = new THREE.MeshBasicMaterial({ color: CONFIG.defaultGround });
+        const groundColorMesh = new THREE.Mesh(groundColorGeo, groundColorMat);
+        groundColorMesh.rotation.x = -Math.PI / 2;
+        groundColorMesh.position.y = -0.3;
+        scene.add(groundColorMesh);
+
+        // 2. 阴影层 - Y = -0.2 (使用 polygonOffset 确保覆盖)
+        const shadowPlaneGeo = new THREE.PlaneGeometry(10000, 10000);
+        const shadowPlaneMat = new THREE.ShadowMaterial({
+            opacity: 0.3,
+            color: 0x000000,
+            polygonOffset: true,
+            polygonOffsetFactor: -1, // 推向摄像机
+            polygonOffsetUnits: -1
+        });
+        const shadowPlane = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
+        shadowPlane.rotation.x = -Math.PI / 2;
+        shadowPlane.position.y = -0.2;
+        shadowPlane.receiveShadow = true;
+        scene.add(shadowPlane);
+
+        // --- 网格系统 (10x10) - Y = -0.1 ---
+        function createGridTexture() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 64; canvas.height = 64;
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, 64, 64);
+            ctx.strokeStyle = 'rgba(0,0,0,0.15)';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(0, 0, 64, 64);
+            const tex = new THREE.CanvasTexture(canvas);
+            tex.wrapS = THREE.RepeatWrapping;
+            tex.wrapT = THREE.RepeatWrapping;
+            tex.magFilter = THREE.NearestFilter;
+            return tex;
+        }
+
+        const gridTex = createGridTexture();
+        const gridRange = 10; // 10格范围
+        const gridVisSize = gridRange * CONFIG.gridSize;
+        gridTex.repeat.set(gridRange, gridRange);
+
+        // 网格使用更大的 PolygonOffset 确保在阴影之上
+        const gridMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(gridVisSize, gridVisSize),
+            new THREE.MeshBasicMaterial({
+                map: gridTex,
+                transparent: true,
+                opacity: 1,
+                side: THREE.DoubleSide,
+                polygonOffset: true,
+                polygonOffsetFactor: -2,
+                polygonOffsetUnits: -2
+            })
+        );
+        gridMesh.rotation.x = -Math.PI / 2;
+        gridMesh.position.y = -0.1;
+        gridTex.offset.set(0.5, 0.5);
+        scene.add(gridMesh);
+
+        // --- 辅助物体 ---
+        const highlightMesh = new THREE.Mesh(
+            new THREE.BoxGeometry(CONFIG.gridSize + 0.6, 0.6, CONFIG.gridSize + 0.6),
+            new THREE.MeshBasicMaterial({ color: 0x48dbfb, opacity: 0.4, transparent: true, depthTest: false })
+        );
+        highlightMesh.visible = false;
+        scene.add(highlightMesh);
+
+        const selectionGroup = new THREE.Group();
+        scene.add(selectionGroup);
+        const pedestrianGroup = new THREE.Group();
+        scene.add(pedestrianGroup);
+
+        const controls = new MapControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.ROTATE, RIGHT: THREE.MOUSE.ROTATE };
+
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        // 交互隐形板
+        const infPlane = new THREE.Mesh(
+            new THREE.PlaneGeometry(10000, 10000),
+            new THREE.MeshBasicMaterial({ visible: false })
+        );
+        infPlane.rotation.x = -Math.PI / 2;
+        scene.add(infPlane);
+
+        // --- 交互逻辑 ---
+        let isDragging = false;
+        let mouseDownTime = 0;
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        document.addEventListener('keydown', e => { if (e.key === 'Control') state.isCtrlPressed = true; });
+        document.addEventListener('keyup', e => { if (e.key === 'Control') state.isCtrlPressed = false; });
+
+        const canvasEl = renderer.domElement;
+        canvasEl.addEventListener('pointerdown', () => { isDragging = false; mouseDownTime = Date.now(); });
+        canvasEl.addEventListener('pointermove', onPointerMove);
+        canvasEl.addEventListener('pointerup', onPointerUp);
+        canvasEl.addEventListener('touchstart', e => e.preventDefault(), { passive: false });
+
+        function onPointerMove(e) {
+            isDragging = true;
+            pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            if (state.mode === 'edit') updateHighlight();
+            if (state.visibility.hoverInfo) checkHoverInfo(e.clientX, e.clientY);
+        }
+
+        function onPointerUp() {
+            if (Date.now() - mouseDownTime < 250 && !isDragging && state.mode === 'edit') handleClick();
+        }
+
+        function getIntersect() {
+            raycaster.setFromCamera(pointer, camera);
+            const objects = Array.from(state.mapData.values()).map(d => d.mesh).filter(m => m);
+            const hits = raycaster.intersectObjects(objects);
+            if (hits.length > 0) return { type: 'obj', object: hits[0].object };
+
+            const gHits = raycaster.intersectObject(infPlane);
+            if (gHits.length > 0) {
+                const p = gHits[0].point;
+                const x = Math.round(p.x / CONFIG.gridSize);
+                const z = Math.round(p.z / CONFIG.gridSize);
+                return { type: 'ground', x, z, key: `${x},${z}` };
+            }
+            return null;
+        }
+
+        function updateHighlight() {
+            const hit = getIntersect();
+            if (hit) {
+                let x, z;
+                if (hit.type === 'obj') {
+                    const key = hit.object.userData.gridKey;
+                    if (key) { [x, z] = key.split(',').map(Number); state.hoverKey = key; }
+                } else {
+                    x = hit.x; z = hit.z; state.hoverKey = hit.key;
+                }
+                if (x !== undefined) {
+                    highlightMesh.position.set(x * CONFIG.gridSize, 0.3, z * CONFIG.gridSize);
+                    highlightMesh.visible = true;
+                    highlightMesh.material.color.setHex(state.subMode === 'moving' ? 0xff6b6b : 0x48dbfb);
+                }
+            } else {
+                highlightMesh.visible = false;
+                state.hoverKey = null;
+            }
+        }
+
+        function handleClick() {
+            if (!state.hoverKey) return;
+            const key = state.hoverKey;
+            if (state.subMode === 'moving') { executeMove(key); return; }
+
+            if (state.isCtrlPressed) {
+                if (state.selection.has(key)) state.selection.delete(key);
+                else state.selection.add(key);
+            } else {
+                state.selection.clear();
+                state.selection.add(key);
+            }
+            renderSelection();
+        }
+
+        function renderSelection() {
+            while (selectionGroup.children.length > 0) selectionGroup.remove(selectionGroup.children[0]);
+            state.selection.forEach(key => {
+                const [x, z] = key.split(',').map(Number);
+                const box = new THREE.Mesh(
+                    new THREE.BoxGeometry(CONFIG.gridSize + 0.8, 0.5, CONFIG.gridSize + 0.8),
+                    new THREE.MeshBasicMaterial({ color: 0xfeca57, opacity: 0.6, transparent: true, depthTest: false })
+                );
+                box.position.set(x * CONFIG.gridSize, 0.1, z * CONFIG.gridSize);
+                selectionGroup.add(box);
+            });
+            document.getElementById('edit-tools').style.display = state.selection.size > 0 ? 'flex' : 'none';
+        }
+
+        // --- 悬停信息 ---
+        const tooltipEl = document.getElementById('hover-tooltip');
+        let lastHoverObj = null;
+
+        function checkHoverInfo(clientX, clientY) {
+            raycaster.setFromCamera(pointer, camera);
+            const objects = Array.from(state.mapData.values()).map(d => d.mesh).filter(m => m);
+            const hits = raycaster.intersectObjects(objects);
+
+            if (hits.length > 0) {
+                const obj = hits[0].object;
+                if (obj !== lastHoverObj) {
+                    lastHoverObj = obj;
+                    clearTimeout(state.hoverTimer);
+                    tooltipEl.style.display = 'none';
+                    state.hoverTimer = setTimeout(() => {
+                        const data = state.mapData.get(obj.userData.gridKey);
+                        if (data && data.nameData) {
+                            // 第一行: 类别 (typeLabel) + 名称
+                            let text = `${data.nameData.typeLabel || '建筑'} ${data.nameData.text}`;
+                            // 第二行: 坐标
+                            const [gx, gz] = obj.userData.gridKey.split(',');
+                            const coordHtml = `<div class="coord-text">坐标: (${gx}, ${gz})</div>`;
+
+                            tooltipEl.innerHTML = `<div>${text}</div>${coordHtml}`;
+                            tooltipEl.style.left = (clientX + 15) + 'px';
+                            tooltipEl.style.top = (clientY + 15) + 'px';
+                            tooltipEl.style.display = 'block';
+                        }
+                    }, 500);
+                } else if (tooltipEl.style.display === 'block') {
+                    tooltipEl.style.left = (clientX + 15) + 'px';
+                    tooltipEl.style.top = (clientY + 15) + 'px';
+                }
+            } else {
+                if (lastHoverObj) {
+                    lastHoverObj = null;
+                    clearTimeout(state.hoverTimer);
+                    tooltipEl.style.display = 'none';
+                }
+            }
+        }
+
+        // --- 建造 ---
+        const colorContainer = document.getElementById('building-colors');
+        CONFIG.colors.forEach(color => {
+            const div = document.createElement('div');
+            div.className = 'color-swatch';
+            div.style.backgroundColor = color;
+            div.onclick = () => {
+                document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+                div.classList.add('selected');
+                document.getElementById('custom-building-color').value = color;
+            };
+            colorContainer.appendChild(div);
+        });
+
+        window.setMode = (mode) => {
+            state.mode = mode;
+            state.subMode = 'normal';
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            event.target.classList.add('active');
+            if (mode === 'view') {
+                state.selection.clear();
+                renderSelection();
+                highlightMesh.visible = false;
+            }
+        };
+
+        window.toggleVis = (type, isActive) => {
+            state.visibility[type] = isActive;
+            if (type === 'grid') gridMesh.visible = isActive;
+            if (type === 'labels') labelRenderer.domElement.style.display = isActive ? 'block' : 'none';
+            if (type === 'shadows') {
+                renderer.shadowMap.enabled = isActive;
+                scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
+            }
+            if (type === 'pedestrians') pedestrianGroup.visible = isActive;
+        };
+
+        window.openBuildModal = () => {
+            const firstKey = state.selection.values().next().value;
+            const data = state.mapData.get(firstKey);
+            if (data) {
+                selectBuildType(data.type);
+                if (data.type === 'building') {
+                    document.getElementById('building-height').value = data.height;
+                    document.getElementById('h-val').innerText = data.height;
+                    document.getElementById('custom-building-color').value = data.color;
+                    selectShape(data.shape || 'square');
+                } else if (data.type === 'plot') {
+                    document.getElementById('custom-plot-color').value = data.color;
+                }
+            } else {
+                selectBuildType('building');
+                document.getElementById('building-height').value = 5;
+                document.getElementById('h-val').innerText = 5;
+                selectShape('square');
+            }
+            document.getElementById('build-modal').classList.add('open');
+        };
+
+        window.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
+
+        window.selectBuildType = (type) => {
+            state.currentBuildType = type;
+            document.querySelectorAll('#build-modal .type-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById('type-' + type).classList.add('selected');
+            ['building', 'plot', 'road'].forEach(t => document.getElementById('settings-' + t).style.display = (t === type ? 'block' : 'none'));
+        };
+
+        window.selectShape = (shape) => {
+            state.currentShape = shape;
+            document.querySelectorAll('#shape-selector .type-btn').forEach(b => b.classList.remove('selected'));
+            const index = ['square', 'diamond', 'hexagon', 'rectH', 'rectV'].indexOf(shape);
+            if (index >= 0) document.querySelectorAll('#shape-selector .type-btn')[index].classList.add('selected');
+        };
+
+        window.setPlotPreset = (c) => document.getElementById('custom-plot-color').value = c;
+
+        window.confirmBuild = () => {
+            const type = state.currentBuildType;
+            const params = {};
+            if (type === 'building') {
+                params.height = parseInt(document.getElementById('building-height').value);
+                params.color = document.getElementById('custom-building-color').value;
+                params.shape = state.currentShape;
+            } else if (type === 'plot') {
+                params.color = document.getElementById('custom-plot-color').value;
+                params.height = 0;
+            } else if (type === 'road') {
+                params.color = CONFIG.roadColor;
+                params.height = 0;
+            }
+
+            state.selection.forEach(key => createOrUpdateCell(key, type, params));
+            closeModals();
+            updatePopulation();
+        };
+
+        function createOrUpdateCell(key, type, params) {
+            const oldData = state.mapData.get(key);
+            if (oldData) {
+                scene.remove(oldData.mesh);
+                if (oldData.labelObj && oldData.labelObj.element.parentNode) {
+                    oldData.labelObj.element.parentNode.removeChild(oldData.labelObj.element);
+                }
+                if (oldData.nameData && !params.nameData) params.nameData = oldData.nameData;
+            }
+
+            const [x, z] = key.split(',').map(Number);
+            const posX = x * CONFIG.gridSize;
+            const posZ = z * CONFIG.gridSize;
+            let mesh, geo, mat;
+
+            if (type === 'building') {
+                const h = params.height * 3;
+                const s = CONFIG.gridSize - 1.5;
+                if (params.shape === 'diamond') {
+                    geo = new THREE.BoxGeometry(s * 0.75, h, s * 0.75);
+                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
+                    mesh.rotation.y = Math.PI / 4;
+                } else if (params.shape === 'hexagon') {
+                    geo = new THREE.CylinderGeometry(s / 2, s / 2, h, 6);
+                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
+                } else if (params.shape === 'rectH') {
+                    geo = new THREE.BoxGeometry(s, h, s * 0.5);
+                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
+                } else if (params.shape === 'rectV') {
+                    geo = new THREE.BoxGeometry(s * 0.5, h, s);
+                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
+                } else {
+                    geo = new THREE.BoxGeometry(s, h, s);
+                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
+                }
+                mesh.position.set(posX, h / 2, posZ);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
+
+            } else if (type === 'plot') {
+                geo = new THREE.BoxGeometry(CONFIG.gridSize, 0.2, CONFIG.gridSize);
+                mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
+                mesh.position.set(posX, 0.1, posZ);
+                mesh.receiveShadow = true;
+
+            } else if (type === 'road') {
+                geo = new THREE.BoxGeometry(CONFIG.gridSize, 0.15, CONFIG.gridSize);
+                mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
+                mesh.position.set(posX, 0.08, posZ);
+                mesh.receiveShadow = true;
+                clearPedestriansOnGrid(x, z);
+            }
+
+            mesh.userData = { gridKey: key, type, ...params };
+            if (params.nameData) attachLabel(mesh, params.nameData);
+            scene.add(mesh);
+            state.mapData.set(key, { type, mesh, ...params });
+        }
+
+        // --- 移动 & 命名 (Fix) ---
+        window.toggleMoveMode = () => {
+            const btn = document.getElementById('btn-move');
+            if (state.subMode === 'moving') {
+                state.subMode = 'normal'; btn.classList.remove('move-active');
+            } else {
+                if (state.selection.size === 0) return alert("请先选择格子");
+                state.subMode = 'moving'; btn.classList.add('move-active');
+            }
+        };
+
+        function executeMove(targetKey) {
+            const keys = Array.from(state.selection);
+            if (keys.length === 0) return;
+            const [tx, tz] = targetKey.split(',').map(Number);
+            const [ax, az] = keys[0].split(',').map(Number);
+            const dx = tx - ax, dz = tz - az;
+
+            const moves = [];
+            const newKeysSet = new Set();
+            for (let k of keys) {
+                const [kx, kz] = k.split(',').map(Number);
+                const nk = `${kx + dx},${kz + dz}`;
+                newKeysSet.add(nk);
+            }
+
+            // 碰撞检测: 目标不可被占用 (除非目标也是选区的一部分)
+            for (let nk of newKeysSet) {
+                if (state.mapData.has(nk) && !state.selection.has(nk)) {
+                    alert("无法移动：目标区域已有建筑！");
+                    toggleMoveMode();
+                    return;
+                }
+            }
+
+            keys.forEach(k => {
+                const d = state.mapData.get(k);
+                if (d) {
+                    const [kx, kz] = k.split(',').map(Number);
+                    moves.push({
+                        oldKey: k, newKey: `${kx + dx},${kz + dz}`, params: {
+                            type: d.type, height: d.height, color: d.color, shape: d.shape,
+                            nameData: d.nameData ? { ...d.nameData } : null
+                        }
+                    });
+                }
+            });
+
+            // 1. 彻底移除旧对象 + DOM
+            moves.forEach(m => {
+                const exist = state.mapData.get(m.oldKey);
+                if (exist) {
+                    if (exist.mesh) {
+                        // 强制移除 Label 的 DOM
+                        if (exist.mesh.userData.labelObj) {
+                            exist.mesh.remove(exist.mesh.userData.labelObj);
+                            if (exist.mesh.userData.labelObj.element.parentNode) {
+                                exist.mesh.userData.labelObj.element.parentNode.removeChild(exist.mesh.userData.labelObj.element);
+                            }
+                        }
+                        scene.remove(exist.mesh);
+                    }
+                    state.mapData.delete(m.oldKey);
+                }
+            });
+
+            // 2. 清理新位置 (虽然检测过碰撞，但清理自身移动产生的重叠)
+            moves.forEach(m => {
+                const conflict = state.mapData.get(m.newKey);
+                if (conflict) {
+                    if (conflict.mesh) {
+                        if (conflict.mesh.userData.labelObj && conflict.mesh.userData.labelObj.element.parentNode) {
+                            conflict.mesh.userData.labelObj.element.parentNode.removeChild(conflict.mesh.userData.labelObj.element);
+                        }
+                        scene.remove(conflict.mesh);
+                    }
+                    state.mapData.delete(m.newKey);
+                }
+            });
+
+            // 3. 重建
+            moves.forEach(m => createOrUpdateCell(m.newKey, m.params.type, m.params));
+
+            state.selection.clear();
+            moves.forEach(m => state.selection.add(m.newKey));
+            toggleMoveMode();
+            renderSelection();
+        }
+
+        window.openNameModal = () => {
+            if (state.selection.size !== 1) return alert("请选择一个格子进行命名");
+            const data = state.mapData.get(Array.from(state.selection)[0]);
+            document.getElementById('area-name-input').value = (data && data.nameData) ? data.nameData.text : "";
+            document.getElementById('name-modal').classList.add('open');
+        };
+
+        window.selectNameType = (el, type, emoji, color, typeLabel) => {
+            state.currentNameType = { type, emoji, color, typeLabel };
+            document.querySelectorAll('#name-types .type-btn').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+        };
+
+        window.confirmName = () => {
+            const text = document.getElementById('area-name-input').value;
+            if (text) {
+                const key = Array.from(state.selection)[0];
+                const data = state.mapData.get(key);
+                if (data) {
+                    const nameData = { text, ...state.currentNameType };
+                    data.nameData = nameData;
+                    attachLabel(data.mesh, nameData);
+                }
+            }
+            closeModals();
+        };
+
+        function attachLabel(mesh, nameData) {
+            if (mesh.userData.labelObj) {
+                if (mesh.userData.labelObj.element.parentNode) {
+                    mesh.userData.labelObj.element.parentNode.removeChild(mesh.userData.labelObj.element);
+                }
+                mesh.remove(mesh.userData.labelObj);
+            }
+
+            const div = document.createElement('div');
+            div.className = 'label-container';
+            div.style.color = nameData.color;
+            div.innerHTML = `<span>${nameData.emoji}</span><span>${nameData.text}</span>`;
+
+            const label = new CSS2DObject(div);
+            let y = 1.5;
+            if (mesh.userData.type === 'building') y = (mesh.userData.height * 3) / 2 + 1.5;
+            label.position.set(0, y, 0);
+
+            mesh.add(label);
+            mesh.userData.labelObj = label;
+            mesh.userData.nameData = nameData;
+
+            div.style.display = state.visibility.labels ? 'flex' : 'none';
+        }
+
+        // --- 设置 ---
+        window.openSettings = () => document.getElementById('settings-modal').classList.add('open');
+        window.setGroundColor = (c) => {
+            document.getElementById('custom-ground-color').value = c;
+            groundColorMesh.material.color.set(c);
+        };
+        window.setBgColor = (c) => {
+            scene.background = new THREE.Color(c);
+            scene.fog.color = new THREE.Color(c);
+            document.getElementById('custom-bg-color').value = c;
+        };
+        window.updateShadowAngle = (deg) => {
+            const rad = deg * Math.PI / 180;
+            const r = 150;
+            dirLight.position.x = Math.sin(rad) * r;
+            dirLight.position.z = Math.cos(rad) * r;
+        };
+
+        // --- 人口 ---
+        function updatePopulation() {
+            let pop = 0;
+            state.mapData.forEach(d => { if (d.type === 'building') pop += d.height * CONFIG.maxPedestrians / 100 * 5; });
+            state.population = Math.floor(pop);
+            updatePopDisplay();
+            adjustPedestrians();
+        }
+
+        function updatePopDisplay() {
+            document.getElementById('pop-display').innerText = `👥 ${state.population}`;
+        }
+
+        setInterval(() => {
+            if (state.population > 0) {
+                const factor = 1 + (Math.random() * 0.06 - 0.03);
+                const displayVal = Math.floor(state.population * factor);
+                document.getElementById('pop-display').innerText = `👥 ${displayVal}`;
+            }
+        }, 3000);
+
+        function adjustPedestrians() {
+            const target = Math.min(Math.floor(state.population * 0.1), CONFIG.maxPedestrians);
+            while (state.pedestrians.length < target) createPedestrian();
+            while (state.pedestrians.length > target) {
+                const p = state.pedestrians.pop();
+                pedestrianGroup.remove(p);
+            }
+        }
+
+        function createPedestrian() {
+            const geo = new THREE.CircleGeometry(0.35, 12);
+            const mat = new THREE.MeshBasicMaterial({ color: CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)], side: THREE.DoubleSide });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.rotation.x = -Math.PI / 2;
+
+            const keys = Array.from(state.mapData.keys());
+            if (keys.length === 0) return;
+            const key = keys[Math.floor(Math.random() * keys.length)];
+            if (state.mapData.get(key).type === 'road') return;
+
+            const [x, z] = key.split(',').map(Number);
+            // 记录出生点
+            const startX = x * CONFIG.gridSize + (Math.random() - 0.5) * 5;
+            const startZ = z * CONFIG.gridSize + (Math.random() - 0.5) * 5;
+
+            mesh.position.set(startX, 0.25, startZ);
+            mesh.userData.spawnPos = new THREE.Vector3(startX, 0.25, startZ);
+            mesh.userData.velocity = new THREE.Vector3((Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.1);
+
+            pedestrianGroup.add(mesh);
+            state.pedestrians.push(mesh);
+        }
+
+        function clearPedestriansOnGrid(gx, gz) {
+            for (let i = state.pedestrians.length - 1; i >= 0; i--) {
+                const p = state.pedestrians[i];
+                const pgx = Math.round(p.position.x / CONFIG.gridSize);
+                const pgz = Math.round(p.position.z / CONFIG.gridSize);
+                if (pgx === gx && pgz === gz) {
+                    pedestrianGroup.remove(p);
+                    state.pedestrians.splice(i, 1);
+                }
+            }
+        }
+
+        // --- 循环 ---
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+
+            const cx = Math.round(controls.target.x / CONFIG.gridSize) * CONFIG.gridSize;
+            const cz = Math.round(controls.target.z / CONFIG.gridSize) * CONFIG.gridSize;
+            gridMesh.position.x = cx;
+            gridMesh.position.z = cz;
+
+            if (state.visibility.pedestrians) {
+                for (let i = state.pedestrians.length - 1; i >= 0; i--) {
+                    const p = state.pedestrians[i];
+
+                    // 距离检测 (走太远则移除)
+                    if (p.userData.spawnPos && p.position.distanceTo(p.userData.spawnPos) > 35) {
+                        pedestrianGroup.remove(p);
+                        state.pedestrians.splice(i, 1);
+                        createPedestrian(); // 重生
+                        continue;
+                    }
+
+                    const nextPos = p.position.clone().add(p.userData.velocity);
+                    const gx = Math.round(nextPos.x / CONFIG.gridSize);
+                    const gz = Math.round(nextPos.z / CONFIG.gridSize);
+                    const cell = state.mapData.get(`${gx},${gz}`);
+
+                    if (cell && cell.type === 'road') {
+                        // 撞墙(路)，反弹或重生
+                        p.userData.velocity.negate();
+                    } else {
+                        p.position.add(p.userData.velocity);
+                    }
+
+                    if (Math.random() < 0.02) p.userData.velocity.set((Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.1);
+                }
+            }
+            renderer.render(scene, camera);
+            labelRenderer.render(scene, camera);
+        }
+        animate();
+
+    </script>
+</body>
+
+</html>
