@@ -284,15 +284,17 @@ window.EXTRA_CONFIG = {
     { name: "开心姐", url: "https://s41.ax1x.com/2025/12/23/pZ84UTH.jpg" },
     { name: "三梦", url: "https://s41.ax1x.com/2025/12/24/pZGQEIx.jpg" },
     { name: "百万人鱼", url: "https://s41.ax1x.com/2025/12/21/pZ3c06H.jpg" },
-    { name: "给我道歉", url: "https://s41.ax1x.com/2025/12/21/pZ3cdpD.jpg" },
+    { name: "给我道歉", url: "https://s41.ax1x.com/2025/12/23/pZ84VyT.jpg" },
     { name: "吐舌头", url: "https://s41.ax1x.com/2025/12/21/pZ3cUfO.jpg" },
     { name: "讶异", url: "https://s41.ax1x.com/2025/12/24/pZGQeJK.jpg" },
     { name: "人贩娜", url: "https://s41.ax1x.com/2025/12/24/pZGQnzD.jpg" },
     { name: "翠花", url: "https://s41.ax1x.com/2025/12/24/pZGQmRO.jpg" },
-    
-
+    { name: "乌干达娜娜", url: "https://s41.ax1x.com/2025/12/23/pZ84JOO.jpg" },
+    { name: "肥婆薯片", url: "https://s41.ax1x.com/2025/12/23/pZ84nw4.png" },
+{ name: "无语", url: "https://s41.ax1x.com/2025/12/24/pZGQAd1.jpg" },
     
   ],
 };
+
 
 
