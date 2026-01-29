@@ -1,0 +1,1421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>公司生存模拟</title>
+    <style>
+        :root {
+            /* 高级灰配色 (Slate Palette) */
+            --bg-color: #f1f5f9;
+            /* 浅灰背景 */
+            --card-bg: #ffffff;
+            /* 纯白卡片 */
+            --header-bg: #1e293b;
+            /* 深岩石灰头部 */
+            --text-primary: #0f172a;
+            /* 深色主文本 */
+            --text-secondary: #64748b;
+            /* 次级文本 */
+            --border-color: #e2e8f0;
+            /* 极淡边框 */
+            --primary-color: #3b82f6;
+            /* 亮蓝主色 */
+            --primary-hover: #2563eb;
+            --danger-color: #ef4444;
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --purple-color: #8b5cf6;
+
+            --player-bg: #fffbeb;
+            /* 玩家高亮背景 (淡暖色) */
+            --player-text: #b45309;
+            --selected-bg: #e0f2fe;
+            /* 选中背景 */
+
+            --radius-size: 12px;
+            /* 统一圆角 */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            /* 禁止选中 */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* 隐藏滚动条 */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        * {
+            scrollbar-width: none;
+            /* Firefox */
+        }
+
+        body {
+            background: var(--bg-color);
+            min-height: 100vh;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 14px;
+            color: var(--text-primary);
+            overflow-x: hidden;
+        }
+
+        /* 顶部信息栏 */
+        .header-wrap {
+            width: 100%;
+            background: var(--header-bg);
+            color: #fff;
+            padding: 14px 16px;
+            border-radius: var(--radius-size);
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+
+        .title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
+        }
+
+        .title-bar h1 {
+            font-size: 16px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            color: #f8fafc;
+        }
+
+        .stats-btn {
+            padding: 4px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.2s;
+        }
+
+        .stats-btn:active {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 关键信息一行显示 */
+        .info-bar-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            color: #94a3b8;
+        }
+
+        .info-item span {
+            color: #fbbf24;
+            /* 金色数字 */
+            font-weight: 600;
+            margin-left: 4px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 事件栏 */
+        .event-bar {
+            background: var(--card-bg);
+            padding: 12px 16px;
+            border-radius: var(--radius-size);
+            border: 1px solid var(--border-color);
+        }
+
+        .event-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .event-header h3 {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .view-all-btn {
+            background: transparent;
+            color: var(--primary-color);
+            border: none;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+
+        .last-event {
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            border-left: 3px solid var(--purple-color);
+        }
+
+        /* 公司列表区域 */
+        .company-box {
+            background: var(--card-bg);
+            border-radius: var(--radius-size);
+            border: 1px solid var(--border-color);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .company-box-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #fff;
+        }
+
+        .company-box-header h3 {
+            font-size: 15px;
+            color: var(--text-primary);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .company-box-header h3::before {
+            content: "";
+            display: block;
+            width: 4px;
+            height: 16px;
+            background: var(--primary-color);
+            border-radius: 2px;
+        }
+
+        .btn-create-new {
+            padding: 6px 14px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            /* 按钮圆角微调 */
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .table-container {
+            flex: 1;
+            overflow-y: auto;
+            background: #fff;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            table-layout: fixed;
+        }
+
+        thead th {
+            background: #f8fafc;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 12px 4px;
+            font-size: 11px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        tbody td {
+            padding: 14px 6px;
+            font-size: 13px;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: background 0.2s;
+        }
+
+        /* 列宽微调 */
+        th:nth-child(1),
+        td:nth-child(1) {
+            width: 12%;
+            color: var(--text-secondary);
+        }
+
+        th:nth-child(2),
+        td:nth-child(2) {
+            width: 34%;
+            text-align: left;
+            padding-left: 10px;
+            font-weight: 500;
+        }
+
+        th:nth-child(3),
+        td:nth-child(3) {
+            width: 22%;
+            text-align: right;
+            padding-right: 12px;
+        }
+
+        th:nth-child(4),
+        td:nth-child(4) {
+            width: 16%;
+        }
+
+        th:nth-child(5),
+        td:nth-child(5) {
+            width: 16%;
+        }
+
+        /* 玩家公司样式 */
+        .player-company td {
+            background-color: var(--player-bg);
+        }
+
+        .player-company td:nth-child(2) {
+            color: var(--player-text);
+            font-weight: 700;
+        }
+
+        .player-company td:nth-child(2)::before {
+            content: "★ ";
+            font-size: 10px;
+            opacity: 0.8;
+        }
+
+        /* 选中行样式 */
+        tr.selected-row td {
+            background-color: var(--selected-bg) !important;
+        }
+
+        tr.player-company.selected-row td {
+            background-color: #fef3c7 !important;
+            /* 选中玩家行 */
+        }
+
+        /* 鼠标滑过高亮文本 */
+        .clickable-name {
+            transition: color 0.2s;
+            cursor: pointer;
+        }
+
+        .clickable-name:hover {
+            color: var(--primary-color) !important;
+        }
+
+        /* 字体美化：取消等宽，使用表格数字对齐 */
+        .market-value {
+            font-family: inherit;
+            /* 继承系统字体 */
+            font-weight: 600;
+            color: var(--text-primary);
+            font-variant-numeric: tabular-nums;
+            /* 数字对齐 */
+            letter-spacing: -0.3px;
+        }
+
+        /* 弹窗通用样式 */
+        .modal-mask {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.4);
+            /* 深色遮罩 */
+            z-index: 100;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            backdrop-filter: blur(4px);
+            /* 毛玻璃背景 */
+        }
+
+        .modal-card {
+            width: 100%;
+            max-width: 380px;
+            max-height: 85vh;
+            background: var(--card-bg);
+            border-radius: var(--radius-size);
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            padding: 16px 20px;
+            background: #fff;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: var(--radius-size) var(--radius-size) 0 0;
+        }
+
+        .modal-header h3 {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .modal-close {
+            font-size: 22px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+
+        .modal-close:active {
+            background: #f1f5f9;
+        }
+
+        .modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            background: #fff;
+        }
+
+        /* 列表式弹窗内容 */
+        .event-item {
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .event-item:last-child {
+            border-bottom: none;
+        }
+
+        .event-time {
+            color: var(--text-secondary);
+            font-size: 11px;
+            margin-bottom: 3px;
+        }
+
+        .event-company {
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        .stats-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+
+        .stats-item:last-child {
+            border-bottom: none;
+        }
+
+        .stats-label {
+            color: var(--text-secondary);
+        }
+
+        .stats-value {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* 输入框与按钮组 */
+        .input-group-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: stretch;
+        }
+
+        .form-input {
+            flex: 1;
+            /* 输入框占据剩余空间 */
+            padding: 10px 14px;
+            border: 1px solid var(--border-color);
+            background: #f8fafc;
+            border-radius: var(--radius-size);
+            /* 圆角一致 */
+            font-size: 14px;
+            outline: none;
+            -webkit-appearance: none;
+            color: var(--text-primary);
+            transition: border-color 0.2s, background 0.2s;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-color);
+            background: #fff;
+        }
+
+        .btn-apply-inline {
+            width: auto;
+            padding: 0 16px;
+            background: var(--header-bg);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-size);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+
+        .btn-dice {
+            padding: 0 14px;
+            background: #fbbf24;
+            border: none;
+            border-radius: var(--radius-size);
+            cursor: pointer;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .info-detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 13px;
+        }
+
+        .info-detail-row span:first-child {
+            color: var(--text-secondary);
+        }
+
+        .info-detail-row span:last-child {
+            font-weight: 700;
+            color: var(--text-primary);
+            font-family: inherit;
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* 按钮网格 */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .action-btn {
+            padding: 14px;
+            border: none;
+            border-radius: var(--radius-size);
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            text-align: center;
+            transition: opacity 0.2s, transform 0.1s;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .action-btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-inject {
+            background: var(--success-color);
+        }
+
+        .btn-withdraw {
+            background: var(--warning-color);
+        }
+
+        .btn-split {
+            background: var(--purple-color);
+        }
+
+        .btn-bankrupt {
+            background: var(--danger-color);
+        }
+
+        /* 确认按钮 */
+        .btn-confirm {
+            width: 100%;
+            padding: 14px;
+            background: var(--header-bg);
+            color: #fff;
+            border: none;
+            border-radius: var(--radius-size);
+            font-weight: 600;
+            margin-top: 20px;
+            cursor: pointer;
+        }
+
+        .action-btn.disabled {
+            background-color: #cbd5e1 !important;
+            color: #94a3b8 !important;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        /* 滑块 */
+        .slider-wrap {
+            margin: 24px 0;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: var(--radius-size);
+            border: 1px solid var(--border-color);
+        }
+
+        .slider-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .slider-input {
+            width: 100%;
+            margin: 12px 0;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider-input::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+
+        .slider-val {
+            text-align: center;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--primary-color);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .feedback-text {
+            color: var(--danger-color);
+            font-size: 12px;
+            text-align: center;
+            min-height: 20px;
+            margin-top: 12px;
+            line-height: 1.4;
+            font-weight: 500;
+        }
+
+        @media (min-width: 768px) {
+            body {
+                max-width: 600px;
+                margin: 0 auto;
+                border-left: 1px solid #e2e8f0;
+                border-right: 1px solid #e2e8f0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header-wrap">
+        <div class="title-bar">
+            <h1>公司生存模拟</h1>
+            <button class="stats-btn" onclick="openStatsModal()">统计</button>
+        </div>
+        <!-- 整合在一行 -->
+        <div class="info-bar-row">
+            <div class="info-item">年份: <span id="gameYear">0</span></div>
+            <div class="info-item">总市值: <span id="playerTotalValue">0.00</span>亿</div>
+            <div class="info-item">资产: <span id="flexibleAssets">2.00</span>亿</div>
+        </div>
+    </div>
+
+    <div class="event-bar">
+        <div class="event-header">
+            <h3>大事件记录</h3>
+            <button class="view-all-btn" onclick="openEventModal()">查看全部</button>
+        </div>
+        <div class="last-event" id="lastEvent">游戏初始化，20家公司均以1亿市值成立</div>
+    </div>
+
+    <div class="company-box">
+        <div class="company-box-header">
+            <h3>公司市值排名榜</h3>
+            <button class="btn-create-new" onclick="openCreateModal()">+ 新建公司</button>
+        </div>
+        <div class="table-container">
+            <table id="companyTable">
+                <thead>
+                    <tr>
+                        <th>排名</th>
+                        <th>公司名称</th>
+                        <th>市值（亿）</th>
+                        <th>成立时长</th>
+                        <th>幸运值</th>
+                    </tr>
+                </thead>
+                <tbody id="companyList">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 事件弹窗 -->
+    <div class="modal-mask" id="eventModalMask" onclick="closeEventModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>大事件记录</h3>
+                <div class="modal-close" onclick="closeEventModal()">×</div>
+            </div>
+            <div class="modal-body" id="eventList">
+            </div>
+        </div>
+    </div>
+
+    <!-- 统计弹窗 -->
+    <div class="modal-mask" id="statsModalMask" onclick="closeStatsModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>统计信息</h3>
+                <div class="modal-close" onclick="closeStatsModal()">×</div>
+            </div>
+            <div class="modal-body" id="statsList">
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建公司弹窗 -->
+    <div class="modal-mask" id="createModalMask" onclick="closeCreateModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>新建公司</h3>
+                <div class="modal-close" onclick="closeCreateModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div class="input-group-row">
+                    <input type="text" class="form-input" id="createNameInput" placeholder="输入公司名称">
+                    <button class="btn-dice" onclick="rollRandomName()">🎲</button>
+                </div>
+
+                <div class="slider-wrap">
+                    <div class="slider-label">初始市值分配（最少1亿）</div>
+                    <input type="range" class="slider-input" id="createMoneySlider" min="0" max="0" step="0.01"
+                        value="0">
+                    <div class="slider-val" id="createMoneyDisplay">1.00亿</div>
+                </div>
+
+                <button class="btn-confirm" onclick="applyCreateCompany()">确认创建</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 公司详情弹窗 -->
+    <div class="modal-mask" id="companyModalMask" onclick="closeCompanyModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3>公司详情</h3>
+                <div class="modal-close" onclick="closeCompanyModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <!-- 重命名区域：一行显示 -->
+                <div class="input-group-row">
+                    <input type="text" class="form-input" id="editCompanyName" placeholder="公司名称">
+                    <button class="btn-apply-inline" onclick="applyRename()">应用</button>
+                </div>
+
+                <div style="margin-top: 10px;">
+                    <div class="info-detail-row">
+                        <span>公司市值</span>
+                        <span id="detailMarketValue">0.00亿</span>
+                    </div>
+                    <div class="info-detail-row">
+                        <span>成立时长</span>
+                        <span id="detailCompanyAge">0</span>
+                    </div>
+                    <div class="info-detail-row">
+                        <span>幸运值</span>
+                        <span id="detailLucky">0</span>
+                    </div>
+                </div>
+
+                <div id="playerActions" class="action-grid" style="display: none;">
+                    <button id="btnInject" class="action-btn btn-inject">市值分配</button>
+                    <button id="btnWithdraw" class="action-btn btn-withdraw">资产提现</button>
+                    <button id="btnSplit" class="action-btn btn-split">公司拆分</button>
+                    <button id="btnBankrupt" class="action-btn btn-bankrupt">破产</button>
+                </div>
+                <div id="actionFeedback" class="feedback-text"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 操作交互弹窗 -->
+    <div class="modal-mask" id="actionModalMask" onclick="closeActionModal()">
+        <div class="modal-card" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 id="actionTitle">操作</h3>
+                <div class="modal-close" onclick="closeActionModal()">×</div>
+            </div>
+            <div class="modal-body">
+                <div id="actionInputContainer"></div>
+
+                <div class="slider-wrap" id="sliderContainer">
+                    <div id="actionDesc" class="slider-label"></div>
+                    <input type="range" class="slider-input" id="actionSlider" min="0" max="100" value="0">
+                    <div class="slider-val" id="sliderValueText">0</div>
+                </div>
+
+                <button class="btn-confirm" onclick="applyAction()">应用</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let companies = [];
+        let gameSecond = 0;
+        let gameYear = 0;
+        let bankruptCount = 0;
+        let flexibleAssets = 2.00;
+        let eventRecords = [];
+        let selectedCompanyId = null;
+        let currentOperateCompanyId = null;
+        let currentActionType = null;
+
+        // 全局操作限制
+        let globalLastActionYear = {
+            inject: -1,
+            withdraw: -1,
+            split: -1,
+            bankrupt: -1
+        };
+
+        // 基础配置
+        const MIN_COMPANIES = 20;
+        const UPDATE_INTERVAL = 1000;
+        const LUCKY_UPDATE_INTERVAL = 10;
+        const MAX_EVENT_RECORDS = 100;
+        const LUCKY_MIN = -10;
+        const LUCKY_MAX = 10;
+        const MARKET_CAP_FORMULA_BASE = 1000;
+        const MARKET_CAP_FORMULA_DEN = 999;
+
+        window.onload = function () {
+            initCompanies();
+            updateBaseInfo();
+            renderCompanyList();
+            addBigEventRecord("系统", `游戏初始化，${MIN_COMPANIES}家公司均以1亿市值成立`);
+            setInterval(coreUpdate, UPDATE_INTERVAL);
+        };
+
+        function getRandomName() {
+            const prefix = ["大信", "天华", "左本", "新寿", "鼎泰", "云帆", "锐科", "金茂", "博远", "大屋", "玉华", "大成", "新信", "明玉", "宏达", "盛世"];
+            const suffix = ["科技", "实业", "资本", "商贸", "智造", "文旅", "医药", "新能源", "物流", "传媒", "集团", "游戏", "保险", "Ai", "电子"];
+            return `${prefix[Math.floor(Math.random() * prefix.length)]}${suffix[Math.floor(Math.random() * suffix.length)]}`;
+        }
+
+        function initCompanies() {
+            for (let i = 0; i < MIN_COMPANIES; i++) {
+                companies.push(createCompany(false));
+            }
+            sortCompaniesByValue();
+        }
+
+        function createCompany(isPlayer = false, manualValue = null) {
+            const randomName = isPlayer ? "" : getRandomName();
+            const initLucky = Math.floor(Math.random() * 21) - 10;
+            let initValue = isPlayer ? 1.00 : +(Math.random() * 0.88 + 1.00).toFixed(2);
+            if (manualValue !== null) initValue = manualValue;
+
+            return {
+                id: Date.now() + Math.random(),
+                name: randomName,
+                marketValue: initValue,
+                createTime: gameYear,
+                lucky: initLucky,
+                isPlayer
+            };
+        }
+
+        // --- 新建公司相关逻辑 ---
+
+        function openCreateModal() {
+            document.getElementById("createNameInput").value = "";
+            const slider = document.getElementById("createMoneySlider");
+            const display = document.getElementById("createMoneyDisplay");
+
+            if (flexibleAssets < 1) {
+                alert("灵活资产不足1亿，无法创建新公司！");
+                return;
+            }
+
+            slider.min = 1.00;
+            slider.max = flexibleAssets;
+            slider.step = 0.01;
+            slider.value = 1.00;
+            display.innerText = "1.00亿";
+
+            slider.oninput = function () {
+                display.innerText = parseFloat(this.value).toFixed(2) + "亿";
+            }
+
+            document.getElementById("createModalMask").style.display = "flex";
+        }
+
+        function closeCreateModal() {
+            document.getElementById("createModalMask").style.display = "none";
+        }
+
+        function rollRandomName() {
+            document.getElementById("createNameInput").value = getRandomName();
+        }
+
+        function applyCreateCompany() {
+            const name = document.getElementById("createNameInput").value.trim();
+            const cost = parseFloat(document.getElementById("createMoneySlider").value);
+
+            if (!name) {
+                alert("请输入公司名称！");
+                return;
+            }
+            if (companies.some(c => c.name === name)) {
+                alert("公司名称已存在！");
+                return;
+            }
+            if (cost > flexibleAssets) {
+                alert("资产不足！");
+                return;
+            }
+            if (cost < 1) {
+                alert("初始市值不能低于1亿！");
+                return;
+            }
+
+            flexibleAssets -= cost;
+            const playerCompany = createCompany(true, cost);
+            playerCompany.name = name;
+            playerCompany.createTime = gameYear;
+            companies.push(playerCompany);
+
+            sortCompaniesByValue();
+            renderCompanyList();
+            updateBaseInfo();
+            addBigEventRecord(name, `玩家消耗${cost.toFixed(2)}亿灵活资产创建公司`);
+            closeCreateModal();
+        }
+
+        // --- 核心逻辑 ---
+
+        function calcDynamicRateBase(marketCap) {
+            const slope = 0.05 - 0.04 * (Math.min(marketCap, MARKET_CAP_FORMULA_BASE) - 1) / MARKET_CAP_FORMULA_DEN;
+            if (marketCap > MARKET_CAP_FORMULA_BASE) {
+                const over = marketCap - MARKET_CAP_FORMULA_BASE;
+                return Math.max(0.0001, slope - 0.002 * (over / 1000));
+            }
+            return Math.max(0.0001, slope);
+        }
+
+        function coreUpdate() {
+            gameSecond++;
+            const prevGameYear = gameYear;
+            gameYear = Math.floor(gameSecond / 60);
+
+            if (gameSecond % LUCKY_UPDATE_INTERVAL === 0) {
+                companies = updateAllLucky(companies);
+            }
+
+            companies = companies.map(company => {
+                const dynamicBase = calcDynamicRateBase(company.marketValue);
+                let rateCoeff = 0;
+                if (company.lucky >= 6) {
+                    rateCoeff = dynamicBase;
+                } else if (company.lucky >= 0) {
+                    rateCoeff = dynamicBase * 0.4;
+                } else if (company.lucky >= -5) {
+                    rateCoeff = -dynamicBase * 0.4;
+                } else {
+                    rateCoeff = -dynamicBase;
+                }
+                let newMarketValue = company.marketValue * (1 + rateCoeff);
+                newMarketValue = Math.round(newMarketValue * 100) / 100;
+                return { ...company, marketValue: newMarketValue };
+            });
+
+            // 破产检测
+            const originCount = companies.length;
+            const nonBankrupt = companies.filter(c => c.marketValue > 0.1);
+            const bankruptNum = originCount - nonBankrupt.length;
+            if (bankruptNum > 0) {
+                bankruptCount += bankruptNum;
+                addBigEventRecord("系统", `${bankruptNum}家公司市值归零，宣告破产`);
+            }
+            companies = nonBankrupt;
+
+            // 新的一年逻辑
+            if (gameYear > prevGameYear) {
+                // 1. 新公司成立 (随机0-3个)
+                const addNum = Math.floor(Math.random() * 4); // 0,1,2,3
+                if (addNum > 0) {
+                    let newNameList = [];
+                    for (let i = 0; i < addNum; i++) {
+                        const nc = createCompany(false);
+                        companies.push(nc);
+                        newNameList.push(`【${nc.name}】`);
+                    }
+                    addBigEventRecord("系统", `${gameYear}年 ${newNameList.join('、')}进入市场`);
+                }
+
+                // 2. 政府资助
+                const poorList = companies.filter(c => c.marketValue < 20);
+                if (poorList.length > 0) {
+                    const luckyOne = poorList[Math.floor(Math.random() * poorList.length)];
+                    const subsidy = Math.floor(Math.random() * 9) + 2;
+                    luckyOne.marketValue += subsidy;
+                    luckyOne.marketValue = Math.round(luckyOne.marketValue * 100) / 100;
+                    addBigEventRecord("政府资助", `向【${luckyOne.name}】发放专项补助${subsidy}亿`);
+                }
+
+                // 3. 随机自主破产事件 (50%概率)
+                if (Math.random() < 0.5) {
+                    const candidates = companies.filter(c => !c.isPlayer && c.marketValue < 3 && (gameYear - c.createTime) >= 3);
+                    if (candidates.length > 0) {
+                        const target = candidates[Math.floor(Math.random() * candidates.length)];
+                        companies = companies.filter(c => c.id !== target.id); // 移除
+                        bankruptCount++;
+                        addBigEventRecord("破产清算", `【${target.name}】因经营不善，选择自主破产退市`);
+                    }
+                }
+            }
+
+            sortCompaniesByValue();
+            renderCompanyList();
+            updateBaseInfo();
+            if (document.getElementById("companyModalMask").style.display === "flex" && currentOperateCompanyId) {
+                updateCompanyModalData();
+            }
+        }
+
+        function updateAllLucky(companies) {
+            return companies.map(company => {
+                let newLucky;
+                if (company.lucky === 0) {
+                    newLucky = Math.random() < 2 / 3 ? 1 : -1;
+                } else {
+                    newLucky = Math.round(company.lucky * 0.7 + (Math.random() - 0.5) * 5);
+                }
+                newLucky = Math.max(LUCKY_MIN, Math.min(LUCKY_MAX, newLucky));
+                return { ...company, lucky: newLucky };
+            });
+        }
+
+        function sortCompaniesByValue() {
+            companies.sort((a, b) => b.marketValue - a.marketValue);
+        }
+
+        function renderCompanyList() {
+            const listEl = document.getElementById("companyList");
+            listEl.innerHTML = "";
+            companies.forEach((company, index) => {
+                const tr = document.createElement("tr");
+                if (company.isPlayer) tr.classList.add("player-company");
+                if (company.id === selectedCompanyId) tr.classList.add("selected-row");
+
+                const companyAge = gameYear - company.createTime;
+                const ageText = companyAge <= 0 ? "0" : companyAge;
+                const marketValue = company.marketValue.toFixed(2);
+
+                tr.onclick = () => selectCompanyRow(company.id);
+
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td class="clickable-name" onclick="openCompanyModal('${company.id}', event)">${company.name}</td>
+                    <td class="market-value">${marketValue}</td>
+                    <td>${ageText}</td>
+                    <td>${company.lucky}</td>
+                `;
+                listEl.appendChild(tr);
+            });
+        }
+
+        function selectCompanyRow(id) {
+            selectedCompanyId = id;
+            renderCompanyList();
+        }
+
+        function updateBaseInfo() {
+            document.getElementById("gameYear").innerText = gameYear;
+            const playerCompanies = companies.filter(c => c.isPlayer);
+            const playerTotal = playerCompanies.reduce((sum, c) => sum + c.marketValue, 0);
+            document.getElementById("playerTotalValue").innerText = playerTotal.toFixed(2);
+            document.getElementById("flexibleAssets").innerText = flexibleAssets.toFixed(2);
+        }
+
+        function addBigEventRecord(actorName, content) {
+            const now = new Date();
+            const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+
+            let displayActor = actorName;
+            const sysNames = ["系统", "政府资助", "破产清算"];
+            if (!sysNames.includes(actorName)) {
+                displayActor = `【${actorName}】`;
+            }
+
+            const eventItem = { time: timeStr, company: displayActor, content, gameYear };
+            eventRecords.unshift(eventItem);
+            if (eventRecords.length > MAX_EVENT_RECORDS) {
+                eventRecords.pop();
+            }
+            document.getElementById("lastEvent").textContent = `[${timeStr}] ${displayActor}：${content}`;
+            renderEventList();
+        }
+
+        function renderEventList() {
+            const eventListEl = document.getElementById("eventList");
+            eventListEl.innerHTML = "";
+            eventRecords.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "event-item";
+                div.innerHTML = `
+                    <div class="event-time">${item.time} | 年份${item.gameYear}</div>
+                    <div><span class="event-company">${item.company}</span>：${item.content}</div>
+                `;
+                eventListEl.appendChild(div);
+            });
+        }
+
+        function renderStatsList() {
+            const statsListEl = document.getElementById("statsList");
+            statsListEl.innerHTML = "";
+            const playerCompanies = companies.filter(c => c.isPlayer);
+            const playerTotal = playerCompanies.reduce((sum, c) => sum + c.marketValue, 0);
+            const avgPlayerValue = playerCompanies.length ? (playerTotal / playerCompanies.length).toFixed(2) : "0.00";
+            const topCompany = companies.length ? companies[0] : null;
+            const stats = [
+                { label: "年份", value: gameYear },
+                { label: "公司总数量", value: companies.length },
+                { label: "破产公司总数", value: bankruptCount },
+                { label: "玩家公司数量", value: playerCompanies.length },
+                { label: "玩家总市值", value: playerTotal.toFixed(2) + "亿" },
+                { label: "玩家平均市值", value: avgPlayerValue + "亿" },
+                { label: "灵活资产", value: flexibleAssets.toFixed(2) + "亿" },
+                { label: "当前榜首公司", value: topCompany ? `【${topCompany.name}】` : "--" },
+                { label: "榜首市值", value: topCompany ? topCompany.marketValue.toFixed(2) + "亿" : "--" }
+            ];
+            stats.forEach(stat => {
+                const div = document.createElement("div");
+                div.className = "stats-item";
+                div.innerHTML = `<span class="stats-label">${stat.label}</span><span class="stats-value">${stat.value}</span>`;
+                statsListEl.appendChild(div);
+            });
+        }
+
+        // --- 公司详情与操作弹窗 ---
+
+        function openCompanyModal(idStr, event) {
+            if (event) event.stopPropagation();
+            const id = parseFloat(idStr);
+            const company = companies.find(c => c.id === id);
+            if (!company) return;
+
+            currentOperateCompanyId = id;
+            selectedCompanyId = id;
+            renderCompanyList();
+
+            document.getElementById("editCompanyName").value = company.name;
+            document.getElementById("actionFeedback").innerText = "";
+
+            const actionsDiv = document.getElementById("playerActions");
+            actionsDiv.style.display = company.isPlayer ? "grid" : "none";
+
+            if (company.isPlayer) {
+                setupActionButton('btnInject', 'inject', company);
+                setupActionButton('btnWithdraw', 'withdraw', company);
+                setupActionButton('btnSplit', 'split', company);
+                setupActionButton('btnBankrupt', 'bankrupt', company);
+            }
+
+            updateCompanyModalData();
+            document.getElementById("companyModalMask").style.display = "flex";
+        }
+
+        function setupActionButton(btnId, type, company) {
+            const btn = document.getElementById(btnId);
+            let disabled = false;
+            let reason = "";
+
+            if (globalLastActionYear[type] === gameYear) {
+                disabled = true;
+                reason = "全服该功能每年只能操作一次（所有玩家公司共享限制）";
+            }
+
+            if (type === 'bankrupt' && !disabled) {
+                if (company.marketValue >= 10) {
+                    disabled = true;
+                    reason = "公司不满足破产条件（市值需小于10亿）";
+                }
+            }
+
+            if (disabled) {
+                btn.classList.add('disabled');
+            } else {
+                btn.classList.remove('disabled');
+            }
+
+            btn.onclick = () => {
+                document.getElementById("actionFeedback").innerText = "";
+                if (disabled) {
+                    document.getElementById("actionFeedback").innerText = reason;
+                } else {
+                    openActionModal(type);
+                }
+            };
+        }
+
+        function updateCompanyModalData() {
+            const company = companies.find(c => c.id === currentOperateCompanyId);
+            if (!company) {
+                closeCompanyModal();
+                return;
+            }
+            const age = gameYear - company.createTime;
+            const ageText = age <= 0 ? "0" : age;
+
+            document.getElementById("detailMarketValue").innerText = company.marketValue.toFixed(2) + "亿";
+            document.getElementById("detailCompanyAge").innerText = ageText;
+            document.getElementById("detailLucky").innerText = company.lucky;
+        }
+
+        function closeCompanyModal() {
+            document.getElementById("companyModalMask").style.display = "none";
+            currentOperateCompanyId = null;
+        }
+
+        function applyRename() {
+            const newName = document.getElementById("editCompanyName").value.trim();
+            const company = companies.find(c => c.id === currentOperateCompanyId);
+            if (!company || !newName) return;
+            if (companies.some(c => c.name === newName && c.id !== company.id)) {
+                alert("公司名称已存在！");
+                return;
+            }
+            const oldName = company.name;
+            company.name = newName;
+            renderCompanyList();
+            addBigEventRecord(company.name, `公司更名为 【${newName}】 (原: 【${oldName}】)`);
+            alert("重命名成功");
+        }
+
+        function openActionModal(type) {
+            const company = companies.find(c => c.id === currentOperateCompanyId);
+            if (!company) return;
+
+            currentActionType = type;
+            document.getElementById("companyModalMask").style.display = "none";
+
+            const modal = document.getElementById("actionModalMask");
+            const slider = document.getElementById("actionSlider");
+            const sliderContainer = document.getElementById("sliderContainer");
+            const inputContainer = document.getElementById("actionInputContainer");
+            const title = document.getElementById("actionTitle");
+            const desc = document.getElementById("actionDesc");
+
+            inputContainer.innerHTML = "";
+            sliderContainer.style.display = "block";
+
+            slider.oninput = updateSliderDisplay;
+
+            if (type === 'inject') {
+                title.innerText = "市值分配 (注资)";
+                slider.min = 0;
+                slider.max = 100;
+                slider.value = 0;
+                desc.innerText = `灵活资产: ${flexibleAssets.toFixed(2)}亿 | 当前市值: ${company.marketValue.toFixed(2)}亿`;
+            } else if (type === 'withdraw') {
+                title.innerText = "资产提现";
+                slider.min = 1;
+                slider.max = 90;
+                slider.value = 10;
+                desc.innerText = `当前市值: ${company.marketValue.toFixed(2)}亿`;
+            } else if (type === 'split') {
+                title.innerText = "公司拆分";
+                inputContainer.innerHTML = `<input type="text" class="form-input" id="splitNewName" value="新${company.name}" style="width:100%;margin-bottom:10px;">`;
+                slider.min = 1;
+                slider.max = 90;
+                slider.value = 50;
+                desc.innerText = `母公司市值: ${company.marketValue.toFixed(2)}亿`;
+            } else if (type === 'bankrupt') {
+                title.innerText = "申请破产";
+                sliderContainer.style.display = "none";
+                desc.innerText = `确定让 【${company.name}】 破产吗？\n当前市值 ${company.marketValue.toFixed(2)}亿 将转入灵活资产。`;
+            }
+
+            modal.style.display = "flex";
+            updateSliderDisplay();
+        }
+
+        function updateSliderDisplay() {
+            const slider = document.getElementById("actionSlider");
+            const display = document.getElementById("sliderValueText");
+            const val = parseInt(slider.value);
+            const company = companies.find(c => c.id === currentOperateCompanyId);
+
+            if (currentActionType === 'inject') {
+                const amount = flexibleAssets * (val / 100);
+                display.innerText = `分配 ${val}% (${amount.toFixed(2)}亿)`;
+            } else if (currentActionType === 'withdraw') {
+                const amount = company.marketValue * (val / 100);
+                display.innerText = `提现 ${val}% (${amount.toFixed(2)}亿)`;
+            } else if (currentActionType === 'split') {
+                const amount = company.marketValue * (val / 100);
+                display.innerText = `分配 ${val}% (${amount.toFixed(2)}亿)`;
+            }
+        }
+
+        function applyAction() {
+            const company = companies.find(c => c.id === currentOperateCompanyId);
+            if (!company) {
+                closeActionModal();
+                return;
+            }
+
+            const sliderVal = parseInt(document.getElementById("actionSlider").value);
+
+            if (currentActionType === 'inject') {
+                const amount = flexibleAssets * (sliderVal / 100);
+                if (amount <= 0 && flexibleAssets > 0) return alert("分配金额需大于0");
+
+                flexibleAssets -= amount;
+                company.marketValue += amount;
+                company.marketValue = Math.round(company.marketValue * 100) / 100;
+
+                addBigEventRecord(company.name, `获得玩家注资 ${amount.toFixed(2)}亿`);
+                globalLastActionYear.inject = gameYear;
+
+            } else if (currentActionType === 'withdraw') {
+                const amount = company.marketValue * (sliderVal / 100);
+
+                company.marketValue -= amount;
+                company.marketValue = Math.round(company.marketValue * 100) / 100;
+                flexibleAssets += amount;
+
+                addBigEventRecord(company.name, `玩家提现资金 ${amount.toFixed(2)}亿`);
+                globalLastActionYear.withdraw = gameYear;
+
+            } else if (currentActionType === 'split') {
+                const newName = document.getElementById("splitNewName").value.trim();
+                if (!newName || companies.some(c => c.name === newName)) return alert("名称无效或已存在");
+
+                const amount = company.marketValue * (sliderVal / 100);
+                company.marketValue -= amount;
+                company.marketValue = Math.round(company.marketValue * 100) / 100;
+
+                const newCompany = createCompany(true);
+                newCompany.name = newName;
+                newCompany.marketValue = Math.round(amount * 100) / 100;
+                newCompany.createTime = gameYear;
+
+                companies.push(newCompany);
+                sortCompaniesByValue();
+
+                addBigEventRecord(company.name, `拆分出新公司 【${newName}】，分资 ${amount.toFixed(2)}亿`);
+                globalLastActionYear.split = gameYear;
+
+            } else if (currentActionType === 'bankrupt') {
+                const amount = company.marketValue;
+                flexibleAssets += amount;
+                companies = companies.filter(c => c.id !== company.id);
+                bankruptCount++;
+                addBigEventRecord(company.name, `玩家申请破产清算，回收资金 ${amount.toFixed(2)}亿`);
+                globalLastActionYear.bankrupt = gameYear;
+
+                updateBaseInfo();
+                renderCompanyList();
+                closeActionModal();
+                return;
+            }
+
+            updateBaseInfo();
+            renderCompanyList();
+            closeActionModal();
+        }
+
+        function closeActionModal() {
+            document.getElementById("actionModalMask").style.display = "none";
+            currentActionType = null;
+            currentOperateCompanyId = null;
+        }
+
+        function openEventModal() {
+            document.getElementById("eventModalMask").style.display = "flex";
+        }
+        function closeEventModal() {
+            document.getElementById("eventModalMask").style.display = "none";
+        }
+        function openStatsModal() {
+            renderStatsList();
+            document.getElementById("statsModalMask").style.display = "flex";
+        }
+        function closeStatsModal() {
+            document.getElementById("statsModalMask").style.display = "none";
+        }
+
+        document.addEventListener("keydown", e => {
+            if (e.key === "Escape") {
+                closeEventModal();
+                closeStatsModal();
+                closeCompanyModal();
+                closeActionModal();
+                closeCreateModal();
+            }
+        });
+        document.getElementById("createNameInput").addEventListener("focus", function () {
+            this.autocomplete = "off";
+        });
+    </script>
+</body>
+
+</html>
