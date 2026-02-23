@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>朝代模拟器 - 终极修正版</title>
+    <title>王朝模拟器</title>
     <style>
         :root {
             --bg-color: #f5f7fa;
@@ -27,6 +27,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            position: relative; /* For watermark positioning */
         }
 
         /* 顶部标题栏 */
@@ -40,8 +41,24 @@
             padding: 0 16px;
             flex-shrink: 0;
             font-weight: bold;
+            z-index: 10;
         }
+        .header-left { display: flex; align-items: center; gap: 8px; }
         .header-title { font-size: 16px; }
+        .btn-help {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 1px solid var(--text-main);
+            background: none;
+            font-size: 12px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+        }
         .header-info { display: flex; align-items: center; gap: 12px; font-size: 14px; }
         .btn-history {
             padding: 4px 10px;
@@ -61,6 +78,8 @@
             align-items: center;
             gap: 16px;
             overflow-y: auto;
+            position: relative;
+            z-index: 1;
         }
 
         .card {
@@ -74,22 +93,32 @@
         }
 
         .dynasty-name { font-size: 42px; font-weight: 800; color: var(--text-main); margin-bottom: 4px; }
-        .dynasty-info { font-size: 13px; color: var(--text-sub); margin-bottom: 16px; }
+        
+        .dynasty-info { 
+            font-size: 13px; 
+            color: var(--text-sub); 
+            margin-bottom: 16px; 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
         
         .monarch-section { border-top: 1px solid var(--border); padding-top: 16px; position: relative; }
         .era-name { font-size: 18px; color: var(--accent); font-weight: bold; margin-bottom: 4px; }
         
         .monarch-name-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
         .monarch-name { font-size: 18px; font-weight: bold; }
+        
         .btn-lineage {
-            font-size: 12px;
-            padding: 2px 8px;
+            font-size: 11px;
+            padding: 2px 6px;
             background: #ecf0f1;
             border: 1px solid #bdc3c7;
             border-radius: 4px;
             color: var(--text-main);
             cursor: pointer;
-            min-width: 50px;
+            white-space: nowrap;
         }
 
         .monarch-stats { font-size: 13px; color: var(--text-sub); display: flex; justify-content: center; gap: 15px; }
@@ -170,9 +199,10 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            z-index: 10;
         }
         
-        /* 底部事件栏：可容纳两行 */
+        /* 底部事件栏 */
         .event-bar {
             height: 52px;
             background: #f0f2f5;
@@ -187,27 +217,21 @@
             color: var(--text-main);
             position: relative;
         }
-        /* 事件行：增加省略号支持 */
         .event-line {
             width: 100%;
             height: 20px;
             line-height: 20px;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis; 
+            text-overflow: ellipsis; /* 支持省略号 */
         }
         
         /* 打字机动画 (2s) */
         .typing-anim {
             display: inline;
             vertical-align: top;
-            /* 移除 white-space:nowrap 以继承父级的 text-overflow 行为，
-               但为了 clip-path 动画效果，通常需要 nowrap。
-               为了同时支持 ellipsis，父级控制 ellipsis，这里负责动画。
-            */
             white-space: nowrap;
             animation: typeReveal 2s cubic-bezier(0.1, 0.7, 0.1, 1) forwards;
-            /* 确保初始不可见 */
             clip-path: inset(0 100% 0 0);
         }
         @keyframes typeReveal {
@@ -253,6 +277,7 @@
             flex-direction: column;
             overflow: hidden;
             animation: popIn 0.2s ease-out;
+            z-index: 101; /* Higher than overlay */
         }
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         
@@ -291,13 +316,32 @@
         .log-list p { margin-bottom: 6px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
         .log-year { font-weight: bold; color: var(--text-sub); margin-right: 6px; }
 
+        /* 玩法说明文本 */
+        .help-text p { margin-bottom: 10px; font-size: 14px; line-height: 1.5; color: #444; }
+        .help-text h3 { margin-top: 15px; margin-bottom: 8px; font-size: 16px; color: var(--text-main); }
+
+        /* 水印样式 */
+        .watermark {
+            position: fixed;
+            pointer-events: none;
+            color: rgba(0, 0, 0, 0.15); /* 半透明 */
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 9999; /* 最顶层 */
+            white-space: nowrap;
+            user-select: none;
+        }
+
     </style>
 </head>
 <body>
 
     <!-- 标题栏 -->
     <header>
-        <div class="header-title">朝代模拟器</div>
+        <div class="header-left">
+            <div class="header-title">王朝模拟器</div>
+            <button class="btn-help" onclick="openModal('helpModal')">?</button>
+        </div>
         <div class="header-info">
             <span id="currentYearDisplay">公元 523 年</span>
             <button class="btn-history" onclick="openHistory()">历史</button>
@@ -309,14 +353,16 @@
         <div class="card">
             <div class="dynasty-name" id="uiDynastyName">--</div>
             <div class="dynasty-info">
-                建国 <span id="uiFoundYear">--</span> · 国祚 <span id="uiDuration">0</span> 年
+                <span>建国 <span id="uiFoundYear">--</span></span>
+                <span>·</span>
+                <span>国祚 <span id="uiDuration">0</span> 年</span>
+                <button class="btn-lineage" id="btnLineage" onclick="openLiveLineage()">谱系0</button>
             </div>
             
             <div class="monarch-section">
                 <div class="era-name" id="uiEraName">--</div>
                 <div class="monarch-name-row">
                     <div class="monarch-name" id="uiMonarchName">--</div>
-                    <button class="btn-lineage" id="btnLineage" onclick="openLiveLineage()">谱系0</button>
                 </div>
                 <div class="monarch-stats">
                     <span><span id="uiMonarchAge">--</span> 岁</span>
@@ -333,7 +379,7 @@
                     <div class="stat-value" id="uiPower">--%</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-label">战役 (战役/胜)</div>
+                    <div class="stat-label">战役/胜战</div>
                     <div class="stat-value" id="uiBattleStats">0 / 0</div>
                 </div>
             </div>
@@ -456,6 +502,28 @@
         </div>
     </div>
 
+    <!-- 6. 玩法说明弹窗 -->
+    <div id="helpModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span>游戏玩法</span>
+                <span onclick="closeModal('helpModal')" style="cursor:pointer;">✕</span>
+            </div>
+            <div class="modal-body help-text">
+                <p><strong>核心目标：</strong> 尽可能延续王朝寿命，避免国力归零。</p>
+                <h3>⚖️ 状态与国力</h3>
+                <p>· <strong>国力值</strong>：归零即亡国。初始50%-80%。</p>
+                <p>· <strong>三大状态</strong>：君主、朝廷、民心。状态优劣决定每年国力的增减。</p>
+                <h3>⚔️ 战役系统</h3>
+                <p>· <strong>我方发起</strong>：国力≥70%时概率提升。胜利可大幅增加国力。</p>
+                <p>· <strong>敌方入侵</strong>：国力≤30%时概率提升。失败将扣除国力。</p>
+                <p>· 双方发动战役的概率独立计算，每年最多发生一次。</p>
+                <h3>📜 历史名牌</h3>
+                <p>国祚超过50年后，根据三大状态数值，可解锁“盛世”、“良君”、“昏君”等历史评价。</p>
+            </div>
+        </div>
+    </div>
+
     <script>
         // --- 游戏配置与数据 ---
         const CONFIG = {
@@ -482,8 +550,8 @@
             speed: 'normal',
             year: 523,
             dynasty: {
-                name: '',     // 全名，如"李朝"
-                baseName: '', // 单字，如"李"
+                name: '',     
+                baseName: '', 
                 surname: '',
                 foundYear: 0,
                 monarchs: [], 
@@ -497,12 +565,12 @@
                 maxAge: 0,
                 startYear: 0,
                 goldenAge: null,
-                eraName: '' // 存储年号
+                eraName: '' 
             },
             politics: {
-                public: 70, // 民心
-                court: 70,  // 朝廷
-                monarch: 70 // 君主
+                public: 70, 
+                court: 70,  
+                monarch: 70 
             },
             era: {
                 name: '',
@@ -514,8 +582,8 @@
                 wins: 0
             },
             tempCreation: {},
-            activeBadge: null, // 当前历史名牌对象 {text, css}
-            shengshiLogged: false // 当前盛世是否已播报
+            activeBadge: null, 
+            shengshiLogged: false 
         };
 
         // --- 辅助函数 ---
@@ -533,7 +601,7 @@
             let attempt;
             do {
                 const char = randomChar();
-                const suffix = Math.random() > 0.5 ? '朝' : '代';
+                const suffix = '朝'; // 仅使用“朝”
                 attempt = { fullName: char + suffix, baseName: char };
             } while (usedData.dynasties.has(attempt.fullName));
             usedData.dynasties.add(attempt.fullName);
@@ -542,7 +610,6 @@
 
         function getSurname() { return generateUnique(usedData.surnames, () => randomChar()); }
         
-        // 年号生成：双列表组合
         function getEraName() {
             return generateUnique(usedData.eraNames, () => {
                 const p = CONFIG.eraPrefix.charAt(randomInt(0, CONFIG.eraPrefix.length - 1));
@@ -554,8 +621,6 @@
         function getTempleName(isFounder) {
             const prefix = gameState.dynasty.baseName;
             if (isFounder) return prefix + '太祖';
-            
-            // 后续皇帝严格使用“宗”
             let name;
             do {
                 name = prefix + randomChar() + '宗'; 
@@ -574,11 +639,10 @@
         // --- 游戏逻辑 ---
 
         function initCreation() {
-            document.getElementById('createModal').classList.add('active');
+            openModal('createModal');
             document.getElementById('gameUI').style.display = 'none';
             document.getElementById('gameFooter').style.display = 'none';
             
-            // 初始化临时数据
             gameState.tempCreation = { dynastyInfo: null, surname: null };
             rollDynastyName();
             rollSurname();
@@ -597,7 +661,7 @@
         }
 
         function startGame() {
-            document.getElementById('createModal').classList.remove('active');
+            closeModal('createModal');
             document.getElementById('gameUI').style.display = 'flex';
             document.getElementById('gameFooter').style.display = 'flex';
             
@@ -613,32 +677,29 @@
                 events: []
             };
             gameState.stats = {
-                power: randomInt(50, 80), // 初始国力50%-80%
+                power: randomInt(50, 80),
                 battles: 0,
                 wins: 0
             };
-            // 初始 70%
             gameState.politics = { public: 70, court: 70, monarch: 70 };
             
-            // 清空朝代相关唯一数据
             usedData.templeNames.clear(); 
             usedData.eraNames.clear(); 
 
             gameState.activeBadge = null;
             gameState.shengshiLogged = false;
             
-            // 清空底部事件栏
             document.getElementById('uiEventBar').innerHTML = '<div class="event-line" style="color:#999; text-align:center;">暂无大事件...</div>';
 
-            // 逻辑顺序：先建国事件，再登基事件
-            logEvent('建国', `国号 ${dInfo.fullName}，定都中原。`);
-            newMonarch(true);
+            const firstEra = getEraName();
+            logEvent('建国', `国号 ${dInfo.fullName}，年号 ${firstEra}。`);
+            newMonarch(true, firstEra);
             
             updateUI();
             startTimer();
         }
 
-        function newMonarch(isFounder) {
+        function newMonarch(isFounder, forcedEraName = null) {
             gameState.shengshiLogged = false;
             gameState.activeBadge = null; 
 
@@ -648,7 +709,7 @@
 
             const templeName = getTempleName(isFounder);
             const age = isFounder ? randomInt(25, 50) : randomInt(10, 50);
-            const eraStr = getEraName();
+            const eraStr = forcedEraName || getEraName();
 
             gameState.currentMonarch = {
                 name: surname + givenName,
@@ -707,20 +768,16 @@
             gameState.currentMonarch.reignTime++;
             gameState.currentMonarch.age++;
             
-            // 1. 状态自然波动 (每5年)
             if (gameState.year % 5 === 0) {
                 applyStatusFluctuation();
             }
 
-            // 2. 政治事件 (每年最多一次)
-            let polyProb = 0.1; // 默认 10%
-            if (gameState.stats.power >= 90) polyProb = 0.2; // 国力>=90时 20%
-            
+            let polyProb = 0.1;
+            if (gameState.stats.power >= 90) polyProb = 0.2;
             if (Math.random() < polyProb) {
                 handlePoliticalEvent();
             }
 
-            // 3. 计算国力
             const pScore = getStatusLevel(gameState.politics.public).score;
             const cScore = getStatusLevel(gameState.politics.court).score;
             const mScore = getStatusLevel(gameState.politics.monarch).score;
@@ -730,27 +787,21 @@
             if (gameState.stats.power > 100) gameState.stats.power = 100;
             if (gameState.stats.power < 0) gameState.stats.power = 0;
 
-            // 4. 名牌检测
             checkHistoryBadge();
 
-            // 5. 战役检测 (每年最多一次)
-            // 计算双方发动概率
+            // 战役独立概率检测
             let probPlayer = 0.1; 
             if (gameState.stats.power >= 70) probPlayer = 0.2;
 
             let probEnemy = 0.1;
             if (gameState.stats.power <= 30) probEnemy = 0.2;
 
-            // 互斥判定 logic: 
-            // 随机数 roll (0~1)
-            // 如果 roll < probPlayer -> 我方发动
-            // 否则如果 roll < probPlayer + probEnemy -> 敌方发动
-            // 否则 -> 无事发生
             const roll = Math.random();
+            // 独立概率互斥逻辑：先判我方，再判敌方，每年最多一次
             if (roll < probPlayer) {
-                handleWar(true); // Player
+                handleWar(true); 
             } else if (roll < (probPlayer + probEnemy)) {
-                handleWar(false); // Enemy
+                handleWar(false); 
             }
 
             checkDeath();
@@ -770,7 +821,6 @@
         function handlePoliticalEvent() {
             const name = randomChar() + randomChar() + (Math.random() < 0.5 ? "政变" : "事变");
             
-            // 先计算变化
             let maxChangeVal = 0;
             let maxChangeKey = '';
             let maxChangeSign = 1;
@@ -779,7 +829,6 @@
                 const change = randomInt(10, 20);
                 const sign = Math.random() < 0.5 ? 1 : -1;
                 
-                // 记录最大变化用于描述
                 if (change > maxChangeVal) {
                     maxChangeVal = change;
                     maxChangeKey = key;
@@ -790,7 +839,6 @@
                 gameState.politics[key] = Math.min(100, Math.max(0, gameState.politics[key]));
             });
 
-            // 生成描述
             let desc = "";
             if (maxChangeKey === 'public') {
                 desc = maxChangeSign > 0 ? "民心大增" : "民怨沸腾";
@@ -817,7 +865,6 @@
             let newBadge = null;
             let badgeClass = '';
 
-            // 优先级判定
             if (p < 30 && c < 30 && m < 30) {
                 newBadge = "危在旦夕";
                 badgeClass = "badge-danger";
@@ -828,7 +875,6 @@
                 if (!gameState.shengshiLogged) {
                     logEvent('盛世', `天下大治，史称「${newBadge}」。`, '#f1c40f');
                     gameState.shengshiLogged = true;
-                    // 记录盛世到当前皇帝
                     gameState.currentMonarch.goldenAge = newBadge;
                 }
             }
@@ -911,7 +957,6 @@
         }
 
         function checkCollapse() {
-            // 只要国力归零即亡国
             if (gameState.stats.power <= 0) {
                 finalizeMonarchData(); 
                 gameOver();
@@ -924,13 +969,11 @@
             const logEntry = { year: yearStr, type, content, fullYear: gameState.year, color: typeColor };
             gameState.dynasty.events.unshift(logEntry);
             
-            // 更新底部事件窗
             const bar = document.getElementById('uiEventBar');
             const e1 = gameState.dynasty.events[0];
             const e2 = gameState.dynasty.events[1];
             
             let html = '';
-            // 新事件动画
             if (e1) {
                 html += `<div class="event-line"><span class="typing-anim"><span style="font-weight:bold; color:${e1.color}; margin-right:4px;">[${e1.type}]</span>${e1.year}: ${e1.content}</span></div>`;
             }
@@ -964,7 +1007,6 @@
             updateStatusBox('uiCourt', gameState.politics.court);
             updateStatusBox('uiPublic', gameState.politics.public);
 
-            // 更新名牌
             const badgeEl = document.getElementById('uiHistoryBadge');
             const duration = gameState.year - gameState.dynasty.foundYear;
             
@@ -1015,7 +1057,7 @@
                     </div>
                 `).join('');
             }
-            document.getElementById('lineageModal').classList.add('active');
+            openModal('lineageModal');
         }
 
         function gameOver() {
@@ -1042,7 +1084,7 @@
             document.getElementById('goDuration').innerText = duration;
             document.getElementById('goMonarchCount').innerText = archiveEntry.monarchCount;
             
-            document.getElementById('gameOverModal').classList.add('active');
+            openModal('gameOverModal');
         }
 
         function resetToCreation() {
@@ -1050,9 +1092,27 @@
             initCreation();
         }
 
+        // 统一弹窗打开关闭逻辑
+        function openModal(id) {
+            document.getElementById(id).classList.add('active');
+        }
+
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
         }
+        
+        // 点击遮罩关闭弹窗
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) {
+                    overlay.classList.remove('active');
+                    // 如果是初始创建弹窗被关，且游戏未开始，重新打开
+                    if (overlay.id === 'createModal' && document.getElementById('gameUI').style.display === 'none') {
+                        overlay.classList.add('active');
+                    }
+                }
+            });
+        });
 
         function openEventLog() {
             const list = document.getElementById('fullEventLog');
@@ -1063,7 +1123,7 @@
                     ${e.content}
                 </p>
             `).join('');
-            document.getElementById('eventModal').classList.add('active');
+            openModal('eventModal');
         }
 
         function openHistory() {
@@ -1100,13 +1160,106 @@
                     </li>
                 `).join('');
             }
-            document.getElementById('historyModal').classList.add('active');
+            openModal('historyModal');
         }
 
         function toggleHistoryDetail(index) {
             const el = document.getElementById(`hist-detail-${index}`);
             el.style.display = (el.style.display === 'block') ? 'none' : 'block';
         }
+
+        // --- 水印系统 ---
+        function createWatermark() {
+            const div = document.createElement('div');
+            div.className = 'watermark';
+            div.innerText = '@瞌睡猫';
+            div.style.position = 'fixed'; 
+            div.style.left = '-100px'; 
+            document.body.appendChild(div);
+
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            
+            // 随机边缘 (0:top, 1:right, 2:bottom, 3:left)
+            const edge = Math.floor(Math.random() * 4);
+            let x, y, vx, vy;
+            const speed = 1.5;
+
+            // Start Logic
+            if (edge === 0) { // top
+                x = Math.random() * w; y = -30;
+                vy = speed; vx = (Math.random() - 0.5) * speed;
+            } else if (edge === 1) { // right
+                x = w + 30; y = Math.random() * h;
+                vx = -speed; vy = (Math.random() - 0.5) * speed;
+            } else if (edge === 2) { // bottom
+                x = Math.random() * w; y = h + 30;
+                vy = -speed; vx = (Math.random() - 0.5) * speed;
+            } else { // left
+                x = -30; y = Math.random() * h;
+                vx = speed; vy = (Math.random() - 0.5) * speed;
+            }
+
+            // 指向中心
+            const cx = w / 2; const cy = h / 2;
+            const angle = Math.atan2(cy - y, cx - x);
+            const moveAngle = angle + (Math.random() - 0.5) * 0.5;
+            vx = Math.cos(moveAngle) * speed;
+            vy = Math.sin(moveAngle) * speed;
+
+            let bounces = 0;
+            let animId;
+
+            // 10秒后自动移除
+            const timeoutId = setTimeout(() => {
+                cancelAnimationFrame(animId);
+                if (div.parentNode) div.remove();
+            }, 10000);
+
+            function animate() {
+                x += vx;
+                y += vy;
+                
+                let hit = false;
+                
+                // 获取当前元素大小（可能因缩放变化）
+                const elW = div.offsetWidth || 50; 
+                const elH = div.offsetHeight || 20;
+
+                // 碰撞边缘检测
+                // Right
+                if (x + elW >= w) { x = w - elW; vx = -vx; hit = true; }
+                // Left
+                else if (x <= 0) { x = 0; vx = -vx; hit = true; }
+                
+                // Bottom
+                if (y + elH >= h) { y = h - elH; vy = -vy; hit = true; }
+                // Top
+                else if (y <= 0) { y = 0; vy = -vy; hit = true; }
+
+                if (hit) {
+                    bounces++;
+                }
+
+                div.style.left = x + 'px';
+                div.style.top = y + 'px';
+
+                if (bounces >= 3) {
+                    clearTimeout(timeoutId);
+                    div.remove();
+                } else {
+                    animId = requestAnimationFrame(animate);
+                }
+            }
+            
+            // 确保 append 后有尺寸再跑动画
+            requestAnimationFrame(() => {
+                animate();
+            });
+        }
+
+        setInterval(createWatermark, 60000); 
+        setTimeout(createWatermark, 1000);
 
         // 初始化
         initCreation();
