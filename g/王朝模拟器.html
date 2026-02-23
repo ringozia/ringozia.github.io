@@ -1,0 +1,1240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>朝代模拟器 - 终极修正版</title>
+    <style>
+        :root {
+            --bg-color: #f5f7fa;
+            --card-bg: #ffffff;
+            --text-main: #2c3e50;
+            --text-sub: #7f8c8d;
+            --accent: #c0392b;
+            /* 深红/危机 */
+            --success: #27ae60;
+            /* 绿色/安全 */
+            --gold: #f1c40f;
+            /* 金色/盛世 */
+            --border: #e0e0e0;
+            --btn-bg: #2980b9;
+            --btn-text: #fff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* 顶部标题栏 */
+        header {
+            height: 50px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+
+        .header-title {
+            font-size: 16px;
+        }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .btn-history {
+            padding: 4px 10px;
+            background: none;
+            border: 1px solid var(--text-main);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        /* 核心信息区 */
+        main {
+            flex: 1;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            overflow-y: auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 400px;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            text-align: center;
+        }
+
+        .dynasty-name {
+            font-size: 42px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .dynasty-info {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 16px;
+        }
+
+        .monarch-section {
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+            position: relative;
+        }
+
+        .era-name {
+            font-size: 18px;
+            color: var(--accent);
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .monarch-name-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .monarch-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .btn-lineage {
+            font-size: 12px;
+            padding: 2px 8px;
+            background: #ecf0f1;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            color: var(--text-main);
+            cursor: pointer;
+            min-width: 50px;
+        }
+
+        .monarch-stats {
+            font-size: 13px;
+            color: var(--text-sub);
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        /* 数值面板 */
+        .stats-container {
+            width: 100%;
+            max-width: 400px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .stats-grid-top {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        /* 状态行 (三列) */
+        .status-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat-box {
+            background: var(--card-bg);
+            padding: 12px 4px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* 状态颜色类 */
+        .status-excellent {
+            color: var(--success);
+        }
+
+        /* 优 */
+        .status-good {
+            color: var(--btn-bg);
+        }
+
+        /* 良 */
+        .status-poor {
+            color: #e67e22;
+        }
+
+        /* 差 */
+        .status-critical {
+            color: var(--accent);
+        }
+
+        /* 危 */
+
+        /* 历史名牌卡片 */
+        .history-badge-card {
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+            color: #888;
+            border: 1px dashed #ddd;
+        }
+
+        .history-badge-card.active {
+            border: 2px solid var(--text-main);
+            color: var(--text-main);
+            background: #fff;
+        }
+
+        .badge-shengshi {
+            border-color: var(--gold) !important;
+            color: #d4ac0d !important;
+            background: #fef9e7 !important;
+        }
+
+        .badge-danger {
+            border-color: var(--accent) !important;
+            color: var(--accent) !important;
+            background: #fdedec !important;
+        }
+
+        .badge-good {
+            border-color: var(--success) !important;
+            color: var(--success) !important;
+            background: #eafaf1 !important;
+        }
+
+        /* 底部 */
+        footer {
+            background: var(--card-bg);
+            border-top: 1px solid var(--border);
+            padding: 10px 16px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* 底部事件栏：改为可容纳两行 */
+        .event-bar {
+            height: 52px;
+            /* 增加高度 */
+            background: #f0f2f5;
+            border-radius: 6px;
+            display: flex;
+            flex-direction: column;
+            /* 垂直排列 */
+            justify-content: center;
+            padding: 4px 12px;
+            font-size: 12px;
+            cursor: pointer;
+            overflow: hidden;
+            color: var(--text-main);
+        }
+
+        .event-line {
+            width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            line-height: 1.6;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .speed-btn {
+            background: var(--btn-bg);
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .speed-btn.active-5x {
+            background: var(--accent);
+        }
+
+        /* 弹窗通用 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: var(--card-bg);
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: popIn 0.2s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        /* 历史记录样式 */
+        .history-list {
+            list-style: none;
+        }
+
+        .history-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-details {
+            display: none;
+            margin-top: 10px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .btn-more {
+            color: var(--btn-bg);
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+            text-decoration: underline;
+        }
+
+        .lineage-row {
+            font-size: 12px;
+            padding: 6px 0;
+            border-bottom: 1px dashed #eee;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        /* 新建朝代弹窗 - 独立按钮样式 */
+        .creation-group {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 0 20px;
+        }
+
+        .creation-label {
+            font-size: 14px;
+            color: #666;
+            width: 40px;
+            text-align: left;
+        }
+
+        .dice-btn {
+            font-size: 20px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px;
+        }
+
+        .generated-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--accent);
+            flex: 1;
+            text-align: center;
+        }
+
+        .main-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--btn-bg);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        /* 事件日志列表 */
+        .log-list p {
+            margin-bottom: 6px;
+            font-size: 13px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+        }
+
+        .log-year {
+            font-weight: bold;
+            color: var(--text-sub);
+            margin-right: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- 标题栏 -->
+    <header>
+        <div class="header-title">朝代模拟器</div>
+        <div class="header-info">
+            <span id="currentYearDisplay">公元 523 年</span>
+            <button class="btn-history" onclick="openHistory()">历史</button>
+        </div>
+    </header>
+
+    <!-- 主界面 -->
+    <main id="gameUI" style="display:none;">
+        <div class="card">
+            <div class="dynasty-name" id="uiDynastyName">--</div>
+            <div class="dynasty-info">
+                建国 <span id="uiFoundYear">--</span> · 国祚 <span id="uiDuration">0</span> 年
+            </div>
+
+            <div class="monarch-section">
+                <div class="era-name" id="uiEraName">--</div>
+                <div class="monarch-name-row">
+                    <div class="monarch-name" id="uiMonarchName">--</div>
+                    <button class="btn-lineage" id="btnLineage" onclick="openLiveLineage()">谱系0</button>
+                </div>
+                <div class="monarch-stats">
+                    <span><span id="uiMonarchAge">--</span> 岁</span>
+                    <span>在位 <span id="uiReignDuration">0</span> 年</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <!-- 顶部：国力与战役 -->
+            <div class="stats-grid-top">
+                <div class="stat-box">
+                    <div class="stat-label">国力值</div>
+                    <div class="stat-value" id="uiPower">--%</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">战役 (战役/胜)</div>
+                    <div class="stat-value" id="uiBattleStats">0 / 0</div>
+                </div>
+            </div>
+
+            <!-- 状态行：君主、朝廷、民心 -->
+            <div class="status-row">
+                <div class="stat-box">
+                    <div class="stat-label">君主</div>
+                    <div class="stat-value" id="uiMonarchState">--</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">朝廷</div>
+                    <div class="stat-value" id="uiCourt">--</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">民心</div>
+                    <div class="stat-value" id="uiPublic">--</div>
+                </div>
+            </div>
+
+            <!-- 历史名牌 -->
+            <div id="uiHistoryBadge" class="history-badge-card">
+                待解锁 (国祚>50年)
+            </div>
+        </div>
+    </main>
+
+    <!-- 底部控制 -->
+    <footer id="gameFooter" style="display:none;">
+        <div class="event-bar" id="uiEventBar" onclick="openEventLog()">
+            <div class="event-line" style="color:#999; text-align:center;">暂无大事件...</div>
+        </div>
+        <div class="controls">
+            <button class="speed-btn" id="speedBtn" onclick="toggleSpeed()">1x 速</button>
+        </div>
+    </footer>
+
+    <!-- 1. 新建朝代弹窗 -->
+    <div id="createModal" class="modal-overlay active">
+        <div class="modal">
+            <div class="modal-header">建立新朝代</div>
+            <div class="modal-body" style="text-align: center;">
+                <p style="color:#666; margin-bottom:20px;">点击骰子随机生成信息</p>
+
+                <div class="creation-group">
+                    <span class="creation-label">国号</span>
+                    <span class="generated-name" id="previewDynasty">? ?</span>
+                    <button class="dice-btn" onclick="rollDynastyName()">🎲</button>
+                </div>
+
+                <div class="creation-group">
+                    <span class="creation-label">国姓</span>
+                    <span class="generated-name" id="previewSurname">?</span>
+                    <button class="dice-btn" onclick="rollSurname()">🎲</button>
+                </div>
+
+            </div>
+            <div class="modal-footer">
+                <button class="main-btn" onclick="startGame()">登基建国</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. 事件日志弹窗 -->
+    <div id="eventModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span>历史大事件</span>
+                <span onclick="closeModal('eventModal')" style="cursor:pointer;">✕</span>
+            </div>
+            <div class="modal-body log-list" id="fullEventLog">
+                <!-- JS 填充 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. 历史记录弹窗 -->
+    <div id="historyModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span>历朝历代</span>
+                <span onclick="closeModal('historyModal')" style="cursor:pointer;">✕</span>
+            </div>
+            <div class="modal-body">
+                <ul class="history-list" id="historyList">
+                    <!-- JS 填充 -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. 当前谱系弹窗 -->
+    <div id="lineageModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span>本朝帝王谱系</span>
+                <span onclick="closeModal('lineageModal')" style="cursor:pointer;">✕</span>
+            </div>
+            <div class="modal-body" id="lineageList">
+                <!-- JS 填充 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. 亡国弹窗 -->
+    <div id="gameOverModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header" style="color:var(--accent);">朝代灭亡</div>
+            <div class="modal-body" style="text-align: center;">
+                <h2 id="goDynastyName" style="margin-bottom: 10px;"></h2>
+                <p>享国 <span id="goDuration"></span> 年</p>
+                <p>历经 <span id="goMonarchCount"></span> 位帝王</p>
+                <p style="margin-top: 10px; font-size: 14px; color: #666;">
+                    国力耗尽，社稷崩塌。<br>后人只能在史书中窥见往日荣光。
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button class="main-btn" onclick="resetToCreation()">新建朝代</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 游戏配置与数据 ---
+        const CONFIG = {
+            baseYear: 523,
+            speeds: { normal: 10000, fast: 2000 },
+            maxAge: 90,
+            chars: "赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜戚谢邹喻柏水窦章云苏潘葛奚范彭郎鲁韦昌马苗凤花方俞任袁柳酆鲍史唐费廉岑薛雷贺倪汤滕殷罗毕郝安常乐于时傅皮卞齐康伍余元卜顾孟平黄和穆萧尹姚邵湛汪祁毛禹狄米贝明臧计伏成戴谈宋茅庞熊纪舒屈项祝董梁杜阮蓝闵席季麻强贾路娄危江童颜郭梅盛林刁钟徐邱骆高夏蔡田樊胡凌霍万柯卢莫房缪干解应宗丁宣邓郁单杭洪包诸左石崔吉钮龚程嵇邢滑裴陆荣翁荀羊於惠家封芮羿储晋汲邴糜松井段富巫乌焦巴弓牧隗山谷车侯宓蓬全郗班仰秋仲伊宫宁仇栾暴甘钭厉戎祖武符刘景詹束龙叶幸司韶郜黎蓟薄印宿白怀蒲台从鄂索咸籍赖卓蔺屠蒙池乔阴郁胥能苍双闻莘党翟谭贡劳逄姬申扶堵冉宰郦雍却璩桑桂濮牛寿通边扈燕冀郟浦尚农温别庄晏柴瞿阎充慕连茹习宦艾鱼容向古易慎戈廖庾终暨居衡步都耿满弘匡国文寇广禄阙东欧沃利蔚越夔隆师巩厍聂晁勾敖融冷訾辛阚那简饶空曾沙沙乜养鞠须丰巢关蒯相查后荆红游竺权逯盖益桓公"
+        };
+
+        const usedData = {
+            dynasties: new Set(),
+            surnames: new Set(),
+            eraNames: new Set(),
+            templeNames: new Set()
+        };
+
+        const historyArchive = [];
+
+        let gameState = {
+            timerId: null,
+            speed: 'normal',
+            year: 523,
+            dynasty: {
+                name: '',     // 全名，如"李朝"
+                baseName: '', // 单字，如"李"
+                surname: '',
+                foundYear: 0,
+                monarchs: [],
+                events: []
+            },
+            currentMonarch: {
+                name: '',
+                temple: '',
+                age: 0,
+                reignTime: 0,
+                maxAge: 0,
+                startYear: 0,
+                goldenAge: null
+            },
+            politics: {
+                public: 70, // 民心
+                court: 70,  // 朝廷
+                monarch: 70 // 君主
+            },
+            era: {
+                name: '',
+                year: 1
+            },
+            stats: {
+                power: 0,
+                battles: 0,
+                wins: 0
+            },
+            tempCreation: {},
+            activeBadge: null, // 当前历史名牌对象 {text, css}
+            shengshiLogged: false // 当前盛世是否已播报
+        };
+
+        // --- 辅助函数 ---
+        function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+        function randomChar() { return CONFIG.chars.charAt(randomInt(0, CONFIG.chars.length - 1)); }
+
+        function generateUnique(set, generatorFn) {
+            let attempt;
+            do { attempt = generatorFn(); } while (set.has(attempt));
+            set.add(attempt);
+            return attempt;
+        }
+
+        function getDynastyNameObj() {
+            let attempt;
+            do {
+                const char = randomChar();
+                const suffix = Math.random() > 0.5 ? '朝' : '代';
+                attempt = { fullName: char + suffix, baseName: char };
+            } while (usedData.dynasties.has(attempt.fullName));
+            usedData.dynasties.add(attempt.fullName);
+            return attempt;
+        }
+
+        function getSurname() { return generateUnique(usedData.surnames, () => randomChar()); }
+        function getEraName() { return generateUnique(usedData.eraNames, () => randomChar() + randomChar()); }
+
+        function getTempleName(isFounder) {
+            const prefix = gameState.dynasty.baseName;
+            if (isFounder) return prefix + '太祖';
+
+            // 后续皇帝严格使用“宗”
+            let name;
+            do {
+                name = prefix + randomChar() + '宗';
+            } while (usedData.templeNames.has(name));
+            usedData.templeNames.add(name);
+            return name;
+        }
+
+        function getStatusLevel(value) {
+            if (value >= 75) return { label: '优', class: 'status-excellent', score: 75 };
+            if (value >= 50) return { label: '良', class: 'status-good', score: 50 };
+            if (value >= 25) return { label: '差', class: 'status-poor', score: -50 };
+            return { label: '危', class: 'status-critical', score: -75 };
+        }
+
+        // --- 游戏逻辑 ---
+
+        function initCreation() {
+            document.getElementById('createModal').classList.add('active');
+            document.getElementById('gameUI').style.display = 'none';
+            document.getElementById('gameFooter').style.display = 'none';
+
+            // 初始化临时数据
+            gameState.tempCreation = { dynastyInfo: null, surname: null };
+            rollDynastyName();
+            rollSurname();
+        }
+
+        // 独立的国号生成
+        function rollDynastyName() {
+            const dInfo = getDynastyNameObj();
+            gameState.tempCreation.dynastyInfo = dInfo;
+            document.getElementById('previewDynasty').innerText = dInfo.fullName;
+        }
+
+        // 独立的国姓生成
+        function rollSurname() {
+            const sName = getSurname();
+            gameState.tempCreation.surname = sName;
+            document.getElementById('previewSurname').innerText = sName;
+        }
+
+        function startGame() {
+            document.getElementById('createModal').classList.remove('active');
+            document.getElementById('gameUI').style.display = 'flex';
+            document.getElementById('gameFooter').style.display = 'flex';
+
+            const dInfo = gameState.tempCreation.dynastyInfo;
+            const sName = gameState.tempCreation.surname;
+
+            gameState.dynasty = {
+                name: dInfo.fullName,
+                baseName: dInfo.baseName,
+                surname: sName,
+                foundYear: gameState.year,
+                monarchs: [],
+                events: []
+            };
+            gameState.stats = {
+                power: randomInt(60, 80),
+                battles: 0,
+                wins: 0
+            };
+            // 初始 70%
+            gameState.politics = { public: 70, court: 70, monarch: 70 };
+
+            usedData.templeNames.clear();
+            gameState.activeBadge = null;
+            gameState.shengshiLogged = false;
+
+            // 清空底部事件栏
+            document.getElementById('uiEventBar').innerHTML = '<div class="event-line" style="color:#999; text-align:center;">暂无大事件...</div>';
+
+            newMonarch(true);
+            logEvent('建国', `国号 ${dInfo.fullName}，定都中原。`);
+
+            updateUI();
+            startTimer();
+        }
+
+        function newMonarch(isFounder) {
+            // 重置盛世标记
+            gameState.shengshiLogged = false;
+            gameState.activeBadge = null;
+
+            const surname = gameState.dynasty.surname;
+            let givenName = randomChar();
+            if (Math.random() < 0.5) givenName += randomChar();
+
+            const templeName = getTempleName(isFounder);
+            const age = isFounder ? randomInt(25, 50) : randomInt(10, 50);
+
+            gameState.currentMonarch = {
+                name: surname + givenName,
+                temple: templeName,
+                age: age,
+                reignTime: 0,
+                maxAge: Math.min(90, age + randomInt(10, 50)),
+                startYear: gameState.year,
+                goldenAge: null
+            };
+            if (gameState.currentMonarch.maxAge > 90) gameState.currentMonarch.maxAge = 90;
+
+            gameState.era = {
+                name: getEraName(),
+                year: 1
+            };
+
+            // 添加到列表
+            gameState.dynasty.monarchs.push({
+                ...gameState.currentMonarch,
+                endYear: null
+            });
+
+            // 更新谱系按钮
+            updateLineageBtn();
+
+            logEvent('登基', `${gameState.currentMonarch.temple} ${gameState.currentMonarch.name} 继位，改元 ${gameState.era.name}，时年 ${age} 岁。`);
+        }
+
+        function updateLineageBtn() {
+            const count = Math.max(0, gameState.dynasty.monarchs.length - 1);
+            document.getElementById('btnLineage').innerText = `谱系${count}`;
+        }
+
+        function startTimer() {
+            if (gameState.timerId) clearInterval(gameState.timerId);
+            const interval = gameState.speed === 'normal' ? CONFIG.speeds.normal : CONFIG.speeds.fast;
+            gameState.timerId = setInterval(tick, interval);
+            updateSpeedBtn();
+        }
+
+        function toggleSpeed() {
+            gameState.speed = gameState.speed === 'normal' ? 'fast' : 'normal';
+            startTimer();
+        }
+        function updateSpeedBtn() {
+            const btn = document.getElementById('speedBtn');
+            if (gameState.speed === 'fast') {
+                btn.innerText = '5x 速'; btn.classList.add('active-5x');
+            } else {
+                btn.innerText = '1x 速'; btn.classList.remove('active-5x');
+            }
+        }
+
+        function tick() {
+            gameState.year++;
+            gameState.era.year++;
+            gameState.currentMonarch.reignTime++;
+            gameState.currentMonarch.age++;
+
+            // 1. 状态自然波动 (每5年)
+            if (gameState.year % 5 === 0) {
+                applyStatusFluctuation();
+            }
+
+            // 2. 政治事件 (每年10%)
+            if (Math.random() < 0.1) {
+                handlePoliticalEvent();
+            }
+
+            // 3. 计算国力
+            const pScore = getStatusLevel(gameState.politics.public).score;
+            const cScore = getStatusLevel(gameState.politics.court).score;
+            const mScore = getStatusLevel(gameState.politics.monarch).score;
+            const powerChange = Math.floor((pScore + cScore + mScore) / 25);
+
+            gameState.stats.power += powerChange;
+            if (gameState.stats.power > 100) gameState.stats.power = 100;
+            if (gameState.stats.power < 0) gameState.stats.power = 0;
+
+            // 4. 名牌检测
+            checkHistoryBadge();
+
+            // 5. 战争 (10%)
+            if (Math.random() < 0.1) {
+                handleWar();
+            }
+
+            checkDeath();
+            checkCollapse();
+            updateUI();
+        }
+
+        function applyStatusFluctuation() {
+            ['public', 'court', 'monarch'].forEach(key => {
+                const change = randomInt(2, 5);
+                const sign = Math.random() < 0.5 ? 1 : -1;
+                gameState.politics[key] += (change * sign);
+                gameState.politics[key] = Math.min(100, Math.max(0, gameState.politics[key]));
+            });
+        }
+
+        function handlePoliticalEvent() {
+            const name = randomChar() + randomChar() + (Math.random() < 0.5 ? "政变" : "事变");
+            ['public', 'court', 'monarch'].forEach(key => {
+                const change = randomInt(10, 20);
+                const sign = Math.random() < 0.5 ? 1 : -1;
+                gameState.politics[key] += (change * sign);
+                gameState.politics[key] = Math.min(100, Math.max(0, gameState.politics[key]));
+            });
+            logEvent('政治', `爆发${name}，朝局动荡。`, '#8e44ad');
+        }
+
+        function checkHistoryBadge() {
+            const duration = gameState.year - gameState.dynasty.foundYear;
+            if (duration <= 50) {
+                gameState.activeBadge = null;
+                return;
+            }
+
+            const p = gameState.politics.public;
+            const c = gameState.politics.court;
+            const m = gameState.politics.monarch;
+
+            let newBadge = null;
+            let badgeClass = '';
+
+            // 优先级判定
+            if (p < 30 && c < 30 && m < 30) {
+                newBadge = "危在旦夕";
+                badgeClass = "badge-danger";
+            }
+            else if (p >= 80 && c >= 80 && m >= 80) {
+                newBadge = `${gameState.era.name}盛世`;
+                badgeClass = "badge-shengshi";
+                if (!gameState.shengshiLogged) {
+                    logEvent('盛世', `天下大治，史称「${newBadge}」。`, '#f1c40f');
+                    gameState.shengshiLogged = true;
+                    // 记录盛世到当前皇帝
+                    gameState.currentMonarch.goldenAge = newBadge;
+                }
+            }
+            else if (m < 30) {
+                newBadge = "昏君当朝";
+                badgeClass = "badge-danger";
+            }
+            else if (c < 30) {
+                newBadge = "朝局动荡"; // 修改为朝局动荡
+                badgeClass = "badge-danger";
+            }
+            else if (p < 30) {
+                newBadge = "民不聊生";
+                badgeClass = "badge-danger";
+            }
+            else if (m >= 90 && p > 30 && c > 30) {
+                newBadge = "良君治国";
+                badgeClass = "badge-good";
+            }
+            else if (p >= 90 && m > 30 && c > 30) {
+                newBadge = "民心所向";
+                badgeClass = "badge-good";
+            }
+
+            gameState.activeBadge = newBadge ? { text: newBadge, css: badgeClass } : null;
+
+            if (newBadge && !newBadge.includes('盛世')) {
+                gameState.shengshiLogged = false;
+            }
+        }
+
+        function handleWar() {
+            const isPlayerAttacker = gameState.stats.power > 70;
+            const initiator = isPlayerAttacker ? "我方" : "敌方";
+
+            const monarchVal = gameState.politics.monarch;
+            const powerScore = gameState.stats.power;
+
+            const winChance = (monarchVal * 0.4) + (powerScore * 0.6);
+            const roll = Math.random() * 100;
+            const isWin = roll < winChance;
+
+            gameState.stats.battles++;
+
+            if (isWin) {
+                gameState.stats.wins++;
+                const gain = randomInt(2, 5);
+                gameState.stats.power = Math.min(100, gameState.stats.power + gain);
+                logEvent('大捷', `${initiator}发起战役，大获全胜！国力 +${gain}%`);
+            } else {
+                const loss = randomInt(2, 5);
+                gameState.stats.power = Math.max(0, gameState.stats.power - loss);
+                logEvent('战败', `${initiator}发起战役，前线失利。国力 -${loss}%`);
+            }
+        }
+
+        function finalizeMonarchData() {
+            const idx = gameState.dynasty.monarchs.length - 1;
+            if (idx >= 0) {
+                const finalData = { ...gameState.currentMonarch };
+                finalData.endYear = gameState.year;
+                gameState.dynasty.monarchs[idx] = finalData;
+            }
+        }
+
+        function checkDeath() {
+            const m = gameState.currentMonarch;
+            if (m.age >= m.maxAge || m.age >= 90) {
+                finalizeMonarchData();
+                logEvent('驾崩', `${m.temple} 驾崩，享年 ${m.age} 岁。`);
+                newMonarch(false);
+            }
+        }
+
+        function checkCollapse() {
+            const monarchCount = gameState.dynasty.monarchs.length;
+            if (gameState.stats.power <= 0) {
+                if (monarchCount >= 3) {
+                    finalizeMonarchData();
+                    gameOver();
+                } else {
+                    gameState.stats.power = 1;
+                }
+            }
+        }
+
+        function logEvent(type, content, color) {
+            const yearStr = `${gameState.era.name}${gameState.era.year}年`;
+            const typeColor = color || ((type === '亡国' || type === '战败' || type === '驾崩') ? '#c0392b' : '#2c3e50');
+            const logEntry = { year: yearStr, type, content, fullYear: gameState.year, color: typeColor };
+            gameState.dynasty.events.unshift(logEntry);
+
+            // 更新底部事件窗：展示最近2条
+            const bar = document.getElementById('uiEventBar');
+            const e1 = gameState.dynasty.events[0];
+            const e2 = gameState.dynasty.events[1];
+
+            let html = '';
+            if (e1) {
+                html += `<div class="event-line"><span style="font-weight:bold; color:${e1.color}; margin-right:4px;">[${e1.type}]</span>${e1.year}: ${e1.content}</div>`;
+            }
+            if (e2) {
+                html += `<div class="event-line"><span style="font-weight:bold; color:${e2.color}; margin-right:4px;">[${e2.type}]</span>${e2.year}: ${e2.content}</div>`;
+            }
+            bar.innerHTML = html;
+        }
+
+        function updateUI() {
+            document.getElementById('currentYearDisplay').innerText = `公元 ${gameState.year} 年`;
+
+            document.getElementById('uiDynastyName').innerText = gameState.dynasty.name;
+            document.getElementById('uiFoundYear').innerText = `公元 ${gameState.dynasty.foundYear} 年`;
+            document.getElementById('uiDuration').innerText = gameState.year - gameState.dynasty.foundYear;
+
+            const m = gameState.currentMonarch;
+            let eraText = gameState.era.year === 1 ? `${gameState.era.name}元年` : `${gameState.era.name}${gameState.era.year}年`;
+            document.getElementById('uiEraName').innerText = eraText;
+            document.getElementById('uiMonarchName').innerText = `${m.temple} ${m.name}`;
+            document.getElementById('uiMonarchAge').innerText = m.age;
+            document.getElementById('uiReignDuration').innerText = m.reignTime;
+
+            const powerEl = document.getElementById('uiPower');
+            powerEl.innerText = gameState.stats.power + '%';
+            powerEl.className = 'stat-value' + (gameState.stats.power < 30 ? ' status-critical' : '');
+
+            document.getElementById('uiBattleStats').innerText = `${gameState.stats.battles} / ${gameState.stats.wins}`;
+
+            updateStatusBox('uiMonarchState', gameState.politics.monarch);
+            updateStatusBox('uiCourt', gameState.politics.court);
+            updateStatusBox('uiPublic', gameState.politics.public);
+
+            // 更新名牌
+            const badgeEl = document.getElementById('uiHistoryBadge');
+            const duration = gameState.year - gameState.dynasty.foundYear;
+
+            if (duration <= 50) {
+                badgeEl.className = 'history-badge-card';
+                badgeEl.innerText = '待解锁 (国祚>50年)';
+                badgeEl.style.color = '#ccc';
+                badgeEl.style.border = '1px dashed #ddd';
+                badgeEl.style.background = 'var(--card-bg)';
+            } else if (gameState.activeBadge) {
+                badgeEl.className = `history-badge-card active ${gameState.activeBadge.css}`;
+                badgeEl.innerText = gameState.activeBadge.text;
+                badgeEl.style = '';
+            } else {
+                badgeEl.className = 'history-badge-card active';
+                badgeEl.innerText = '平稳发展';
+                badgeEl.style.color = '#7f8c8d';
+                badgeEl.style.border = '1px solid #bdc3c7';
+                badgeEl.style.background = '#fff';
+            }
+        }
+
+        function updateStatusBox(id, value) {
+            const el = document.getElementById(id);
+            const status = getStatusLevel(value);
+            el.innerHTML = `<span class="${status.class}">${status.label} <small style="font-size:12px; opacity:0.7">(${Math.round(value)}%)</small></span>`;
+        }
+
+        // --- 弹窗逻辑 ---
+
+        function openLiveLineage() {
+            const list = document.getElementById('lineageList');
+            const pastMonarchs = gameState.dynasty.monarchs.slice(0, gameState.dynasty.monarchs.length - 1);
+
+            if (pastMonarchs.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">暂无先帝谱系</p>';
+            } else {
+                list.innerHTML = pastMonarchs.map(m => `
+                    <div class="lineage-row">
+                        <div style="font-weight:bold; font-size:14px; margin-bottom:2px;">
+                            ${m.temple} ${m.name} 
+                            <span style="font-weight:normal; font-size:12px; margin-left:6px;">享年 ${m.age}</span>
+                        </div>
+                        <div style="color:#666;">
+                            在位 ${m.reignTime} 年 (公元${m.startYear}-${m.endYear}年)
+                        </div>
+                        ${m.goldenAge ? `<div style="color:#d4ac0d; font-weight:bold; font-size:12px; margin-top:2px;">★ 取得 ${m.goldenAge}</div>` : ''}
+                    </div>
+                `).join('');
+            }
+            document.getElementById('lineageModal').classList.add('active');
+        }
+
+        function gameOver() {
+            clearInterval(gameState.timerId);
+            gameState.timerId = null;
+
+            const duration = gameState.year - gameState.dynasty.foundYear;
+            logEvent('亡国', `国力耗尽，${gameState.dynasty.name}灭亡。`);
+
+            const archiveEntry = {
+                dynastyName: gameState.dynasty.name,
+                foundYear: gameState.dynasty.foundYear,
+                endYear: gameState.year,
+                duration: duration,
+                monarchCount: gameState.dynasty.monarchs.length,
+                battles: gameState.stats.battles,
+                wins: gameState.stats.wins,
+                monarchs: [...gameState.dynasty.monarchs],
+                events: [...gameState.dynasty.events]
+            };
+            historyArchive.unshift(archiveEntry);
+
+            document.getElementById('goDynastyName').innerText = gameState.dynasty.name;
+            document.getElementById('goDuration').innerText = duration;
+            document.getElementById('goMonarchCount').innerText = archiveEntry.monarchCount;
+
+            document.getElementById('gameOverModal').classList.add('active');
+        }
+
+        function resetToCreation() {
+            closeModal('gameOverModal');
+            initCreation();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function openEventLog() {
+            const list = document.getElementById('fullEventLog');
+            list.innerHTML = gameState.dynasty.events.map(e => `
+                <p>
+                    <span class="log-year">${e.year}</span>
+                    <span style="color:${e.color}">[${e.type}]</span> 
+                    ${e.content}
+                </p>
+            `).join('');
+            document.getElementById('eventModal').classList.add('active');
+        }
+
+        function openHistory() {
+            const list = document.getElementById('historyList');
+            if (historyArchive.length === 0) {
+                list.innerHTML = '<li style="text-align:center; padding:20px; color:#999;">暂无历史朝代</li>';
+            } else {
+                list.innerHTML = historyArchive.map((h, index) => `
+                    <li class="history-item-wrap">
+                        <div class="history-item">
+                            <div>
+                                <span style="font-weight:bold; font-size:16px;">${h.dynastyName}</span>
+                                <span style="font-size:12px; color:#666; margin-left:8px;">(${h.foundYear} - ${h.endYear})</span>
+                            </div>
+                            <div>
+                                <span style="font-size:12px;">${h.duration}年</span>
+                                <span class="btn-more" onclick="toggleHistoryDetail(${index})">更多</span>
+                            </div>
+                        </div>
+                        <div class="history-details" id="hist-detail-${index}">
+                            <p><strong>历代帝王：</strong>${h.monarchCount} 位</p>
+                            <p><strong>武功：</strong>战役 ${h.battles} 次，胜 ${h.wins} 次</p>
+                            <div style="margin-top:8px; max-height:150px; overflow-y:auto; border-top:1px solid #ddd; padding-top:4px;">
+                                <p style="color:#666; font-size:11px; margin-bottom:5px;">帝王谱系：</p>
+                                ${h.monarchs.map(m => `
+                                    <div style="font-size:12px; margin-bottom:6px; border-bottom:1px dashed #eee; padding-bottom:4px;">
+                                        <div><strong>${m.temple}</strong> ${m.name} <span style="color:#7f8c8d; font-size:11px;">(享年${m.age})</span></div>
+                                        <div style="color:#555;">在位${m.reignTime}年 (公元${m.startYear}-${m.endYear || '?'}年)</div>
+                                        ${m.goldenAge ? `<div style="color:#d4ac0d; font-weight:bold; font-size:11px;">★ 取得 ${m.goldenAge}</div>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    </li>
+                `).join('');
+            }
+            document.getElementById('historyModal').classList.add('active');
+        }
+
+        function toggleHistoryDetail(index) {
+            const el = document.getElementById(`hist-detail-${index}`);
+            el.style.display = (el.style.display === 'block') ? 'none' : 'block';
+        }
+
+        // 初始化
+        initCreation();
+
+    </script>
+</body>
+
+</html>
