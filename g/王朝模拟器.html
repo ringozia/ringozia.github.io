@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -10,15 +11,26 @@
             --card-bg: #ffffff;
             --text-main: #2c3e50;
             --text-sub: #7f8c8d;
-            --accent: #c0392b;     /* 深红/危机 */
-            --success: #27ae60;    /* 绿色/安全 */
-            --gold: #f1c40f;       /* 金色/盛世 */
+            --accent: #c0392b;
+            /* 深红/危机 */
+            --success: #27ae60;
+            /* 绿色/安全 */
+            --gold: #f1c40f;
+            /* 金色/盛世 */
+            --score-color: #2980b9;
+            /* 分值颜色 */
             --border: #e0e0e0;
             --btn-bg: #2980b9;
             --btn-text: #fff;
         }
 
-        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
             background-color: var(--bg-color);
@@ -27,7 +39,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            position: relative; /* For watermark positioning */
+            position: relative;
         }
 
         /* 顶部标题栏 */
@@ -43,8 +55,17 @@
             font-weight: bold;
             z-index: 10;
         }
-        .header-left { display: flex; align-items: center; gap: 8px; }
-        .header-title { font-size: 16px; }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-title {
+            font-size: 16px;
+        }
+
         .btn-help {
             width: 20px;
             height: 20px;
@@ -59,7 +80,14 @@
             justify-content: center;
             color: var(--text-main);
         }
-        .header-info { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+
+        .header-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+        }
+
         .btn-history {
             padding: 4px 10px;
             background: none;
@@ -88,28 +116,53 @@
             max-width: 400px;
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
             text-align: center;
         }
 
-        .dynasty-name { font-size: 42px; font-weight: 800; color: var(--text-main); margin-bottom: 4px; }
-        
-        .dynasty-info { 
-            font-size: 13px; 
-            color: var(--text-sub); 
-            margin-bottom: 16px; 
+        .dynasty-name {
+            font-size: 42px;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 4px;
+        }
+
+        .dynasty-info {
+            font-size: 13px;
+            color: var(--text-sub);
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
-        
-        .monarch-section { border-top: 1px solid var(--border); padding-top: 16px; position: relative; }
-        .era-name { font-size: 18px; color: var(--accent); font-weight: bold; margin-bottom: 4px; }
-        
-        .monarch-name-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; }
-        .monarch-name { font-size: 18px; font-weight: bold; }
-        
+
+        .monarch-section {
+            border-top: 1px solid var(--border);
+            padding-top: 16px;
+            position: relative;
+        }
+
+        .era-name {
+            font-size: 18px;
+            color: var(--accent);
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .monarch-name-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .monarch-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
         .btn-lineage {
             font-size: 11px;
             padding: 2px 6px;
@@ -121,7 +174,13 @@
             white-space: nowrap;
         }
 
-        .monarch-stats { font-size: 13px; color: var(--text-sub); display: flex; justify-content: center; gap: 15px; }
+        .monarch-stats {
+            font-size: 13px;
+            color: var(--text-sub);
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
 
         /* 数值面板 */
         .stats-container {
@@ -138,32 +197,57 @@
             gap: 12px;
         }
 
-        /* 状态行 (三列) */
+        /* 状态行 (四列) */
         .status-row {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 8px;
+            grid-template-columns: 1fr 1fr 1fr 1fr;
+            gap: 6px;
         }
 
         .stat-box {
             background: var(--card-bg);
-            padding: 12px 4px;
+            padding: 10px 2px;
             border-radius: 8px;
             text-align: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
         }
-        .stat-label { font-size: 11px; color: var(--text-sub); margin-bottom: 4px; }
-        .stat-value { font-size: 14px; font-weight: bold; }
-        
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-sub);
+            margin-bottom: 4px;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
         /* 状态颜色类 */
-        .status-excellent { color: var(--success); } /* 优 */
-        .status-good { color: var(--btn-bg); }     /* 良 */
-        .status-poor { color: #e67e22; }           /* 差 */
-        .status-critical { color: var(--accent); } /* 危 */
+        .status-excellent {
+            color: var(--success);
+        }
+
+        /* 优 */
+        .status-good {
+            color: var(--btn-bg);
+        }
+
+        /* 良 */
+        .status-poor {
+            color: #e67e22;
+        }
+
+        /* 差 */
+        .status-critical {
+            color: var(--accent);
+        }
+
+        /* 危 */
 
         /* 历史名牌卡片 */
         .history-badge-card {
@@ -171,7 +255,7 @@
             border-radius: 8px;
             padding: 12px;
             text-align: center;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
             min-height: 48px;
             display: flex;
             align-items: center;
@@ -181,14 +265,30 @@
             color: #888;
             border: 1px dashed #ddd;
         }
+
         .history-badge-card.active {
             border: 2px solid var(--text-main);
             color: var(--text-main);
             background: #fff;
         }
-        .badge-shengshi { border-color: var(--gold) !important; color: #d4ac0d !important; background: #fef9e7 !important; }
-        .badge-danger { border-color: var(--accent) !important; color: var(--accent) !important; background: #fdedec !important; }
-        .badge-good { border-color: var(--success) !important; color: var(--success) !important; background: #eafaf1 !important; }
+
+        .badge-shengshi {
+            border-color: var(--gold) !important;
+            color: #d4ac0d !important;
+            background: #fef9e7 !important;
+        }
+
+        .badge-danger {
+            border-color: var(--accent) !important;
+            color: var(--accent) !important;
+            background: #fdedec !important;
+        }
+
+        .badge-good {
+            border-color: var(--success) !important;
+            color: var(--success) !important;
+            background: #eafaf1 !important;
+        }
 
         /* 底部 */
         footer {
@@ -201,7 +301,7 @@
             gap: 10px;
             z-index: 10;
         }
-        
+
         /* 底部事件栏 */
         .event-bar {
             height: 52px;
@@ -217,15 +317,16 @@
             color: var(--text-main);
             position: relative;
         }
+
         .event-line {
             width: 100%;
             height: 20px;
             line-height: 20px;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis; /* 支持省略号 */
+            text-overflow: ellipsis;
         }
-        
+
         /* 打字机动画 (2s) */
         .typing-anim {
             display: inline;
@@ -234,17 +335,31 @@
             animation: typeReveal 2s cubic-bezier(0.1, 0.7, 0.1, 1) forwards;
             clip-path: inset(0 100% 0 0);
         }
+
         @keyframes typeReveal {
-            from { clip-path: inset(0 100% 0 0); }
-            to { clip-path: inset(0 0 0 0); }
+            from {
+                clip-path: inset(0 100% 0 0);
+            }
+
+            to {
+                clip-path: inset(0 0 0 0);
+            }
         }
 
         .controls {
             display: flex;
-            justify-content: flex-end;
+            justify-content: space-between;
+            /* Adjusted for card button */
+            align-items: center;
         }
-        
-        .speed-btn {
+
+        .controls-right {
+            display: flex;
+            gap: 10px;
+        }
+
+        .speed-btn,
+        .card-btn-trigger {
             background: var(--btn-bg);
             color: #fff;
             border: none;
@@ -254,19 +369,101 @@
             font-weight: bold;
             cursor: pointer;
             transition: 0.2s;
+            position: relative;
         }
-        .speed-btn.active-5x { background: var(--accent); }
+
+        .speed-btn.active-5x {
+            background: var(--accent);
+        }
+
+        /* 卡牌按钮红色泡泡 */
+        .card-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--accent);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #fff;
+            display: none;
+            /* 默认隐藏 */
+        }
+
+        /* 胶囊消息 (Toast) */
+        #toast-container {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            pointer-events: none;
+        }
+
+        .toast {
+            background: rgba(44, 62, 80, 0.9);
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            animation: slideInDown 0.3s ease-out, fadeOut 0.3s ease-in 1.7s forwards;
+            white-space: nowrap;
+        }
+
+        @keyframes slideInDown {
+            from {
+                transform: translateY(-100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeOut {
+            from {
+                opacity: 1;
+            }
+
+            to {
+                opacity: 0;
+            }
+        }
 
         /* 弹窗通用 */
         .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
             display: none;
             justify-content: center;
             align-items: center;
             z-index: 100;
         }
-        .modal-overlay.active { display: flex; }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        /* 历史弹窗层级最高 */
+        #historyModal {
+            z-index: 200;
+        }
+
         .modal {
             background: var(--card-bg);
             width: 90%;
@@ -277,26 +474,160 @@
             flex-direction: column;
             overflow: hidden;
             animation: popIn 0.2s ease-out;
-            z-index: 101; /* Higher than overlay */
         }
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        
-        .modal-header { padding: 16px; border-bottom: 1px solid var(--border); font-weight: bold; display: flex; justify-content: space-between; }
-        .modal-body { padding: 16px; overflow-y: auto; flex: 1; }
-        .modal-footer { padding: 16px; border-top: 1px solid var(--border); text-align: center; }
+
+        @keyframes popIn {
+            from {
+                transform: scale(0.9);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+        }
+
+        /* 亡国弹窗 按钮组 */
+        .modal-footer.game-over-footer {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .btn-secondary {
+            padding: 12px;
+            background: transparent;
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            width: 100px;
+        }
 
         /* 历史记录样式 */
-        .history-list { list-style: none; }
-        .history-item { padding: 12px 0; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .history-details { display: none; margin-top: 10px; background: #f9f9f9; padding: 10px; border-radius: 6px; font-size: 13px; }
-        .btn-more { color: var(--btn-bg); cursor: pointer; font-size: 12px; margin-left: 10px; text-decoration: underline; }
-        
-        /* 谱系行样式优化 */
-        .lineage-row { 
-            font-size: 13px; 
-            padding: 8px 0; 
-            border-bottom: 1px dashed #eee; 
-            color: #2c3e50; 
+        .history-list {
+            list-style: none;
+        }
+
+        .history-item {
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-details {
+            display: none;
+            margin-top: 10px;
+            background: #f9f9f9;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 13px;
+        }
+
+        .btn-more {
+            color: var(--btn-bg);
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+            text-decoration: underline;
+        }
+
+        /* 谱系行样式 */
+        .lineage-row {
+            font-size: 13px;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            color: #2c3e50;
+        }
+
+        /* 卡牌系统样式 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .card-item {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 120px;
+            text-align: left;
+            position: relative;
+        }
+
+        .card-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .card-desc {
+            font-size: 12px;
+            color: #555;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .card-timer {
+            font-size: 11px;
+            color: #e67e22;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        .card-actions {
+            display: flex;
+            gap: 5px;
+        }
+
+        .btn-card-use {
+            flex: 1;
+            padding: 4px;
+            background: var(--btn-bg);
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+
+        .btn-card-discard {
+            flex: 1;
+            padding: 4px;
+            background: #95a5a6;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
         }
 
         /* 新建朝代弹窗 - 独立按钮样式 */
@@ -307,34 +638,90 @@
             margin-bottom: 15px;
             padding: 0 20px;
         }
-        .creation-label { font-size: 14px; color: #666; width: 40px; text-align: left; }
-        .dice-btn { font-size: 20px; cursor: pointer; background: none; border: none; padding: 4px; }
-        .generated-name { font-size: 22px; font-weight: bold; color: var(--accent); flex: 1; text-align: center; }
-        .main-btn { width: 100%; padding: 12px; background: var(--btn-bg); color: #fff; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; }
-        
+
+        .creation-label {
+            font-size: 14px;
+            color: #666;
+            width: 40px;
+            text-align: left;
+        }
+
+        .dice-btn {
+            font-size: 20px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 4px;
+        }
+
+        .generated-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--accent);
+            flex: 1;
+            text-align: center;
+        }
+
+        .main-btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--btn-bg);
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
         /* 事件日志列表 */
-        .log-list p { margin-bottom: 6px; font-size: 13px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
-        .log-year { font-weight: bold; color: var(--text-sub); margin-right: 6px; }
+        .log-list p {
+            margin-bottom: 6px;
+            font-size: 13px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 4px;
+        }
+
+        .log-year {
+            font-weight: bold;
+            color: var(--text-sub);
+            margin-right: 6px;
+        }
 
         /* 玩法说明文本 */
-        .help-text p { margin-bottom: 10px; font-size: 14px; line-height: 1.5; color: #444; }
-        .help-text h3 { margin-top: 15px; margin-bottom: 8px; font-size: 16px; color: var(--text-main); }
+        .help-text p {
+            margin-bottom: 10px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #444;
+        }
+
+        .help-text h3 {
+            margin-top: 15px;
+            margin-bottom: 8px;
+            font-size: 16px;
+            color: var(--text-main);
+        }
 
         /* 水印样式 */
         .watermark {
             position: fixed;
             pointer-events: none;
-            color: rgba(0, 0, 0, 0.15); /* 半透明 */
+            color: rgba(0, 0, 0, 0.15);
+            /* 半透明 */
             font-size: 12px;
             font-weight: bold;
-            z-index: 9999; /* 最顶层 */
+            z-index: 9999;
+            /* 最顶层 */
             white-space: nowrap;
             user-select: none;
         }
-
     </style>
 </head>
+
 <body>
+
+    <!-- 顶部消息容器 -->
+    <div id="toast-container"></div>
 
     <!-- 标题栏 -->
     <header>
@@ -358,7 +745,7 @@
                 <span>国祚 <span id="uiDuration">0</span> 年</span>
                 <button class="btn-lineage" id="btnLineage" onclick="openLiveLineage()">谱系0</button>
             </div>
-            
+
             <div class="monarch-section">
                 <div class="era-name" id="uiEraName">--</div>
                 <div class="monarch-name-row">
@@ -384,7 +771,7 @@
                 </div>
             </div>
 
-            <!-- 状态行：君主、朝廷、民心 -->
+            <!-- 状态行：君主、朝廷、军心、民心 -->
             <div class="status-row">
                 <div class="stat-box">
                     <div class="stat-label">君主</div>
@@ -393,6 +780,10 @@
                 <div class="stat-box">
                     <div class="stat-label">朝廷</div>
                     <div class="stat-value" id="uiCourt">--</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-label">军心</div>
+                    <div class="stat-value" id="uiMilitary">--</div>
                 </div>
                 <div class="stat-box">
                     <div class="stat-label">民心</div>
@@ -413,7 +804,14 @@
             <div class="event-line" style="color:#999; text-align:center;">暂无大事件...</div>
         </div>
         <div class="controls">
-            <button class="speed-btn" id="speedBtn" onclick="toggleSpeed()">1x 速</button>
+            <div><!-- Spacer --></div>
+            <div class="controls-right">
+                <button class="card-btn-trigger" onclick="openCardModal()">
+                    卡牌
+                    <div class="card-badge" id="uiCardBadge">0</div>
+                </button>
+                <button class="speed-btn" id="speedBtn" onclick="toggleSpeed()">1x 速</button>
+            </div>
         </div>
     </footer>
 
@@ -423,7 +821,7 @@
             <div class="modal-header">建立新朝代</div>
             <div class="modal-body" style="text-align: center;">
                 <p style="color:#666; margin-bottom:20px;">点击骰子随机生成信息</p>
-                
+
                 <div class="creation-group">
                     <span class="creation-label">国号</span>
                     <span class="generated-name" id="previewDynasty">? ?</span>
@@ -496,8 +894,9 @@
                     国力耗尽，社稷崩塌。<br>后人只能在史书中窥见往日荣光。
                 </p>
             </div>
-            <div class="modal-footer">
-                <button class="main-btn" onclick="resetToCreation()">新建朝代</button>
+            <div class="modal-footer game-over-footer">
+                <button class="btn-secondary" onclick="openHistory()">历史</button>
+                <button class="main-btn" style="flex:1;" onclick="resetToCreation()">新建朝代</button>
             </div>
         </div>
     </div>
@@ -512,14 +911,29 @@
             <div class="modal-body help-text">
                 <p><strong>核心目标：</strong> 尽可能延续王朝寿命，避免国力归零。</p>
                 <h3>⚖️ 状态与国力</h3>
-                <p>· <strong>国力值</strong>：归零即亡国。初始50%-80%。</p>
-                <p>· <strong>三大状态</strong>：君主、朝廷、民心。状态优劣决定每年国力的增减。</p>
+                <p>· <strong>国力值</strong>：归零即亡国。每年自动-1。</p>
+                <p>· <strong>四大状态</strong>：君主、朝廷、军心、民心。状态优劣决定每年国力的增减。</p>
                 <h3>⚔️ 战役系统</h3>
                 <p>· <strong>我方发起</strong>：国力≥70%时概率提升。胜利可大幅增加国力。</p>
                 <p>· <strong>敌方入侵</strong>：国力≤30%时概率提升。失败将扣除国力。</p>
-                <p>· 双方发动战役的概率独立计算，每年最多发生一次。</p>
-                <h3>📜 历史名牌</h3>
-                <p>国祚超过50年后，根据三大状态数值，可解锁“盛世”、“良君”、“昏君”等历史评价。</p>
+                <h3>🃏 卡牌系统</h3>
+                <p>· 每10年有几率获得卡牌，可用于增益状态或赌国运。</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 7. 卡牌弹窗 -->
+    <div id="cardModal" class="modal-overlay">
+        <div class="modal">
+            <div class="modal-header">
+                <span>治国策略</span>
+                <span onclick="closeModal('cardModal')" style="cursor:pointer;">✕</span>
+            </div>
+            <div class="modal-body">
+                <div id="cardList" class="card-grid">
+                    <!-- JS 填充 -->
+                </div>
+                <div id="noCardMsg" style="text-align:center; color:#999; padding:20px; display:none;">暂无可用卡牌</div>
             </div>
         </div>
     </div>
@@ -530,17 +944,24 @@
             baseYear: 523,
             speeds: { normal: 10000, fast: 2000 },
             maxAge: 90,
-            chars: "赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜戚谢邹喻柏水窦章云苏潘葛奚范彭郎鲁韦昌马苗凤花方俞任袁柳酆鲍史唐费廉岑薛雷贺倪汤滕殷罗毕郝安常乐于时傅皮卞齐康伍余元卜顾孟平黄和穆萧尹姚邵湛汪祁毛禹狄米贝明臧计伏成戴谈宋茅庞熊纪舒屈项祝董梁杜阮蓝闵席季麻强贾路娄危江童颜郭梅盛林刁钟徐邱骆高夏蔡田樊胡凌霍万柯卢莫房缪干解应宗丁宣邓郁单杭洪包诸左石崔吉钮龚程嵇邢滑裴陆荣翁荀羊於惠家封芮羿储晋汲邴糜松井段富巫乌焦巴弓牧隗山谷车侯宓蓬全郗班仰秋仲伊宫宁仇栾暴甘钭厉戎祖武符刘景詹束龙叶幸司韶郜黎蓟薄印宿白怀蒲台从鄂索咸籍赖卓蔺屠蒙池乔阴郁胥能苍双闻莘党翟谭贡劳逄姬申扶堵冉宰郦雍却璩桑桂濮牛寿通边扈燕冀郟浦尚农温别庄晏柴瞿阎充慕连茹习宦艾鱼容向古易慎戈廖庾终暨居衡步都耿满弘匡国文寇广禄阙东欧沃利蔚越夔隆师巩厍聂晁勾敖融冷訾辛阚那简饶空曾沙沙乜养鞠须丰巢关蒯相查后荆红游竺权逯盖益桓公",
-            // 年号专用字库
+            givenNames: "赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜戚谢邹喻柏水窦章云苏潘葛奚范彭郎鲁韦昌马苗凤花方俞任袁柳酆鲍史唐费廉岑薛雷贺倪汤滕殷罗毕郝安常乐于时傅皮卞齐康伍余元卜顾孟平黄和穆萧尹姚邵湛汪祁毛禹狄米贝明臧计伏成戴谈宋茅庞熊纪舒屈项祝董梁杜阮蓝闵席季麻强贾路娄危江童颜郭梅盛林刁钟徐邱骆高夏蔡田樊胡凌霍万柯卢莫房缪干解应宗丁宣邓郁单杭洪包诸左石崔吉钮龚程嵇邢滑裴陆荣翁荀羊於惠家封芮羿储晋汲邴糜松井段富巫乌焦巴弓牧隗山谷车侯宓蓬全郗班仰秋仲伊宫宁仇栾暴甘钭厉戎祖武符刘景詹束龙叶幸司韶郜黎蓟薄印宿白怀蒲台从鄂索咸籍赖卓蔺屠蒙池乔阴郁胥能苍双闻莘党翟谭贡劳逄姬申扶堵冉宰郦雍却璩桑桂濮牛寿通边扈燕冀郟浦尚农温别庄晏柴瞿阎充慕连茹习宦艾鱼容向古易慎戈廖庾终暨居衡步都耿满弘匡国文寇广禄阙东欧沃利蔚越夔隆师巩厍聂晁勾敖融冷訾辛阚那简饶空曾沙沙乜养鞠须丰巢关蒯相查后荆红游竺权逯盖益桓公",
+            surnames: "赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨朱秦尤许何吕施张孔曹严华金魏陶姜戚谢邹喻柏水窦章云苏潘葛奚范彭郎鲁韦昌马苗凤花方俞任袁柳酆鲍史唐费廉岑薛雷贺倪汤滕殷罗毕郝安常乐于时傅皮卞齐康伍余元卜顾孟平黄和穆萧尹姚邵湛汪祁毛禹狄米贝明臧计伏成戴谈宋茅庞熊纪舒屈项祝董梁杜阮蓝闵席季麻强贾路娄危江童颜郭梅盛林刁钟徐邱骆高夏蔡田樊胡凌霍万柯卢莫房缪干解应宗丁宣邓郁单杭洪包诸左石崔吉钮龚程嵇邢滑裴陆荣翁荀羊於惠家封芮羿储晋汲邴糜松井段富巫乌焦巴弓牧隗山谷车侯宓蓬全郗班仰秋仲伊宫宁仇栾暴甘钭厉戎祖武符刘景詹束龙叶幸司韶郜黎蓟薄印宿白怀蒲台从鄂索咸籍赖卓蔺屠蒙池乔阴郁胥能苍双闻莘党翟谭贡劳逄姬申扶堵冉宰郦雍却璩桑桂濮牛寿通边扈燕冀郟浦尚农温别庄晏柴瞿阎充慕连茹习宦艾鱼容向古易慎戈廖庾终暨居衡步都耿满弘匡国文寇广禄阙东欧沃利蔚越夔隆师巩厍聂晁勾敖融冷訾辛阚那简饶空曾沙沙乜养鞠须丰巢关蒯相查后荆红游竺权逯盖益桓公",
+            compoundSurnames: ["欧阳", "上官", "宝木", "司马", "巫马", "东方", "宝台", "上本", "沙汕", "汕本", "端木", "独孤", "南宫", "万俟", "闻人", "夏侯", "诸葛", "尉迟", "公羊", "赫连", "澹台", "皇甫", "宗政", "濮阳", "公淳", "淳于", "单于", "太叔", "申屠", "公孙", "仲孙", "轩辕", "令狐", "钟离", "宇文", "长孙", "慕容", "鲜于", "闾丘", "司徒", "司空", "亓官", "司寇", "仉督", "子车", "颛孙", "端木", "巫马", "公西", "漆雕", "乐正", "壤驷", "公良", "拓跋", "夹谷", "宰父", "谷梁", "晋楚", "闫法", "汝鄢", "涂钦", "段干", "百里", "东郭", "南门", "呼延", "归海", "羊舌", "微生", "岳帅", "缑亢", "况后", "有琴", "梁丘", "左丘", "东门", "西门", "商牟", "佘佴", "伯赏", "南伯", "行主", "言福", "百家", "东宫"],
             eraPrefix: "皇大天元永建开光咸昭景绍洪正宏武嘉万同道咸光宣乾坤中兴太宁至延熙隆淳德文神圣应保庆",
-            eraSuffix: "平安定治德庆宁和兴丰熙泰顺佑昌历启康熙绪统正宝化福祯祥授业成武献让宗奉元朔初"
+            eraSuffix: "平安定治德庆宁和兴丰熙泰顺佑昌历启康熙绪统正宝化福祯祥授业成武献让宗奉元朔初",
+            templeTiers: {
+                t1: "文武圣高明成英宣神昭睿德",
+                t2: "仁中宪孝景庄肃翼懿康",
+                t3: "平顺安定敬恭元简穆",
+                t4: "灵炀哀悼思殇惠怀敏愍"
+            }
         };
 
         const usedData = {
             dynasties: new Set(),
-            surnames: new Set(),
             eraNames: new Set(),
-            templeNames: new Set() 
+            templeNames: new Set(),
+            templeFullNames: new Set()
         };
 
         const historyArchive = [];
@@ -550,11 +971,11 @@
             speed: 'normal',
             year: 523,
             dynasty: {
-                name: '',     
-                baseName: '', 
+                name: '',
+                baseName: '',
                 surname: '',
                 foundYear: 0,
-                monarchs: [], 
+                monarchs: [],
                 events: []
             },
             currentMonarch: {
@@ -565,12 +986,15 @@
                 maxAge: 0,
                 startYear: 0,
                 goldenAge: null,
-                eraName: '' 
+                eraName: '',
+                totalPowerChange: 0,
+                score: 0
             },
             politics: {
-                public: 70, 
-                court: 70,  
-                monarch: 70 
+                public: 70,
+                court: 70,
+                monarch: 70,
+                military: 70
             },
             era: {
                 name: '',
@@ -581,52 +1005,82 @@
                 battles: 0,
                 wins: 0
             },
+            cards: [], // { id, type, name, desc, color, yearsLeft }
+            nextCardId: 1,
             tempCreation: {},
-            activeBadge: null, 
-            shengshiLogged: false 
+            activeBadge: null,
+            shengshiLogged: false
         };
 
         // --- 辅助函数 ---
         function randomInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
-        function randomChar() { return CONFIG.chars.charAt(randomInt(0, CONFIG.chars.length - 1)); }
-        
+        function randomCharFrom(str) { return str.charAt(randomInt(0, str.length - 1)); }
+
         function generateUnique(set, generatorFn) {
             let attempt;
-            do { attempt = generatorFn(); } while (set.has(attempt));
+            let safety = 0;
+            do {
+                attempt = generatorFn();
+                safety++;
+                if (safety > 500) break;
+            } while (set.has(attempt));
             set.add(attempt);
             return attempt;
         }
 
         function getDynastyNameObj() {
-            let attempt;
-            do {
-                const char = randomChar();
-                const suffix = '朝'; // 仅使用“朝”
-                attempt = { fullName: char + suffix, baseName: char };
-            } while (usedData.dynasties.has(attempt.fullName));
-            usedData.dynasties.add(attempt.fullName);
-            return attempt;
+            return generateUnique(usedData.dynasties, () => {
+                const char = randomCharFrom(CONFIG.givenNames);
+                const suffix = '朝';
+                return { fullName: char + suffix, baseName: char };
+            });
         }
 
-        function getSurname() { return generateUnique(usedData.surnames, () => randomChar()); }
-        
+        function getSurname() {
+            if (Math.random() < 0.1) {
+                const idx = randomInt(0, CONFIG.compoundSurnames.length - 1);
+                return CONFIG.compoundSurnames[idx];
+            } else {
+                return randomCharFrom(CONFIG.surnames);
+            }
+        }
+
         function getEraName() {
             return generateUnique(usedData.eraNames, () => {
-                const p = CONFIG.eraPrefix.charAt(randomInt(0, CONFIG.eraPrefix.length - 1));
-                const s = CONFIG.eraSuffix.charAt(randomInt(0, CONFIG.eraSuffix.length - 1));
+                const p = randomCharFrom(CONFIG.eraPrefix);
+                let s;
+                do {
+                    s = randomCharFrom(CONFIG.eraSuffix);
+                } while (s === p);
                 return p + s;
             });
         }
 
-        function getTempleName(isFounder) {
+        function generateTempleName(score, isFounder) {
             const prefix = gameState.dynasty.baseName;
-            if (isFounder) return prefix + '太祖';
-            let name;
+
+            if (isFounder) {
+                return { full: prefix + '太祖', char: '太祖' };
+            }
+
+            let pool = "";
+            if (score >= 8) pool = CONFIG.templeTiers.t1;
+            else if (score >= 4) pool = CONFIG.templeTiers.t2;
+            else if (score >= -4) pool = CONFIG.templeTiers.t3;
+            else pool = CONFIG.templeTiers.t4;
+
+            let middleChar;
+            let safety = 0;
             do {
-                name = prefix + randomChar() + '宗'; 
-            } while (usedData.templeNames.has(name));
-            usedData.templeNames.add(name);
-            return name;
+                if (safety > 50) pool = CONFIG.templeTiers.t2 + CONFIG.templeTiers.t3;
+                middleChar = randomCharFrom(pool);
+                safety++;
+            } while (usedData.templeNames.has(middleChar) && safety < 100);
+
+            usedData.templeNames.add(middleChar);
+
+            const suffix = '宗';
+            return { full: prefix + middleChar + suffix, char: middleChar + suffix };
         }
 
         function getStatusLevel(value) {
@@ -636,13 +1090,148 @@
             return { label: '危', class: 'status-critical', score: -75 };
         }
 
+        // --- 胶囊消息系统 ---
+        function showToast(message) {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.innerText = message;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 2000); // 2秒后消失
+        }
+
+        // --- 卡牌系统逻辑 ---
+        function tryDrawCard() {
+            if (Math.random() < 0.5) {
+                // 获得卡牌
+                const types = [
+                    { type: 'monarch', name: '君主加持', desc: '君主状态+10%', color: '#e8f8f5' },
+                    { type: 'court', name: '整顿朝纲', desc: '朝廷状态+10%', color: '#f4ecf7' },
+                    { type: 'military', name: '强军计划', desc: '军心状态+10%', color: '#fdebd0' },
+                    { type: 'public', name: '大赦天下', desc: '民心状态+10%', color: '#eafaf1' },
+                    { type: 'gamble', name: '赌国运', desc: '全状态 ±30%', color: '#fadbd8' }
+                ];
+
+                const picked = types[randomInt(0, types.length - 1)];
+                const newCard = {
+                    id: gameState.nextCardId++,
+                    ...picked,
+                    yearsLeft: randomInt(30, 60)
+                };
+
+                gameState.cards.push(newCard);
+                updateCardBadge();
+                // 获得提示可选？题目未要求，但为了体验可以加
+                showToast(`获得卡牌：${newCard.name}`);
+            }
+        }
+
+        function useCard(id) {
+            const idx = gameState.cards.findIndex(c => c.id === id);
+            if (idx === -1) return;
+            const card = gameState.cards[idx];
+
+            let msg = '';
+            if (card.type === 'gamble') {
+                if (Math.random() < 0.5) {
+                    // +30%
+                    gameState.politics.monarch = Math.min(100, gameState.politics.monarch + 30);
+                    gameState.politics.court = Math.min(100, gameState.politics.court + 30);
+                    gameState.politics.military = Math.min(100, gameState.politics.military + 30);
+                    gameState.politics.public = Math.min(100, gameState.politics.public + 30);
+                    msg = '国运昌隆！所有状态 +30%';
+                    logEvent('国运', '使用赌国运卡牌，天佑大统，国势大增！', '#27ae60');
+                } else {
+                    // -30%
+                    gameState.politics.monarch = Math.max(0, gameState.politics.monarch - 30);
+                    gameState.politics.court = Math.max(0, gameState.politics.court - 30);
+                    gameState.politics.military = Math.max(0, gameState.politics.military - 30);
+                    gameState.politics.public = Math.max(0, gameState.politics.public - 30);
+                    msg = '国运衰退！所有状态 -30%';
+                    logEvent('国运', '使用赌国运卡牌，时运不济，国势衰微。', '#c0392b');
+                }
+            } else {
+                // Buffs
+                if (card.type === 'monarch') { gameState.politics.monarch = Math.min(100, gameState.politics.monarch + 10); msg = '卡牌使用成功！君主增益10%'; }
+                else if (card.type === 'court') { gameState.politics.court = Math.min(100, gameState.politics.court + 10); msg = '卡牌使用成功！朝廷增益10%'; }
+                else if (card.type === 'military') { gameState.politics.military = Math.min(100, gameState.politics.military + 10); msg = '卡牌使用成功！军心增益10%'; }
+                else if (card.type === 'public') { gameState.politics.public = Math.min(100, gameState.politics.public + 10); msg = '卡牌使用成功！民心增益10%'; }
+            }
+
+            showToast(msg);
+            gameState.cards.splice(idx, 1);
+            updateCardBadge();
+            renderCards(); // Re-render modal
+            updateUI(); // Update stats immediately
+        }
+
+        function discardCard(id) {
+            const idx = gameState.cards.findIndex(c => c.id === id);
+            if (idx !== -1) {
+                gameState.cards.splice(idx, 1);
+                updateCardBadge();
+                renderCards();
+            }
+        }
+
+        function updateCardBadge() {
+            const el = document.getElementById('uiCardBadge');
+            const count = gameState.cards.length;
+            if (count > 0) {
+                el.style.display = 'flex';
+                el.innerText = count;
+            } else {
+                el.style.display = 'none';
+            }
+        }
+
+        function openCardModal() {
+            renderCards();
+            openModal('cardModal');
+        }
+
+        function renderCards() {
+            const list = document.getElementById('cardList');
+            const emptyMsg = document.getElementById('noCardMsg');
+
+            if (gameState.cards.length === 0) {
+                list.innerHTML = '';
+                emptyMsg.style.display = 'block';
+                return;
+            }
+            emptyMsg.style.display = 'none';
+
+            list.innerHTML = gameState.cards.map(c => `
+                <div class="card-item" style="background-color:${c.color}">
+                    <div>
+                        <div class="card-name">${c.name}</div>
+                        <div class="card-desc">${c.desc}</div>
+                    </div>
+                    <div>
+                        <div class="card-timer">${c.yearsLeft}年后失效</div>
+                        <div class="card-actions">
+                            <button class="btn-card-use" onclick="useCard(${c.id})">使用</button>
+                            <button class="btn-card-discard" onclick="discardCard(${c.id})">丢弃</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
         // --- 游戏逻辑 ---
 
         function initCreation() {
             openModal('createModal');
             document.getElementById('gameUI').style.display = 'none';
             document.getElementById('gameFooter').style.display = 'none';
-            
+
+            usedData.eraNames.clear();
+            usedData.templeNames.clear();
+            usedData.templeFullNames.clear();
+
             gameState.tempCreation = { dynastyInfo: null, surname: null };
             rollDynastyName();
             rollSurname();
@@ -664,10 +1253,10 @@
             closeModal('createModal');
             document.getElementById('gameUI').style.display = 'flex';
             document.getElementById('gameFooter').style.display = 'flex';
-            
+
             const dInfo = gameState.tempCreation.dynastyInfo;
             const sName = gameState.tempCreation.surname;
-            
+
             gameState.dynasty = {
                 name: dInfo.fullName,
                 baseName: dInfo.baseName,
@@ -676,50 +1265,58 @@
                 monarchs: [],
                 events: []
             };
+            const startPower = randomInt(50, 80);
             gameState.stats = {
-                power: randomInt(50, 80),
+                power: startPower,
                 battles: 0,
                 wins: 0
             };
-            gameState.politics = { public: 70, court: 70, monarch: 70 };
-            
-            usedData.templeNames.clear(); 
-            usedData.eraNames.clear(); 
+            gameState.politics = {
+                public: randomInt(50, 80),
+                court: randomInt(50, 80),
+                monarch: randomInt(50, 80),
+                military: randomInt(50, 80)
+            };
+
+            gameState.cards = [];
+            updateCardBadge();
+
+            usedData.eraNames.clear();
+            usedData.templeNames.clear();
 
             gameState.activeBadge = null;
             gameState.shengshiLogged = false;
-            
+
             document.getElementById('uiEventBar').innerHTML = '<div class="event-line" style="color:#999; text-align:center;">暂无大事件...</div>';
 
-            const firstEra = getEraName();
-            logEvent('建国', `国号 ${dInfo.fullName}，年号 ${firstEra}。`);
-            newMonarch(true, firstEra);
-            
+            newMonarch(true);
+
             updateUI();
             startTimer();
         }
 
         function newMonarch(isFounder, forcedEraName = null) {
             gameState.shengshiLogged = false;
-            gameState.activeBadge = null; 
+            gameState.activeBadge = null;
 
             const surname = gameState.dynasty.surname;
-            let givenName = randomChar();
-            if (Math.random() < 0.5) givenName += randomChar();
+            let givenName = randomCharFrom(CONFIG.givenNames);
+            if (Math.random() < 0.5) givenName += randomCharFrom(CONFIG.givenNames);
 
-            const templeName = getTempleName(isFounder);
             const age = isFounder ? randomInt(25, 50) : randomInt(10, 50);
             const eraStr = forcedEraName || getEraName();
 
             gameState.currentMonarch = {
                 name: surname + givenName,
-                temple: templeName,
+                temple: null,
                 age: age,
                 reignTime: 0,
                 maxAge: Math.min(90, age + randomInt(10, 50)),
                 startYear: gameState.year,
                 goldenAge: null,
-                eraName: eraStr
+                eraName: eraStr,
+                totalPowerChange: 0,
+                score: 0
             };
             if (gameState.currentMonarch.maxAge > 90) gameState.currentMonarch.maxAge = 90;
 
@@ -734,7 +1331,12 @@
             });
 
             updateLineageBtn();
-            logEvent('登基', `${gameState.currentMonarch.temple} ${gameState.currentMonarch.name} 继位，改元 ${gameState.era.name}，时年 ${age} 岁。`);
+
+            if (isFounder) {
+                logEvent('建国', `${gameState.currentMonarch.name}于公元${gameState.year}年称帝，国号 ${gameState.dynasty.baseName}，史称${eraStr}帝。`);
+            } else {
+                logEvent('登基', `${gameState.currentMonarch.name} 继位，改元 ${gameState.era.name}，史称 ${gameState.era.name}帝，时年 ${age} 岁。`);
+            }
         }
 
         function updateLineageBtn() {
@@ -767,9 +1369,30 @@
             gameState.era.year++;
             gameState.currentMonarch.reignTime++;
             gameState.currentMonarch.age++;
-            
+
+            // 国力自动 -1
+            gameState.stats.power -= 1;
+
             if (gameState.year % 5 === 0) {
                 applyStatusFluctuation();
+            }
+
+            // 卡牌获取 (每10年)
+            if (gameState.year % 10 === 0) {
+                tryDrawCard();
+            }
+
+            // 卡牌过期处理
+            for (let i = gameState.cards.length - 1; i >= 0; i--) {
+                gameState.cards[i].yearsLeft--;
+                if (gameState.cards[i].yearsLeft <= 0) {
+                    gameState.cards.splice(i, 1); // 移除过期卡
+                }
+            }
+            updateCardBadge();
+            // 如果卡牌弹窗开着，刷新一下
+            if (document.getElementById('cardModal').classList.contains('active')) {
+                renderCards();
             }
 
             let polyProb = 0.1;
@@ -781,27 +1404,29 @@
             const pScore = getStatusLevel(gameState.politics.public).score;
             const cScore = getStatusLevel(gameState.politics.court).score;
             const mScore = getStatusLevel(gameState.politics.monarch).score;
-            const powerChange = Math.floor((pScore + cScore + mScore) / 25);
-            
+            const milScore = getStatusLevel(gameState.politics.military).score;
+
+            const powerChange = Math.floor((pScore + cScore + mScore + milScore) / 30);
+
+            gameState.currentMonarch.totalPowerChange += powerChange;
+
             gameState.stats.power += powerChange;
             if (gameState.stats.power > 100) gameState.stats.power = 100;
             if (gameState.stats.power < 0) gameState.stats.power = 0;
 
             checkHistoryBadge();
 
-            // 战役独立概率检测
-            let probPlayer = 0.1; 
+            let probPlayer = 0.1;
             if (gameState.stats.power >= 70) probPlayer = 0.2;
 
             let probEnemy = 0.1;
             if (gameState.stats.power <= 30) probEnemy = 0.2;
 
             const roll = Math.random();
-            // 独立概率互斥逻辑：先判我方，再判敌方，每年最多一次
             if (roll < probPlayer) {
-                handleWar(true); 
+                handleWar(true);
             } else if (roll < (probPlayer + probEnemy)) {
-                handleWar(false); 
+                handleWar(false);
             }
 
             checkDeath();
@@ -810,7 +1435,7 @@
         }
 
         function applyStatusFluctuation() {
-            ['public', 'court', 'monarch'].forEach(key => {
+            ['public', 'court', 'monarch', 'military'].forEach(key => {
                 const change = randomInt(2, 5);
                 const sign = Math.random() < 0.5 ? 1 : -1;
                 gameState.politics[key] += (change * sign);
@@ -819,16 +1444,16 @@
         }
 
         function handlePoliticalEvent() {
-            const name = randomChar() + randomChar() + (Math.random() < 0.5 ? "政变" : "事变");
-            
+            const name = randomCharFrom(CONFIG.givenNames) + randomCharFrom(CONFIG.givenNames) + (Math.random() < 0.5 ? "政变" : "事变");
+
             let maxChangeVal = 0;
             let maxChangeKey = '';
             let maxChangeSign = 1;
 
-            ['public', 'court', 'monarch'].forEach(key => {
+            ['public', 'court', 'monarch', 'military'].forEach(key => {
                 const change = randomInt(10, 20);
                 const sign = Math.random() < 0.5 ? 1 : -1;
-                
+
                 if (change > maxChangeVal) {
                     maxChangeVal = change;
                     maxChangeKey = key;
@@ -844,6 +1469,8 @@
                 desc = maxChangeSign > 0 ? "民心大增" : "民怨沸腾";
             } else if (maxChangeKey === 'court') {
                 desc = maxChangeSign > 0 ? "朝纲肃清" : "权臣当道";
+            } else if (maxChangeKey === 'military') {
+                desc = maxChangeSign > 0 ? "军威大振" : "军心涣散";
             } else {
                 desc = maxChangeSign > 0 ? "帝威大振" : "威严扫地";
             }
@@ -861,15 +1488,16 @@
             const p = gameState.politics.public;
             const c = gameState.politics.court;
             const m = gameState.politics.monarch;
+            const mil = gameState.politics.military;
 
             let newBadge = null;
             let badgeClass = '';
 
-            if (p < 30 && c < 30 && m < 30) {
+            if (p < 30 && c < 30 && m < 30 && mil < 30) {
                 newBadge = "危在旦夕";
                 badgeClass = "badge-danger";
             }
-            else if (p >= 80 && c >= 80 && m >= 80) {
+            else if (p >= 80 && c >= 80 && m >= 80 && mil >= 80) {
                 newBadge = `${gameState.era.name}盛世`;
                 badgeClass = "badge-shengshi";
                 if (!gameState.shengshiLogged) {
@@ -883,46 +1511,50 @@
                 badgeClass = "badge-danger";
             }
             else if (c < 30) {
-                newBadge = "朝局动荡"; 
+                newBadge = "朝局动荡";
+                badgeClass = "badge-danger";
+            }
+            else if (mil < 30) {
+                newBadge = "军心涣散";
                 badgeClass = "badge-danger";
             }
             else if (p < 30) {
                 newBadge = "民不聊生";
                 badgeClass = "badge-danger";
             }
-            else if (m >= 90 && p > 30 && c > 30) {
+            else if (m >= 90 && p > 30 && c > 30 && mil > 30) {
                 newBadge = "良君治国";
                 badgeClass = "badge-good";
             }
-            else if (p >= 90 && m > 30 && c > 30) {
+            else if (p >= 90 && m > 30 && c > 30 && mil > 30) {
                 newBadge = "民心所向";
                 badgeClass = "badge-good";
             }
 
             gameState.activeBadge = newBadge ? { text: newBadge, css: badgeClass } : null;
-            
+
             if (newBadge && !newBadge.includes('盛世')) {
-                gameState.shengshiLogged = false; 
+                gameState.shengshiLogged = false;
             }
         }
 
         function handleWar(isPlayerInitiator) {
             const initiator = isPlayerInitiator ? "我方" : "敌方";
-            
+
             const monarchVal = gameState.politics.monarch;
             const powerScore = gameState.stats.power;
-            
+
             const winChance = (monarchVal * 0.4) + (powerScore * 0.6);
             const roll = Math.random() * 100;
             const isWin = roll < winChance;
 
             gameState.stats.battles++;
-            
+
             if (isWin) {
                 gameState.stats.wins++;
                 const gain = randomInt(2, 5);
                 gameState.stats.power = Math.min(100, gameState.stats.power + gain);
-                
+
                 const winDescList = ["缴获大量物资", "获得前朝遗留技术", "敌国赔款求和", "收复北方失地", "拓土开疆", "威震四方"];
                 const desc = winDescList[randomInt(0, winDescList.length - 1)];
 
@@ -939,40 +1571,56 @@
         }
 
         function finalizeMonarchData() {
+            const m = gameState.currentMonarch;
+
+            if (m.reignTime >= 10) {
+                m.score = Math.floor(m.totalPowerChange / m.reignTime);
+            } else {
+                m.score = 0;
+            }
+
+            const isFounder = (gameState.dynasty.monarchs.length === 1);
+            const templeObj = generateTempleName(m.score, isFounder);
+            m.temple = templeObj.full;
+
             const idx = gameState.dynasty.monarchs.length - 1;
             if (idx >= 0) {
-                const finalData = { ...gameState.currentMonarch };
-                finalData.endYear = gameState.year; 
+                const finalData = { ...m };
+                finalData.endYear = gameState.year;
                 gameState.dynasty.monarchs[idx] = finalData;
             }
+
+            return m.temple;
         }
 
         function checkDeath() {
             const m = gameState.currentMonarch;
             if (m.age >= m.maxAge || m.age >= 90) {
-                finalizeMonarchData(); 
-                logEvent('驾崩', `${m.temple} 驾崩，享年 ${m.age} 岁。`);
+                const finalTemple = finalizeMonarchData();
+                logEvent('驾崩', `${m.eraName}帝驾崩，群臣上谥，庙号${finalTemple}，享年${m.age} 岁。`);
                 newMonarch(false);
             }
         }
 
         function checkCollapse() {
             if (gameState.stats.power <= 0) {
-                finalizeMonarchData(); 
+                finalizeMonarchData();
                 gameOver();
             }
         }
 
         function logEvent(type, content, color) {
-            const yearStr = `${gameState.era.name}${gameState.era.year}年`;
-            const typeColor = color || ((type==='亡国'||type==='战败'||type==='驾崩') ? '#c0392b' : '#2c3e50');
-            const logEntry = { year: yearStr, type, content, fullYear: gameState.year, color: typeColor };
+            let yearDisplay = `${gameState.era.name}${gameState.era.year}年`;
+            if (gameState.era.year === 1) yearDisplay = `${gameState.era.name}元年`;
+
+            const typeColor = color || ((type === '亡国' || type === '战败' || type === '驾崩') ? '#c0392b' : '#2c3e50');
+            const logEntry = { year: yearDisplay, type, content, fullYear: gameState.year, color: typeColor };
             gameState.dynasty.events.unshift(logEntry);
-            
+
             const bar = document.getElementById('uiEventBar');
             const e1 = gameState.dynasty.events[0];
             const e2 = gameState.dynasty.events[1];
-            
+
             let html = '';
             if (e1) {
                 html += `<div class="event-line"><span class="typing-anim"><span style="font-weight:bold; color:${e1.color}; margin-right:4px;">[${e1.type}]</span>${e1.year}: ${e1.content}</span></div>`;
@@ -985,31 +1633,32 @@
 
         function updateUI() {
             document.getElementById('currentYearDisplay').innerText = `公元 ${gameState.year} 年`;
-            
+
             document.getElementById('uiDynastyName').innerText = gameState.dynasty.name;
             document.getElementById('uiFoundYear').innerText = `公元 ${gameState.dynasty.foundYear} 年`;
             document.getElementById('uiDuration').innerText = gameState.year - gameState.dynasty.foundYear;
-            
+
             const m = gameState.currentMonarch;
             let eraText = gameState.era.year === 1 ? `${gameState.era.name}元年` : `${gameState.era.name}${gameState.era.year}年`;
             document.getElementById('uiEraName').innerText = eraText;
-            document.getElementById('uiMonarchName').innerText = `${m.temple} ${m.name}`;
+            document.getElementById('uiMonarchName').innerText = `${m.eraName}帝 ${m.name}`;
             document.getElementById('uiMonarchAge').innerText = m.age;
             document.getElementById('uiReignDuration').innerText = m.reignTime;
-            
+
             const powerEl = document.getElementById('uiPower');
             powerEl.innerText = gameState.stats.power + '%';
             powerEl.className = 'stat-value' + (gameState.stats.power < 30 ? ' status-critical' : '');
-            
+
             document.getElementById('uiBattleStats').innerText = `${gameState.stats.battles} / ${gameState.stats.wins}`;
 
             updateStatusBox('uiMonarchState', gameState.politics.monarch);
             updateStatusBox('uiCourt', gameState.politics.court);
             updateStatusBox('uiPublic', gameState.politics.public);
+            updateStatusBox('uiMilitary', gameState.politics.military);
 
             const badgeEl = document.getElementById('uiHistoryBadge');
             const duration = gameState.year - gameState.dynasty.foundYear;
-            
+
             if (duration <= 50) {
                 badgeEl.className = 'history-badge-card';
                 badgeEl.innerText = '待解锁 (国祚>50年)';
@@ -1019,7 +1668,7 @@
             } else if (gameState.activeBadge) {
                 badgeEl.className = `history-badge-card active ${gameState.activeBadge.css}`;
                 badgeEl.innerText = gameState.activeBadge.text;
-                badgeEl.style = ''; 
+                badgeEl.style = '';
             } else {
                 badgeEl.className = 'history-badge-card active';
                 badgeEl.innerText = '平稳发展';
@@ -1040,7 +1689,7 @@
         function openLiveLineage() {
             const list = document.getElementById('lineageList');
             const pastMonarchs = gameState.dynasty.monarchs.slice(0, gameState.dynasty.monarchs.length - 1);
-            
+
             if (pastMonarchs.length === 0) {
                 list.innerHTML = '<p style="text-align:center; color:#999; padding:20px;">暂无先帝谱系</p>';
             } else {
@@ -1051,7 +1700,7 @@
                             <span style="font-weight:normal; color:#7f8c8d; font-size:12px;">[${m.eraName}] 享年${m.age}</span>
                         </div>
                         <div style="font-size:12px; color:#555; display:flex; justify-content:space-between; margin-top:2px;">
-                            <span>在位 ${m.reignTime} 年 (${m.startYear}-${m.endYear})</span>
+                            <span>在位 ${m.reignTime} 年 (${m.startYear}-${m.endYear}) <small style="color:var(--score-color)">分值：${m.score}</small></span>
                             ${m.goldenAge ? `<span style="color:#d4ac0d; font-weight:bold;">★ ${m.goldenAge}</span>` : ''}
                         </div>
                     </div>
@@ -1063,7 +1712,7 @@
         function gameOver() {
             clearInterval(gameState.timerId);
             gameState.timerId = null;
-            
+
             const duration = gameState.year - gameState.dynasty.foundYear;
             logEvent('亡国', `国力耗尽，${gameState.dynasty.name}灭亡。`);
 
@@ -1083,7 +1732,7 @@
             document.getElementById('goDynastyName').innerText = gameState.dynasty.name;
             document.getElementById('goDuration').innerText = duration;
             document.getElementById('goMonarchCount').innerText = archiveEntry.monarchCount;
-            
+
             openModal('gameOverModal');
         }
 
@@ -1092,7 +1741,6 @@
             initCreation();
         }
 
-        // 统一弹窗打开关闭逻辑
         function openModal(id) {
             document.getElementById(id).classList.add('active');
         }
@@ -1100,13 +1748,15 @@
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
         }
-        
-        // 点击遮罩关闭弹窗
+
         document.querySelectorAll('.modal-overlay').forEach(overlay => {
             overlay.addEventListener('click', (e) => {
                 if (e.target === overlay) {
+                    if (overlay.id === 'gameOverModal') {
+                        // 不做任何事
+                        return;
+                    }
                     overlay.classList.remove('active');
-                    // 如果是初始创建弹窗被关，且游戏未开始，重新打开
                     if (overlay.id === 'createModal' && document.getElementById('gameUI').style.display === 'none') {
                         overlay.classList.add('active');
                     }
@@ -1150,8 +1800,8 @@
                                 <p style="color:#666; font-size:11px; margin-bottom:5px;">帝王谱系：</p>
                                 ${h.monarchs.map(m => `
                                     <div style="font-size:12px; margin-bottom:6px; border-bottom:1px dashed #eee; padding-bottom:4px;">
-                                        <div><strong>${m.temple}</strong> ${m.name} <span style="color:#7f8c8d; font-size:11px;">(享年${m.age})</span></div>
-                                        <div style="color:#555;">[${m.eraName}] 在位${m.reignTime}年 (${m.startYear}-${m.endYear||'?'}年)</div>
+                                        <div><strong>${m.temple || '(在位)'}</strong> ${m.name} <span style="color:#7f8c8d; font-size:11px;">(享年${m.age})</span></div>
+                                        <div style="color:#555;">[${m.eraName}] 在位${m.reignTime}年 (${m.startYear}-${m.endYear || '?'}年) <small style="color:var(--score-color)">分值：${m.score}</small></div>
                                         ${m.goldenAge ? `<div style="color:#d4ac0d; font-weight:bold; font-size:11px;">★ 取得 ${m.goldenAge}</div>` : ''}
                                     </div>
                                 `).join('')}
@@ -1168,97 +1818,29 @@
             el.style.display = (el.style.display === 'block') ? 'none' : 'block';
         }
 
-        // --- 水印系统 ---
+        // --- 水印系统 (随机静止生成) ---
         function createWatermark() {
             const div = document.createElement('div');
             div.className = 'watermark';
             div.innerText = '@瞌睡猫';
-            div.style.position = 'fixed'; 
-            div.style.left = '-100px'; 
-            document.body.appendChild(div);
 
             const w = window.innerWidth;
             const h = window.innerHeight;
-            
-            // 随机边缘 (0:top, 1:right, 2:bottom, 3:left)
-            const edge = Math.floor(Math.random() * 4);
-            let x, y, vx, vy;
-            const speed = 1.5;
 
-            // Start Logic
-            if (edge === 0) { // top
-                x = Math.random() * w; y = -30;
-                vy = speed; vx = (Math.random() - 0.5) * speed;
-            } else if (edge === 1) { // right
-                x = w + 30; y = Math.random() * h;
-                vx = -speed; vy = (Math.random() - 0.5) * speed;
-            } else if (edge === 2) { // bottom
-                x = Math.random() * w; y = h + 30;
-                vy = -speed; vx = (Math.random() - 0.5) * speed;
-            } else { // left
-                x = -30; y = Math.random() * h;
-                vx = speed; vy = (Math.random() - 0.5) * speed;
-            }
+            const x = Math.random() * (w - 60);
+            const y = Math.random() * (h - 20);
 
-            // 指向中心
-            const cx = w / 2; const cy = h / 2;
-            const angle = Math.atan2(cy - y, cx - x);
-            const moveAngle = angle + (Math.random() - 0.5) * 0.5;
-            vx = Math.cos(moveAngle) * speed;
-            vy = Math.sin(moveAngle) * speed;
+            div.style.left = x + 'px';
+            div.style.top = y + 'px';
 
-            let bounces = 0;
-            let animId;
+            document.body.appendChild(div);
 
-            // 10秒后自动移除
-            const timeoutId = setTimeout(() => {
-                cancelAnimationFrame(animId);
+            setTimeout(() => {
                 if (div.parentNode) div.remove();
             }, 10000);
-
-            function animate() {
-                x += vx;
-                y += vy;
-                
-                let hit = false;
-                
-                // 获取当前元素大小（可能因缩放变化）
-                const elW = div.offsetWidth || 50; 
-                const elH = div.offsetHeight || 20;
-
-                // 碰撞边缘检测
-                // Right
-                if (x + elW >= w) { x = w - elW; vx = -vx; hit = true; }
-                // Left
-                else if (x <= 0) { x = 0; vx = -vx; hit = true; }
-                
-                // Bottom
-                if (y + elH >= h) { y = h - elH; vy = -vy; hit = true; }
-                // Top
-                else if (y <= 0) { y = 0; vy = -vy; hit = true; }
-
-                if (hit) {
-                    bounces++;
-                }
-
-                div.style.left = x + 'px';
-                div.style.top = y + 'px';
-
-                if (bounces >= 3) {
-                    clearTimeout(timeoutId);
-                    div.remove();
-                } else {
-                    animId = requestAnimationFrame(animate);
-                }
-            }
-            
-            // 确保 append 后有尺寸再跑动画
-            requestAnimationFrame(() => {
-                animate();
-            });
         }
 
-        setInterval(createWatermark, 60000); 
+        setInterval(createWatermark, 60000);
         setTimeout(createWatermark, 1000);
 
         // 初始化
@@ -1266,4 +1848,5 @@
 
     </script>
 </body>
+
 </html>
