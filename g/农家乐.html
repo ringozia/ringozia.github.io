@@ -128,12 +128,6 @@
             cursor: pointer;
             text-shadow: var(--btn-text-shadow);
             box-shadow: 0 4px 0 rgba(0, 0, 0, 0.2);
-            transition: transform 0.1s, box-shadow 0.1s;
-        }
-
-        .btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 0 0 rgba(0, 0, 0, 0.2);
         }
 
         .btn-shop {
@@ -189,7 +183,6 @@
             align-items: center;
             overflow: visible;
             box-shadow: var(--soil-shadow-locked);
-            transition: transform 0.1s;
         }
 
         .plot.unlocked {
@@ -239,6 +232,35 @@
 
             100% {
                 transform: translate(-50%, -150%) scale(1);
+                opacity: 0;
+            }
+        }
+
+        /* 种植动画 - 种子由小变大 */
+        .plant-anim {
+            position: absolute;
+            pointer-events: none;
+            z-index: 100;
+            font-size: 40px;
+            animation: plantGrow 1s ease-out forwards;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        @keyframes plantGrow {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 0;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.3);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1);
                 opacity: 0;
             }
         }
@@ -318,13 +340,7 @@
             align-items: center;
             font-size: 32px;
             border: 2px solid #F5F5F5;
-            transition: transform 0.1s;
             cursor: pointer;
-        }
-
-        .slot:active {
-            transform: translateY(4px);
-            box-shadow: 0 0 0 #ccc;
         }
 
         .slot.selected {
@@ -560,17 +576,49 @@
             box-shadow: 0 4px 0 rgba(0, 0, 0, 0.1);
         }
 
-        .action-btn:active {
-            transform: translateY(2px);
-            box-shadow: none;
-        }
-
         .btn-buy {
             background: #66BB6A;
         }
 
         .btn-sell {
             background: #EF5350;
+        }
+
+        /* 解锁确认弹窗 */
+        .unlock-modal .modal-body {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .unlock-info {
+            font-size: 16px;
+            color: #5D4037;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+
+        .unlock-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+
+        .unlock-btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 800;
+            cursor: pointer;
+            color: white;
+        }
+
+        .unlock-btn-yes {
+            background: #66BB6A;
+        }
+
+        .unlock-btn-no {
+            background: #BDBDBD;
         }
     </style>
 </head>
@@ -610,7 +658,7 @@
         </div>
 
         <!-- 商店弹窗 -->
-        <div class="modal-overlay" id="modal-shop">
+        <div class="modal-overlay" id="modal-shop" onclick="game.handleOverlayClick(event, 'modal-shop')">
             <div class="modal">
                 <div class="modal-header">
                     <span>🌱 种子商店 (💰<span id="shop-gold"></span>)</span>
@@ -627,7 +675,7 @@
         </div>
 
         <!-- 仓库弹窗 -->
-        <div class="modal-overlay" id="modal-repo">
+        <div class="modal-overlay" id="modal-repo" onclick="game.handleOverlayClick(event, 'modal-repo')">
             <div class="modal">
                 <div class="modal-header">
                     <span>🥕 仓库出售</span>
@@ -642,44 +690,57 @@
                 </div>
             </div>
         </div>
+
+        <!-- 解锁确认弹窗 -->
+        <div class="modal-overlay unlock-modal" id="modal-unlock"
+            onclick="game.handleOverlayClick(event, 'modal-unlock')">
+            <div class="modal">
+                <div class="modal-header">
+                    <span>🔓 开垦耕地</span>
+                    <button class="modal-close" onclick="game.closeModal('modal-unlock')">×</button>
+                </div>
+                <div class="modal-body">
+                    <div class="unlock-info" id="unlock-info">
+                        是否花费金币开垦这块耕地？
+                    </div>
+                    <div class="unlock-buttons">
+                        <button class="unlock-btn unlock-btn-yes" onclick="game.confirmUnlock()">确认开垦</button>
+                        <button class="unlock-btn unlock-btn-no" onclick="game.closeModal('modal-unlock')">取消</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         // --- 游戏配置：24种作物 ---
-        const CROP_EMOJIS = [
-            '🥕', '🥔', '🍅', '🎃', '🌽',
-            '🍆', '🌶️', '🌻', '🍓', '🍉',
-            '🍄', '🍇', '🍒', '🍑', '🍐',
-            '🍎', '🍍', '🍌', '🍋', '🍊',
-            '🍎', '🍍', '🍌', '🍋', '🍊',
-            '🍈', '🥥', '🥝', '🥦'
-        ];
-
-        const CROP_NAMES = [
-            '胡萝卜', '土豆', '番茄', '南瓜', '玉米',
-            '茄子', '辣椒', '向日葵', '草莓', '西瓜',
-            '蘑菇', '葡萄', '樱桃', '桃子', '香梨',
-            '苹果', '菠萝', '香蕉', '柠檬', '橘子',
-            '苹果', '菠萝', '香蕉', '柠檬', '橘子',
-            '哈密瓜', '椰子', '猕猴桃', '西兰花'
-        ];
-
-        const ITEMS_CONFIG = CROP_NAMES.map((name, i) => {
-            const price = 10 + (i * 2); // 价格递增
-            return {
-                id: i,
-                name: name,
-                price: price,
-                coin_gain: 1.5,
-                exp_gain: 10,
-                emoji: CROP_EMOJIS[i],
-                time: 3 + i, // 间隔时间，总时间 * 2
-                type: 'crop'
-            };
-        });
-
         const CONFIG = {
-            items: ITEMS_CONFIG,
+            items: [
+                { name: '胡萝卜', price: 10, coin_gain: 1.5, exp_gain: 1.5, emoji: '🥕', time: 3, type: 'crop' },
+                { name: '土豆', price: 12, coin_gain: 1.5, exp_gain: 1.5, emoji: '🥔', time: 4, type: 'crop' },
+                { name: '番茄', price: 14, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍅', time: 5, type: 'crop' },
+                { name: '南瓜', price: 16, coin_gain: 1.5, exp_gain: 1.5, emoji: '🎃', time: 6, type: 'crop' },
+                { name: '玉米', price: 18, coin_gain: 1.5, exp_gain: 1.5, emoji: '🌽', time: 7, type: 'crop' },
+                { name: '茄子', price: 20, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍆', time: 8, type: 'crop' },
+                { name: '辣椒', price: 22, coin_gain: 1.5, exp_gain: 1.5, emoji: '🌶️', time: 9, type: 'crop' },
+                { name: '向日葵', price: 24, coin_gain: 1.5, exp_gain: 1.5, emoji: '🌻', time: 10, type: 'crop' },
+                { name: '草莓', price: 26, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍓', time: 11, type: 'crop' },
+                { name: '西瓜', price: 28, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍉', time: 12, type: 'crop' },
+                { name: '蘑菇', price: 30, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍄', time: 13, type: 'crop' },
+                { name: '葡萄', price: 32, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍇', time: 14, type: 'crop' },
+                { name: '樱桃', price: 34, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍒', time: 15, type: 'crop' },
+                { name: '桃子', price: 36, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍑', time: 16, type: 'crop' },
+                { name: '香梨', price: 38, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍐', time: 17, type: 'crop' },
+                { name: '苹果', price: 40, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍎', time: 18, type: 'crop' },
+                { name: '菠萝', price: 42, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍍', time: 19, type: 'crop' },
+                { name: '香蕉', price: 44, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍌', time: 20, type: 'crop' },
+                { name: '柠檬', price: 46, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍋', time: 21, type: 'crop' },
+                { name: '橘子', price: 48, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍊', time: 22, type: 'crop' },
+                { name: '哈密瓜', price: 50, coin_gain: 1.5, exp_gain: 1.5, emoji: '🍈', time: 23, type: 'crop' },
+                { name: '椰子', price: 52, coin_gain: 1.5, exp_gain: 1.5, emoji: '🥥', time: 24, type: 'crop' },
+                { name: '猕猴桃', price: 54, coin_gain: 1.5, exp_gain: 1.5, emoji: '🥝', time: 25, type: 'crop' },
+                { name: '西兰花', price: 56, coin_gain: 1.5, exp_gain: 1.5, emoji: '🥦', time: 26, type: 'crop' }
+            ],
             expToLevel: 100,
             plotsCount: 25
         };
@@ -688,7 +749,7 @@
             constructor() {
                 this.state = {
                     gold: 1000,
-                    level: 1,
+                    level: 10,
                     exp: 0,
                     plots: Array(CONFIG.plotsCount).fill(null).map((_, i) => ({
                         id: i,
@@ -698,7 +759,8 @@
                     inventory: [],
                     selectedSlot: -1,
                     shopSelection: null,
-                    repoSelection: -1
+                    repoSelection: -1,
+                    pendingUnlockIndex: null
                 };
 
                 // 滚动 & 滑动操作状态
@@ -706,6 +768,7 @@
                 this.dragStartX = 0;
                 this.dragScrollLeft = 0;
                 this.isSwipingFarm = false;
+                this.lastSwipeTarget = null;
 
                 this.dom = {
                     gold: document.getElementById('ui-gold'),
@@ -718,11 +781,12 @@
                     shopList: document.getElementById('shop-list'),
                     shopInfo: document.getElementById('shop-info'),
                     repoList: document.getElementById('repo-list'),
-                    repoInfo: document.getElementById('repo-info')
+                    repoInfo: document.getElementById('repo-info'),
+                    unlockInfo: document.getElementById('unlock-info')
                 };
 
                 this.init();
-                this.loop();
+                this.startLoop();
             }
 
             init() {
@@ -764,7 +828,8 @@
                     const plotEl = target.closest('.plot');
                     if (plotEl) {
                         const index = parseInt(plotEl.dataset.index);
-                        if (!isNaN(index)) {
+                        if (!isNaN(index) && index !== this.lastSwipeTarget) {
+                            this.lastSwipeTarget = index;
                             this.handlePlotInteract(index, true); // true 表示静默模式(不弹窗确认解锁，只种/收)
                         }
                     }
@@ -773,6 +838,7 @@
                 // 鼠标事件
                 grid.addEventListener('mousedown', (e) => {
                     this.isSwipingFarm = true;
+                    this.lastSwipeTarget = null;
                     handleInteract(e.target);
                 });
                 grid.addEventListener('mousemove', (e) => {
@@ -780,23 +846,30 @@
                 });
                 window.addEventListener('mouseup', () => {
                     this.isSwipingFarm = false;
+                    this.lastSwipeTarget = null;
                 });
 
-                // 触摸事件
+                // 触摸事件 - 修复：使用正确的触摸目标获取
                 grid.addEventListener('touchstart', (e) => {
                     this.isSwipingFarm = true;
-                    handleInteract(e.touches[0].target);
-                });
+                    this.lastSwipeTarget = null;
+                    const touch = e.touches[0];
+                    const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                    if (el) handleInteract(el);
+                }, { passive: false });
+
                 grid.addEventListener('touchmove', (e) => {
                     if (this.isSwipingFarm) {
-                        // touchmove 的 target 永远是起始元素，需要用坐标计算当前元素
+                        e.preventDefault(); // 防止页面滚动
                         const touch = e.touches[0];
                         const el = document.elementFromPoint(touch.clientX, touch.clientY);
                         if (el) handleInteract(el);
                     }
-                });
+                }, { passive: false });
+
                 grid.addEventListener('touchend', () => {
                     this.isSwipingFarm = false;
+                    this.lastSwipeTarget = null;
                 });
             }
 
@@ -850,13 +923,10 @@
                     if (this.state.level < reqLevel) return this.showToast(`需要等级 ${reqLevel}`);
                     if (this.state.gold < cost) return this.showToast(`需要 ${cost} 金币`);
 
-                    if (confirm(`花费 ${cost} 金币开垦?`)) {
-                        this.state.gold -= cost;
-                        plot.unlocked = true;
-                        this.addExp(0);
-                        this.renderGrid();
-                        this.showToast("开垦成功!");
-                    }
+                    // 使用自定义弹窗替代系统confirm
+                    this.state.pendingUnlockIndex = index;
+                    this.dom.unlockInfo.innerHTML = `花费 <span style="color:#E91E63;font-weight:900">💰${cost}</span> 金币开垦这块耕地？<br><small>需要等级: ${reqLevel}</small>`;
+                    document.getElementById('modal-unlock').classList.add('active');
                     return;
                 }
 
@@ -881,6 +951,10 @@
                         finishTime: now + totalTime * 1000
                     };
                     this.useItem(this.state.selectedSlot);
+
+                    // 播放种植动画
+                    this.showPlantAnim(index);
+
                     this.renderGrid();
                     return;
                 }
@@ -906,6 +980,24 @@
                         if (!isSwipe) this.showPlotTooltip(index);
                     }
                 }
+            }
+
+            // 确认开垦
+            confirmUnlock() {
+                const index = this.state.pendingUnlockIndex;
+                if (index === null) return;
+
+                const plot = this.state.plots[index];
+                const cost = index * 50;
+
+                this.state.gold -= cost;
+                plot.unlocked = true;
+                this.addExp(0);
+                this.renderGrid();
+                this.showToast("开垦成功!");
+
+                this.closeModal('modal-unlock');
+                this.state.pendingUnlockIndex = null;
             }
 
             // 绑定给 HTML click 用
@@ -1018,14 +1110,14 @@
                 this.dom.shopList.innerHTML = '';
                 this.state.shopSelection = null;
 
-                CONFIG.items.forEach((conf) => {
+                CONFIG.items.forEach((conf, idx) => {
                     const div = document.createElement('div');
 
-                    // 解锁判断：前3个(0,1,2)默认解锁。后面需要 Level >= id + 2
+                    // 解锁判断：前3个(0,1,2)默认解锁。后面需要 Level >= idx + 2
                     let isLocked = false;
                     let unlockLevel = 0;
-                    if (conf.id >= 3) {
-                        unlockLevel = conf.id + 2;
+                    if (idx >= 3) {
+                        unlockLevel = idx + 2;
                         if (this.state.level < unlockLevel) isLocked = true;
                     }
 
@@ -1059,9 +1151,9 @@
                             this.state.shopSelection = null;
                             this.dom.shopInfo.innerText = `${conf.name}种子 ${unlockLevel}级解锁`;
                         } else {
-                            this.state.shopSelection = conf.id;
-                            const sellPrice = Math.floor(conf.price * 1.5);
-                            const expGain = Math.floor((conf.price / 2) * 10);
+                            this.state.shopSelection = idx;
+                            const sellPrice = Math.floor(conf.price * conf.coin_gain);
+                            const expGain = Math.floor((conf.price / 2) * conf.exp_gain);
                             const totalTime = conf.time * 2;
                             this.dom.shopInfo.innerText = `收益:💰${sellPrice} | 经验:${expGain} | 成熟:${totalTime}s`;
                         }
@@ -1142,7 +1234,7 @@
                 const item = this.state.inventory[index];
                 const conf = CONFIG.items[item.id];
 
-                let price = item.kind === 'crop' ? Math.floor(conf.price * 1.5) : Math.floor(conf.price * 0.5);
+                let price = item.kind === 'crop' ? Math.floor(conf.price * conf.coin_gain) : Math.floor(conf.price * 0.5);
                 let total = price * item.count;
                 this.dom.repoInfo.innerHTML = `${conf.name}${item.kind === 'seed' ? '种' : ''} | 单价:💰${price} | 总价:💰${total}`;
             }
@@ -1154,7 +1246,7 @@
                 if (!item) return;
 
                 const conf = CONFIG.items[item.id];
-                let price = item.kind === 'crop' ? Math.floor(conf.price * 1.5) : Math.floor(conf.price * 0.5);
+                let price = item.kind === 'crop' ? Math.floor(conf.price * conf.coin_gain) : Math.floor(conf.price * 0.5);
                 let total = price * item.count;
 
                 this.state.gold += total;
@@ -1179,6 +1271,13 @@
 
             closeModal(id) {
                 document.getElementById(id).classList.remove('active');
+            }
+
+            // 点击弹窗外部关闭
+            handleOverlayClick(event, modalId) {
+                if (event.target.id === modalId) {
+                    this.closeModal(modalId);
+                }
             }
 
             showToast(msg, time = 2000) {
@@ -1227,6 +1326,16 @@
                 }
             }
 
+            // 种植动画
+            showPlantAnim(index) {
+                const el = this.dom.grid.children[index];
+                const anim = document.createElement('div');
+                anim.className = 'plant-anim';
+                anim.innerText = '🌰';
+                el.appendChild(anim);
+                setTimeout(() => anim.remove(), 1000);
+            }
+
             showHarvestAnim(index, emoji) {
                 const el = this.dom.grid.children[index];
                 const anim = document.createElement('div');
@@ -1236,33 +1345,35 @@
                 setTimeout(() => anim.remove(), 800);
             }
 
-            loop() {
-                const now = Date.now();
-                this.state.plots.forEach((plot, i) => {
-                    if (plot.unlocked && plot.crop) {
-                        this.updateTimerText(i);
-                        const el = this.dom.grid.children[i];
-                        if (!el) return;
+            // 改为秒刷新
+            startLoop() {
+                setInterval(() => {
+                    const now = Date.now();
+                    this.state.plots.forEach((plot, i) => {
+                        if (plot.unlocked && plot.crop) {
+                            this.updateTimerText(i);
+                            const el = this.dom.grid.children[i];
+                            if (!el) return;
 
-                        const contentDiv = el.querySelector('.plot-content');
-                        if (!contentDiv) return;
+                            const contentDiv = el.querySelector('.plot-content');
+                            if (!contentDiv) return;
 
-                        const conf = CONFIG.items[plot.crop.id];
-                        const totalTime = conf.time * 2 * 1000;
-                        const timeLeft = plot.crop.finishTime - now;
-                        const halfTime = totalTime / 2;
+                            const conf = CONFIG.items[plot.crop.id];
+                            const totalTime = conf.time * 2 * 1000;
+                            const timeLeft = plot.crop.finishTime - now;
+                            const halfTime = totalTime / 2;
 
-                        let char = '';
-                        if (timeLeft <= 0) char = conf.emoji;
-                        else if (timeLeft > halfTime) char = '🌰';
-                        else char = '🌱';
+                            let char = '';
+                            if (timeLeft <= 0) char = conf.emoji;
+                            else if (timeLeft > halfTime) char = '🌰';
+                            else char = '🌱';
 
-                        if (contentDiv.innerText !== char) {
-                            contentDiv.innerText = char;
+                            if (contentDiv.innerText !== char) {
+                                contentDiv.innerText = char;
+                            }
                         }
-                    }
-                });
-                requestAnimationFrame(() => this.loop());
+                    });
+                }, 1000);
             }
         }
 
