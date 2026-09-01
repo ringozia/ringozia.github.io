@@ -85,12 +85,29 @@
             top: 90px;
             left: 30px;
             background: var(--ui-bg);
-            padding: 10px 20px;
+            padding: 8px 12px 8px 20px;
             border-radius: 50px;
             font-weight: 800;
             color: #1dd1a1;
             border: var(--ui-border);
             font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .stats-btn {
+            background: #f1f2f6;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+
+        .stats-btn:hover {
+            background: #dfe4ea;
         }
 
         /* 模式切换 (无投影) */
@@ -158,18 +175,19 @@
         /* 底部工具栏 (无投影) */
         .bottom-bar {
             pointer-events: auto;
-            padding: 30px;
+            padding: 20px 30px 25px;
             display: flex;
             justify-content: center;
-            gap: 20px;
+            flex-wrap: wrap;
+            gap: 14px;
         }
 
         .action-btn {
             background: var(--ui-bg);
             border: 1px solid #eee;
-            padding: 14px 35px;
+            padding: 12px 24px;
             border-radius: 50px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: bold;
             color: #555;
             cursor: pointer;
@@ -195,6 +213,28 @@
             border-color: var(--accent);
         }
 
+        /* Toast 提示 */
+        #toast {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-70px);
+            background: rgba(45, 52, 54, 0.92);
+            color: #fff;
+            padding: 10px 22px;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 700;
+            pointer-events: none;
+            z-index: 4000;
+            transition: transform 0.25s;
+            white-space: nowrap;
+        }
+
+        #toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
         /* --- 弹窗 --- */
         .modal-overlay {
             position: fixed;
@@ -218,9 +258,11 @@
             background: #fff;
             padding: 25px;
             border-radius: 24px;
-            width: 360px;
-            max-width: 90%;
+            width: 380px;
+            max-width: 92%;
             border: 1px solid #eee;
+            max-height: 90vh;
+            overflow-y: auto;
         }
 
         .modal h2 {
@@ -317,6 +359,11 @@
             background: var(--primary-hover);
         }
 
+        .btn-full.secondary {
+            background: #f1f2f6;
+            color: #636e72;
+        }
+
         /* 悬停 Tooltip */
         #hover-tooltip {
             position: absolute;
@@ -358,6 +405,28 @@
             color: #2d3436;
         }
 
+        /* 统计面板行 */
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+            font-size: 14px;
+        }
+
+        .stats-row:last-child {
+            border-bottom: none;
+        }
+
+        .stats-row span {
+            color: #636e72;
+            font-weight: 600;
+        }
+
+        .stats-row b {
+            color: #2d3436;
+        }
+
         @media (max-width: 600px) {
             .bottom-bar {
                 flex-direction: column;
@@ -388,6 +457,7 @@
 
     <div id="canvas-container"></div>
     <div id="hover-tooltip"></div>
+    <div id="toast"></div>
 
     <div id="game-ui">
         <div class="top-bar">
@@ -400,17 +470,16 @@
         </div>
 
         <div class="mode-switcher">
-            <button class="mode-btn active" onclick="setMode('edit')">🛠️ 编辑</button>
-            <button class="mode-btn" onclick="setMode('view')">👀 观赏</button>
+            <button class="mode-btn active" onclick="setMode('edit', this)">🛠️ 编辑</button>
+            <button class="mode-btn" onclick="setMode('view', this)">👀 观赏</button>
         </div>
 
         <div class="stats-panel">
             <span id="pop-display">👥 0</span>
+            <button class="stats-btn" onclick="openStats()" title="城市统计">📊</button>
         </div>
 
         <div class="visibility-panel">
-            <label class="vis-toggle"><input type="checkbox" checked onchange="toggleVis('grid', this.checked)"> 网格线
-                (10格范围)</label>
             <label class="vis-toggle"><input type="checkbox" checked onchange="toggleVis('labels', this.checked)">
                 命名标签</label>
             <label class="vis-toggle"><input type="checkbox" checked onchange="toggleVis('shadows', this.checked)">
@@ -425,6 +494,10 @@
             <button class="action-btn" onclick="openBuildModal()">🏗️ 建造 / 修改</button>
             <button class="action-btn" onclick="openNameModal()">🏷️ 命名</button>
             <button class="action-btn" id="btn-move" onclick="toggleMoveMode()">✥ 移动</button>
+            <button class="action-btn" onclick="rotateSelected()">⟳ 旋转</button>
+            <button class="action-btn" onclick="deleteSelected()">🧹 拆除</button>
+            <button class="action-btn" onclick="undo()">↩️ 撤销</button>
+            <button class="action-btn" onclick="redo()">↪️ 重做</button>
         </div>
     </div>
 
@@ -454,6 +527,23 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label>样式</label>
+                    <div class="type-grid" id="style-selector">
+                        <div class="type-btn selected" onclick="selectStyle('office')">写字楼</div>
+                        <div class="type-btn" onclick="selectStyle('residential')">住宅</div>
+                        <div class="type-btn" onclick="selectStyle('industrial')">工业</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>朝向 (固定旋转角度) : <span id="rot-val" style="color:var(--primary)">0°</span></label>
+                    <div class="type-grid" style="grid-template-columns: repeat(4, 1fr);" id="rot-selector">
+                        <div class="type-btn selected" onclick="selectRot(0)">0°</div>
+                        <div class="type-btn" onclick="selectRot(45)">45°</div>
+                        <div class="type-btn" onclick="selectRot(90)">90°</div>
+                        <div class="type-btn" onclick="selectRot(135)">135°</div>
+                    </div>
+                </div>
+                <div class="form-group">
                     <label>高度 (1-50层) : <span id="h-val" style="color:var(--primary)">5</span></label>
                     <input type="range" min="1" max="50" value="5" id="building-height"
                         style="width:100%; accent-color:var(--primary);"
@@ -472,12 +562,14 @@
                 <div class="form-group">
                     <label>预设</label>
                     <div class="type-grid">
-                        <div class="type-btn" onclick="setPlotPreset('#bdc3c7')">水泥</div>
-                        <div class="type-btn" onclick="setPlotPreset('#2ecc71')">草地</div>
-                        <div class="type-btn" onclick="setPlotPreset('#48dbfb')">水面</div>
+                        <div class="type-btn" onclick="setPlotPreset('#bdc3c7', false)">水泥</div>
+                        <div class="type-btn" onclick="setPlotPreset('#2ecc71', true)">草地</div>
+                        <div class="type-btn" onclick="setPlotPreset('#48dbfb', false)">水面</div>
                     </div>
                     <input type="color" id="custom-plot-color" value="#2ecc71"
                         style="width:100%; margin-top:8px; height:30px; border:none; padding:0; border-radius:8px;">
+                    <label class="vis-toggle" style="margin-top:10px;"><input type="checkbox" id="plot-veg" checked>
+                        种植树木</label>
                 </div>
             </div>
 
@@ -488,7 +580,7 @@
             </div>
 
             <button class="btn-full" onclick="confirmBuild()">完成</button>
-            <button class="btn-full" style="background:#f1f2f6; color:#636e72;" onclick="closeModals()">取消</button>
+            <button class="btn-full secondary" onclick="closeModals()">取消</button>
         </div>
     </div>
 
@@ -511,7 +603,7 @@
             <input type="text" id="area-name-input" placeholder="输入名称..."
                 style="width: 100%; padding: 12px; border:1px solid #dfe6e9; border-radius:12px; box-sizing: border-box; font-size:14px; outline:none;">
             <button class="btn-full" onclick="confirmName()">确定</button>
-            <button class="btn-full" style="background:#f1f2f6; color:#636e72;" onclick="closeModals()">取消</button>
+            <button class="btn-full secondary" onclick="closeModals()">取消</button>
         </div>
     </div>
 
@@ -539,10 +631,48 @@
 
             <div class="form-group">
                 <label>光照方向</label>
-                <input type="range" min="0" max="360" value="45" style="width:100%; accent-color:var(--primary);"
-                    oninput="updateShadowAngle(this.value)">
+                <input type="range" min="0" max="360" value="45" id="light-slider" style="width:100%; accent-color:var(--primary);"
+                    oninput="applyLightAngle(parseFloat(this.value))">
             </div>
+
+            <div class="form-group">
+                <label>存档管理</label>
+                <div class="type-grid">
+                    <div class="type-btn" onclick="saveGame(false)">💾 保存</div>
+                    <div class="type-btn" onclick="loadGame()">📂 载入</div>
+                    <div class="type-btn" onclick="clearMap()">🗑️ 清空</div>
+                </div>
+                <label class="vis-toggle" style="margin-top:10px;"><input type="checkbox" id="autosave-toggle" checked>
+                    自动保存 (每30秒)</label>
+            </div>
+
+            <div class="form-group">
+                <label>建筑可见范围 (以镜头为中心，远处建筑自动隐藏)</label>
+                <div class="type-grid" id="visrange-selector">
+                    <div class="type-btn selected" onclick="setVisRange(15)">15×15</div>
+                    <div class="type-btn" onclick="setVisRange(20)">20×20</div>
+                    <div class="type-btn" onclick="setVisRange(30)">30×30</div>
+                    <div class="type-btn" onclick="setVisRange(50)">50×50</div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>调试工具</label>
+                <div class="type-grid">
+                    <div class="type-btn" onclick="randomCity()">🎲 随机城市</div>
+                </div>
+            </div>
+
             <button class="btn-full" onclick="closeModals()">关闭</button>
+        </div>
+    </div>
+
+    <!-- 统计弹窗 -->
+    <div class="modal-overlay" id="stats-modal">
+        <div class="modal" style="width: 320px;">
+            <h2>📊 城市统计</h2>
+            <div id="stats-body"></div>
+            <button class="btn-full" style="margin-top:16px;" onclick="closeModals()">关闭</button>
         </div>
     </div>
 
@@ -571,7 +701,17 @@
             roadColor: "#576574",
             defaultGround: "#ffffff",
             defaultBg: "#ffffff",
-            maxPedestrians: 986
+            pedestrianRatio: 0.1,   // 路人占人口比例 (可配置)
+            maxPedestrians: 986,    // 路人数量上限 (可配置)
+            saveKey: "sandy-metropolis-save-v1",
+            autoSaveInterval: 30000 // 自动保存间隔
+        };
+
+        // 建筑外立面样式
+        const BUILDING_STYLES = {
+            office:      { label: '写字楼',   metalness: 0.2, roughness: 0.45 },
+            residential: { label: '住宅',     metalness: 0.1, roughness: 0.7 },
+            industrial:  { label: '工业',     metalness: 0.4, roughness: 0.6 }
         };
 
         const state = {
@@ -583,25 +723,40 @@
             isCtrlPressed: false,
             currentBuildType: 'building',
             currentShape: 'square',
-            currentNameType: { emoji: '🏠', color: '#ff9f43', typeLabel: '住宅' },
-            visibility: { grid: true, labels: true, shadows: true, pedestrians: true, hoverInfo: false },
+            currentStyle: 'office',
+            currentRotation: 0,
+            currentNameType: { type: 'res', emoji: '🏠', color: '#ff9f43', typeLabel: '住宅' },
+            visibility: { labels: true, shadows: true, pedestrians: true, hoverInfo: false },
+            visRange: 15, // 建筑可见范围（格），默认 15×15，超出范围的远处建筑自动隐藏
             population: 0,
             pedestrians: [],
             hoverTimer: null
         };
 
+        // 撤销/重做历史
+        const history = { stack: [], index: -1, MAX: 60 };
+
+        // --- 颜色工具 ---
+        function shade(hex, f) {
+            const n = parseInt(hex.replace('#', ''), 16);
+            let r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+            r = Math.min(255, Math.round(r * f));
+            g = Math.min(255, Math.round(g * f));
+            b = Math.min(255, Math.round(b * f));
+            return `rgb(${r},${g},${b})`;
+        }
+
         // --- Init ---
         const scene = new THREE.Scene();
         scene.background = new THREE.Color(CONFIG.defaultBg);
-        scene.fog = new THREE.Fog(CONFIG.defaultBg, 80, 500);
+        scene.fog = new THREE.Fog(CONFIG.defaultBg, 120, 600);
 
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         camera.position.set(60, 80, 60);
 
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
         renderer.setSize(window.innerWidth, window.innerHeight);
-        renderer.shadowMap.enabled = true;
-        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.shadowMap.enabled = false; // 已废除 ShadowMap，改用软投影阴影
         document.getElementById('canvas-container').appendChild(renderer.domElement);
 
         const labelRenderer = new CSS2DRenderer();
@@ -611,81 +766,77 @@
         labelRenderer.domElement.style.pointerEvents = 'none';
         document.getElementById('canvas-container').appendChild(labelRenderer.domElement);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
         scene.add(ambientLight);
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x666666, 0.45);
+        scene.add(hemiLight);
 
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
         dirLight.position.set(100, 150, 100);
-        dirLight.castShadow = true;
-        dirLight.shadow.mapSize.set(2048, 2048);
-        dirLight.shadow.camera.top = 250;
-        dirLight.shadow.camera.bottom = -250;
-        dirLight.shadow.camera.left = -250;
-        dirLight.shadow.camera.right = 250;
         scene.add(dirLight);
 
-        // --- 地面系统 (Z-Fighting Fix & PolygonOffset) ---
-        // 1. 颜色层 - Y = -0.3
-        const groundColorGeo = new THREE.PlaneGeometry(10000, 10000);
-        const groundColorMat = new THREE.MeshBasicMaterial({ color: CONFIG.defaultGround });
-        const groundColorMesh = new THREE.Mesh(groundColorGeo, groundColorMat);
+        // --- 地面系统 (Z-Fighting 修复) ---
+        // 1. 颜色层 - Y = -0.6 (MeshBasicMaterial 精确显示所选颜色)
+        let currentGround = CONFIG.defaultGround;
+        let currentBg = CONFIG.defaultBg;
+        let lightAngle = 45;
+
+        const groundColorMesh = new THREE.Mesh(
+            new THREE.PlaneGeometry(10000, 10000),
+            new THREE.MeshBasicMaterial({ color: currentGround })
+        );
         groundColorMesh.rotation.x = -Math.PI / 2;
-        groundColorMesh.position.y = -0.3;
+        groundColorMesh.position.y = -0.6;
         scene.add(groundColorMesh);
 
-        // 2. 阴影层 - Y = -0.2 (使用 polygonOffset 确保覆盖)
-        const shadowPlaneGeo = new THREE.PlaneGeometry(10000, 10000);
-        const shadowPlaneMat = new THREE.ShadowMaterial({
-            opacity: 0.3,
-            color: 0x000000,
-            polygonOffset: true,
-            polygonOffsetFactor: -1, // 推向摄像机
-            polygonOffsetUnits: -1
-        });
-        const shadowPlane = new THREE.Mesh(shadowPlaneGeo, shadowPlaneMat);
-        shadowPlane.rotation.x = -Math.PI / 2;
-        shadowPlane.position.y = -0.2;
-        shadowPlane.receiveShadow = true;
-        scene.add(shadowPlane);
+        // 2. 新阴影系统：软投影(blob) —— 稳定无闪烁，替代 ShadowMap
+        const shadowGroup = new THREE.Group();
+        scene.add(shadowGroup);
 
-        // --- 网格系统 (10x10) - Y = -0.1 ---
-        function createGridTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 64; canvas.height = 64;
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, 64, 64);
-            ctx.strokeStyle = 'rgba(0,0,0,0.15)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(0, 0, 64, 64);
-            const tex = new THREE.CanvasTexture(canvas);
-            tex.wrapS = THREE.RepeatWrapping;
-            tex.wrapT = THREE.RepeatWrapping;
-            tex.magFilter = THREE.NearestFilter;
-            return tex;
+        // 软阴影纹理（径向渐变）
+        function makeShadowTexture() {
+            const W = 128, H = 128;
+            const cv = document.createElement('canvas');
+            cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d');
+            const g = ctx.createRadialGradient(W / 2, H / 2, 4, W / 2, H / 2, W / 2);
+            g.addColorStop(0, 'rgba(0,0,0,0.42)');
+            g.addColorStop(0.55, 'rgba(0,0,0,0.24)');
+            g.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+            return new THREE.CanvasTexture(cv);
+        }
+        const shadowTex = makeShadowTexture();
+
+        // 创建软投影：baseX/baseZ 为建筑所在格中心的世界坐标
+        function createBlobShadow(baseX, baseZ, height) {
+            const blob = new THREE.Mesh(
+                new THREE.CircleGeometry(1, 16),
+                new THREE.MeshBasicMaterial({
+                    map: shadowTex, transparent: true, depthWrite: false,
+                    polygonOffset: true, polygonOffsetFactor: -1
+                })
+            );
+            blob.rotation.x = -Math.PI / 2;
+            const s = 2.2 + (height || 0) * 0.45;
+            blob.scale.set(s, s, s);
+            blob.userData.baseX = baseX;
+            blob.userData.baseZ = baseZ;
+            blob.userData.shadowHeight = height || 0;
+            blob.position.y = 0.02;
+            applyBlobOffset(blob);
+            shadowGroup.add(blob);
+            return blob;
         }
 
-        const gridTex = createGridTexture();
-        const gridRange = 10; // 10格范围
-        const gridVisSize = gridRange * CONFIG.gridSize;
-        gridTex.repeat.set(gridRange, gridRange);
-
-        // 网格使用更大的 PolygonOffset 确保在阴影之上
-        const gridMesh = new THREE.Mesh(
-            new THREE.PlaneGeometry(gridVisSize, gridVisSize),
-            new THREE.MeshBasicMaterial({
-                map: gridTex,
-                transparent: true,
-                opacity: 1,
-                side: THREE.DoubleSide,
-                polygonOffset: true,
-                polygonOffsetFactor: -2,
-                polygonOffsetUnits: -2
-            })
-        );
-        gridMesh.rotation.x = -Math.PI / 2;
-        gridMesh.position.y = -0.1;
-        gridTex.offset.set(0.5, 0.5);
-        scene.add(gridMesh);
+        function applyBlobOffset(blob) {
+            const rad = lightAngle * Math.PI / 180;
+            const dx = Math.sin(rad), dz = Math.cos(rad);
+            const len = 1 + (blob.userData.shadowHeight || 0) * 0.22;
+            blob.position.x = blob.userData.baseX - dx * len;
+            blob.position.z = blob.userData.baseZ - dz * len;
+        }
 
         // --- 辅助物体 ---
         const highlightMesh = new THREE.Mesh(
@@ -726,7 +877,15 @@
             labelRenderer.setSize(window.innerWidth, window.innerHeight);
         });
 
-        document.addEventListener('keydown', e => { if (e.key === 'Control') state.isCtrlPressed = true; });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Control') state.isCtrlPressed = true;
+            // 输入框聚焦时不拦截撤销/重做快捷键
+            const tag = e.target && e.target.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+            if (((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') ||
+                ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'z')) { e.preventDefault(); redo(); }
+        });
         document.addEventListener('keyup', e => { if (e.key === 'Control') state.isCtrlPressed = false; });
 
         const canvasEl = renderer.domElement;
@@ -750,7 +909,7 @@
         function getIntersect() {
             raycaster.setFromCamera(pointer, camera);
             const objects = Array.from(state.mapData.values()).map(d => d.mesh).filter(m => m);
-            const hits = raycaster.intersectObjects(objects);
+            const hits = raycaster.intersectObjects(objects, true);
             if (hits.length > 0) return { type: 'obj', object: hits[0].object };
 
             const gHits = raycaster.intersectObject(infPlane);
@@ -800,7 +959,12 @@
         }
 
         function renderSelection() {
-            while (selectionGroup.children.length > 0) selectionGroup.remove(selectionGroup.children[0]);
+            while (selectionGroup.children.length > 0) {
+                const c = selectionGroup.children[0];
+                selectionGroup.remove(c);
+                if (c.geometry) c.geometry.dispose();
+                if (c.material) c.material.dispose();
+            }
             state.selection.forEach(key => {
                 const [x, z] = key.split(',').map(Number);
                 const box = new THREE.Mesh(
@@ -820,7 +984,7 @@
         function checkHoverInfo(clientX, clientY) {
             raycaster.setFromCamera(pointer, camera);
             const objects = Array.from(state.mapData.values()).map(d => d.mesh).filter(m => m);
-            const hits = raycaster.intersectObjects(objects);
+            const hits = raycaster.intersectObjects(objects, true);
 
             if (hits.length > 0) {
                 const obj = hits[0].object;
@@ -870,11 +1034,11 @@
             colorContainer.appendChild(div);
         });
 
-        window.setMode = (mode) => {
+        window.setMode = (mode, el) => {
             state.mode = mode;
             state.subMode = 'normal';
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            event.target.classList.add('active');
+            el.classList.add('active');
             if (mode === 'view') {
                 state.selection.clear();
                 renderSelection();
@@ -884,16 +1048,472 @@
 
         window.toggleVis = (type, isActive) => {
             state.visibility[type] = isActive;
-            if (type === 'grid') gridMesh.visible = isActive;
             if (type === 'labels') labelRenderer.domElement.style.display = isActive ? 'block' : 'none';
-            if (type === 'shadows') {
-                renderer.shadowMap.enabled = isActive;
-                scene.traverse(o => { if (o.material) o.material.needsUpdate = true; });
-            }
+            if (type === 'shadows') shadowGroup.visible = isActive;
             if (type === 'pedestrians') pedestrianGroup.visible = isActive;
         };
 
+        // --- 楼宇外观生成 ---
+        // widthWorld: 该纹理所覆盖的立面实际宽度（世界单位），不同面宽自动生成对应窗格数量，实现自然贴合
+        function createBuildingTexture(style, baseColor, floors, widthWorld) {
+            const W = 512, H = 512;
+            const cv = document.createElement('canvas');
+            cv.width = W; cv.height = H;
+            const ctx = cv.getContext('2d');
+
+            const cols = Math.max(1, Math.round(widthWorld / 1.6));
+            const rows = Math.max(1, floors);
+            const cw = W / cols, ch = H / rows;
+
+            // 立面纵向渐变
+            const g = ctx.createLinearGradient(0, 0, 0, H);
+            g.addColorStop(0, shade(baseColor, 1.18));
+            g.addColorStop(0.5, shade(baseColor, 1.0));
+            g.addColorStop(1, shade(baseColor, 0.75));
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+
+            const isOffice = style === 'office';
+            const isRes = style === 'residential';
+            const isInd = style === 'industrial';
+            const isGlass = style === 'glass'; // 旧存档兼容
+
+            if (isOffice) {
+                // 写字楼：通高玻璃幕墙 + 深色楼层横梁 + 竖挺，冷色调为主
+                for (let r = 0; r < rows; r++) {
+                    const y = r * ch;
+                    ctx.fillStyle = 'rgba(0,0,0,0.20)';
+                    ctx.fillRect(0, y, W, Math.max(2, ch * 0.09));
+                    for (let c = 0; c < cols; c++) {
+                        const x = c * cw;
+                        const lit = Math.random() < 0.3;
+                        ctx.fillStyle = lit
+                            ? 'rgba(255,244,205,0.95)'
+                            : `rgba(${90 + (Math.random() * 50 | 0)},${150 + (Math.random() * 60 | 0)},235,0.9)`;
+                        ctx.fillRect(x + cw * 0.07, y + ch * 0.13, cw * 0.86, ch * 0.74);
+                    }
+                }
+                // 竖挺 + 顶部反光
+                ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+                ctx.lineWidth = 1;
+                for (let c = 0; c <= cols; c++) { ctx.beginPath(); ctx.moveTo(c * cw, 0); ctx.lineTo(c * cw, H); ctx.stroke(); }
+                const rg = ctx.createLinearGradient(0, 0, W, 0);
+                rg.addColorStop(0, 'rgba(255,255,255,0)');
+                rg.addColorStop(0.5, 'rgba(255,255,255,0.18)');
+                rg.addColorStop(1, 'rgba(255,255,255,0)');
+                ctx.fillStyle = rg;
+                ctx.fillRect(0, 0, W, H);
+            } else if (isRes) {
+                // 住宅：暖色小窗 + 窗框 + 阳台/楼板线，亮灯密集、尺度更细
+                for (let r = 0; r < rows; r++) {
+                    const y = r * ch;
+                    // 楼板 / 阳台线
+                    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+                    ctx.fillRect(0, y + ch * 0.86, W, Math.max(2, ch * 0.10));
+                    ctx.fillStyle = 'rgba(255,255,255,0.10)';
+                    ctx.fillRect(0, y + ch * 0.84, W, Math.max(1, ch * 0.03));
+                    for (let c = 0; c < cols; c++) {
+                        const x = c * cw;
+                        const lit = Math.random() < 0.55;
+                        const winC = lit
+                            ? (Math.random() < 0.5 ? 'rgba(255,236,170,0.98)' : 'rgba(255,250,230,0.98)')
+                            : 'rgba(150,175,200,0.9)';
+                        const ix = x + cw * 0.18, iy = y + ch * 0.16;
+                        const iw = cw * 0.64, ih = ch * 0.6;
+                        // 窗框
+                        ctx.fillStyle = 'rgba(45,52,54,0.35)';
+                        ctx.fillRect(ix - 1, iy - 1, iw + 2, ih + 2);
+                        ctx.fillStyle = winC;
+                        ctx.fillRect(ix, iy, iw, ih);
+                        // 中梃
+                        ctx.fillStyle = 'rgba(45,52,54,0.5)';
+                        ctx.fillRect(ix + iw / 2 - 1, iy, 2, ih);
+                    }
+                }
+            } else if (isInd) {
+                // 工业：波纹横带 + 实墙 + 小窗
+                for (let r = 0; r < rows; r++) {
+                    const y = r * ch;
+                    ctx.fillStyle = 'rgba(0,0,0,0.10)';
+                    ctx.fillRect(0, y, W, Math.max(2, ch * 0.14));
+                    for (let c = 0; c < cols; c++) {
+                        if (Math.random() < 0.4) continue; // 部分实墙
+                        const x = c * cw;
+                        const lit = Math.random() < 0.2;
+                        ctx.fillStyle = lit ? 'rgba(255,235,180,0.9)' : 'rgba(120,140,160,0.9)';
+                        ctx.fillRect(x + cw * 0.25, y + ch * 0.2, cw * 0.5, ch * 0.6);
+                    }
+                }
+            } else {
+                // 玻璃(旧存档兼容)：竖挺网格
+                for (let r = 0; r < rows; r++) {
+                    const y = r * ch;
+                    for (let c = 0; c < cols; c++) {
+                        const x = c * cw;
+                        const lit = Math.random() < 0.12;
+                        ctx.fillStyle = lit
+                            ? 'rgba(255,240,205,0.92)'
+                            : `rgba(${150 + (Math.random() * 60 | 0)},${190 + (Math.random() * 40 | 0)},255,0.85)`;
+                        ctx.fillRect(x + cw * 0.1, y + ch * 0.1, cw * 0.8, ch * 0.8);
+                    }
+                }
+                ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+                ctx.lineWidth = 1;
+                for (let r = 0; r <= rows; r++) { ctx.beginPath(); ctx.moveTo(0, r * ch); ctx.lineTo(W, r * ch); ctx.stroke(); }
+                for (let c = 0; c <= cols; c++) { ctx.beginPath(); ctx.moveTo(c * cw, 0); ctx.lineTo(c * cw, H); ctx.stroke(); }
+            }
+
+            // 顶部边缘高光
+            ctx.fillStyle = 'rgba(255,255,255,0.18)';
+            ctx.fillRect(0, 0, W, 2);
+
+            const tex = new THREE.CanvasTexture(cv);
+            tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+            tex.colorSpace = THREE.SRGBColorSpace;
+            tex.anisotropy = 4;
+            return tex;
+        }
+
+        function buildBuildingMesh(key, params) {
+            const [x, z] = key.split(',').map(Number);
+            const h = params.height * 3;
+            const floors = params.height;
+            const style = params.style || 'office';
+            const shape = params.shape || 'square';
+            const group = new THREE.Group();
+
+            // 旧存档可能含 glass 样式，回退到玻璃参数避免崩溃
+            const styleDef = BUILDING_STYLES[style] || { label: '现代玻璃', metalness: 0.7, roughness: 0.2 };
+
+            // 各面面宽（世界单位），纹理按实际面宽生成窗格，避免呆板拉伸
+            const s = CONFIG.gridSize - 1.5;
+            let wide = s, narrow = s;
+            if (shape === 'diamond') { wide = narrow = s * 0.75; }
+            else if (shape === 'rectH') { wide = s; narrow = s * 0.5; }
+            else if (shape === 'rectV') { wide = s; narrow = s * 0.5; }
+
+            const makeSideMat = (faceW) => {
+                const tex = createBuildingTexture(style, params.color, floors, faceW);
+                return new THREE.MeshStandardMaterial({
+                    map: tex, metalness: styleDef.metalness, roughness: styleDef.roughness
+                });
+            };
+            const wideMat = makeSideMat(wide);
+            const narrowMat = makeSideMat(narrow);
+            const topMat = new THREE.MeshStandardMaterial({ color: shade(params.color, 0.72), roughness: 0.9, metalness: 0.05 });
+            const bottomMat = new THREE.MeshStandardMaterial({ color: shade(params.color, 0.6), roughness: 0.9 });
+
+            let main;
+            if (shape === 'hexagon') {
+                // 六边形：侧壁纹理按周长贴合，绕一圈自然过渡
+                const r = s / 2;
+                const hexMat = makeSideMat(6 * r);
+                main = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 6), [hexMat, topMat, bottomMat]);
+            } else if (shape === 'rectH') {
+                main = new THREE.Mesh(new THREE.BoxGeometry(wide, h, narrow),
+                    [wideMat, wideMat, topMat, bottomMat, narrowMat, narrowMat]);
+            } else if (shape === 'rectV') {
+                main = new THREE.Mesh(new THREE.BoxGeometry(narrow, h, wide),
+                    [narrowMat, narrowMat, topMat, bottomMat, wideMat, wideMat]);
+            } else {
+                // 正方形 / 菱形共用同面宽
+                main = new THREE.Mesh(new THREE.BoxGeometry(wide, h, wide),
+                    [wideMat, wideMat, topMat, bottomMat, wideMat, wideMat]);
+            }
+            main.position.y = h / 2;
+            main.castShadow = true;
+            main.receiveShadow = true;
+            group.add(main);
+
+            // --- 智能顶楼楼板：按基础形状自动适配几何形态 ---
+            const slabTh = 0.25;
+            const slabMat = new THREE.MeshStandardMaterial({ color: shade(params.color, 0.75), roughness: 0.8 });
+            let slab;
+            if (shape === 'hexagon') {
+                const r = s / 2;
+                slab = new THREE.Mesh(new THREE.CylinderGeometry(r, r, slabTh, 6), slabMat);
+            } else if (shape === 'rectH') {
+                slab = new THREE.Mesh(new THREE.BoxGeometry(wide + 0.1, slabTh, narrow + 0.1), slabMat);
+            } else if (shape === 'rectV') {
+                slab = new THREE.Mesh(new THREE.BoxGeometry(narrow + 0.1, slabTh, wide + 0.1), slabMat);
+            } else {
+                // 正方形 / 菱形：方形楼板随整体旋转，菱形即呈菱形外观
+                slab = new THREE.Mesh(new THREE.BoxGeometry(wide * 1.02, slabTh, wide * 1.02), slabMat);
+            }
+            slab.position.y = h + 0.12;
+            slab.castShadow = true;
+            slab.receiveShadow = true;
+            group.add(slab);
+
+            // 高层楼顶设备
+            if (h >= 15) {
+                const eqCount = 1 + Math.floor(Math.random() * 2);
+                const rr = wide / 2 - 1.2;
+                for (let i = 0; i < eqCount; i++) {
+                    const eq = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.8 + Math.random(), 0.8 + Math.random() * 0.6, 0.8 + Math.random()),
+                        new THREE.MeshStandardMaterial({ color: shade(params.color, 0.55), roughness: 0.9 })
+                    );
+                    eq.position.set((Math.random() - 0.5) * rr * 1.5, h + 0.55, (Math.random() - 0.5) * rr * 1.5);
+                    eq.castShadow = true;
+                    group.add(eq);
+                }
+            }
+
+            if (params.rotation) group.rotation.y = params.rotation * Math.PI / 180;
+            group.position.set(x * CONFIG.gridSize, 0, z * CONFIG.gridSize);
+            return group;
+        }
+
+        // --- 树木 ---
+        function createTree() {
+            const g = new THREE.Group();
+            const trunkH = 0.6;
+            const trunk = new THREE.Mesh(
+                new THREE.CylinderGeometry(0.07, 0.11, trunkH, 5),
+                new THREE.MeshStandardMaterial({ color: '#7d5a33', roughness: 1 })
+            );
+            trunk.position.y = trunkH / 2;
+            const greens = ['#2ecc71', '#1dd1a1', '#27ae60', '#6ab04c'];
+            const canopy = new THREE.Mesh(
+                new THREE.IcosahedronGeometry(0.5, 0),
+                new THREE.MeshStandardMaterial({ color: greens[Math.random() * greens.length | 0], roughness: 0.9 })
+            );
+            canopy.position.y = trunkH + 0.42;
+            canopy.scale.set(1, 1.15, 1);
+            canopy.castShadow = true;
+            g.add(trunk, canopy);
+            return g;
+        }
+
+        function buildPlotMesh(key, params) {
+            const [x, z] = key.split(',').map(Number);
+            const group = new THREE.Group();
+            const box = new THREE.Mesh(
+                new THREE.BoxGeometry(CONFIG.gridSize, 0.2, CONFIG.gridSize),
+                new THREE.MeshStandardMaterial({ color: params.color, roughness: 0.9 })
+            );
+            box.position.y = 0.1;
+            box.receiveShadow = true;
+            group.add(box);
+
+            if (params.vegetation) {
+                const trees = 2 + Math.floor(Math.random() * 3);
+                const half = CONFIG.gridSize / 2 - 1.2;
+                for (let i = 0; i < trees; i++) {
+                    const t = createTree();
+                    t.position.set((Math.random() - 0.5) * half * 1.6, 0.2, (Math.random() - 0.5) * half * 1.6);
+                    group.add(t);
+                }
+            }
+            group.position.set(x * CONFIG.gridSize, 0, z * CONFIG.gridSize);
+            return group;
+        }
+
+        function buildRoadMesh(key, params) {
+            const [x, z] = key.split(',').map(Number);
+            const gs = CONFIG.gridSize;
+            const group = new THREE.Group();
+
+            // 相邻格判定（基于 mapData，需在建格后再刷新邻居道路）
+            const isRoad = (gx, gz) => { const d = state.mapData.get(`${gx},${gz}`); return !!d && d.type === 'road'; };
+
+            const hasN = isRoad(x, z - 1), hasS = isRoad(x, z + 1);
+            const hasE = isRoad(x + 1, z), hasW = isRoad(x - 1, z);
+            const vertical = hasN || hasS;
+            const horizontal = hasE || hasW;
+            const isIntersection = vertical && horizontal;
+
+            // 1. 沥青路面
+            const asphalt = new THREE.Mesh(
+                new THREE.BoxGeometry(gs, 0.15, gs),
+                new THREE.MeshStandardMaterial({ color: params.color, roughness: 0.95 })
+            );
+            asphalt.position.y = 0.08;
+            asphalt.receiveShadow = true;
+            group.add(asphalt);
+
+            // 2. 灰色人行道：仅在道路交叉路口隐藏；道路连接处保持连贯显示
+            const swW = 1.3, swH = 0.18, swMat = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.9 });
+            const edgeL = gs / 2 - swW / 2;
+            const addSidewalk = (px, pz, lx, lz) => {
+                const sw = new THREE.Mesh(new THREE.BoxGeometry(lx, swH, lz), swMat);
+                sw.position.set(px, 0.12, pz);
+                sw.receiveShadow = true;
+                group.add(sw);
+            };
+            if (!isIntersection) {
+                if (vertical && !horizontal) {
+                    // 垂直路段：东西两侧人行道沿道路连贯
+                    addSidewalk(edgeL, 0, swW, gs);
+                    addSidewalk(-edgeL, 0, swW, gs);
+                } else if (horizontal && !vertical) {
+                    // 水平路段：南北两侧人行道沿道路连贯
+                    addSidewalk(0, -edgeL, gs, swW);
+                    addSidewalk(0, edgeL, gs, swW);
+                } else {
+                    // 孤立道路：四周铺设人行道
+                    addSidewalk(0, -edgeL, gs, swW);
+                    addSidewalk(0, edgeL, gs, swW);
+                    addSidewalk(edgeL, 0, swW, gs);
+                    addSidewalk(-edgeL, 0, swW, gs);
+                }
+            }
+
+            // 3. 车道分隔虚线（路口统一隐藏，避免与斑马线重合闪烁）
+            const dashMat = new THREE.MeshBasicMaterial({ color: 0xf5f6fa });
+            if (!isIntersection) {
+                const isVerticalRun = vertical || (!vertical && !horizontal);
+                const half = gs / 2 - 0.6;
+                const segLen = 2.4;
+                const dashGeo = isVerticalRun
+                    ? new THREE.BoxGeometry(0.32, 0.02, segLen)
+                    : new THREE.BoxGeometry(segLen, 0.02, 0.32);
+                const count = Math.max(1, Math.floor(gs / 5));
+                for (let i = 0; i < count; i++) {
+                    const offset = -half + (i + 0.5) * ((2 * half) / count);
+                    const dash = new THREE.Mesh(dashGeo, dashMat);
+                    dash.position.set(isVerticalRun ? 0 : offset, 0.2, isVerticalRun ? offset : 0);
+                    group.add(dash);
+                }
+            }
+
+            // 4. 路口斑马线（仅在道路交叉边缘，横向跨越整条道路）
+            if (isIntersection) {
+                const zebraMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+                const zebraT = 1.0, stripeW = 0.55, stripeGap = 1.1;
+                const stripes = Math.max(1, Math.floor(gs / stripeGap));
+                const start = -gs / 2 + (gs - stripes * stripeGap) / 2 + stripeW / 2;
+                const addZebra = (dir) => {
+                    for (let i = 0; i < stripes; i++) {
+                        const off = start + i * stripeGap;
+                        const st = (dir === 'n' || dir === 's')
+                            ? new THREE.Mesh(new THREE.BoxGeometry(stripeW, 0.03, zebraT), zebraMat)
+                            : new THREE.Mesh(new THREE.BoxGeometry(zebraT, 0.03, stripeW), zebraMat);
+                        if (dir === 'n') st.position.set(off, 0.2, -gs / 2);
+                        else if (dir === 's') st.position.set(off, 0.2, gs / 2);
+                        else if (dir === 'e') st.position.set(gs / 2, 0.2, off);
+                        else st.position.set(-gs / 2, 0.2, off);
+                        group.add(st);
+                    }
+                };
+                if (hasN) addZebra('n');
+                if (hasS) addZebra('s');
+                if (hasE) addZebra('e');
+                if (hasW) addZebra('w');
+            }
+
+            group.position.set(x * gs, 0, z * gs);
+            return group;
+        }
+
+        // --- 网格数据管理 (稳定性核心) ---
+        function setUserData(obj, data) {
+            obj.traverse(o => { o.userData = { ...o.userData, ...data }; });
+        }
+
+        function removeLabelFromObject(obj) {
+            if (obj.userData && obj.userData.labelObj) {
+                const l = obj.userData.labelObj;
+                if (l.element && l.element.parentNode) l.element.parentNode.removeChild(l.element);
+                obj.remove(l);
+                obj.userData.labelObj = null;
+            }
+        }
+
+        function removeCellNoRefresh(key) {
+            const d = state.mapData.get(key);
+            if (!d) return;
+            const obj = d.mesh;
+            // 释放软投影阴影
+            if (d.shadowBlob) {
+                shadowGroup.remove(d.shadowBlob);
+                d.shadowBlob.geometry.dispose();
+                d.shadowBlob.material.dispose();
+                d.shadowBlob = null;
+            }
+            removeLabelFromObject(obj);
+            scene.remove(obj);
+            obj.traverse(o => {
+                if (o.isMesh) {
+                    if (o.geometry) o.geometry.dispose();
+                    const mats = Array.isArray(o.material) ? o.material : [o.material];
+                    mats.forEach(m => {
+                        if (m.map) m.map.dispose();
+                        m.dispose();
+                    });
+                }
+            });
+            state.mapData.delete(key);
+        }
+
+        function removeCell(key) {
+            removeCellNoRefresh(key);
+            refreshRoadsAround(key);
+        }
+
+        // 刷新指定格及其四邻中的道路（人行道/虚线/斑马线随相邻变化自适应）
+        function refreshRoadsAround(key) {
+            if (!key) return;
+            const [x, z] = key.split(',').map(Number);
+            [[x, z], [x - 1, z], [x + 1, z], [x, z - 1], [x, z + 1]].forEach(([gx, gz]) => {
+                const k = `${gx},${gz}`;
+                const d = state.mapData.get(k);
+                if (d && d.type === 'road') {
+                    createOrUpdateCellNoRefresh(k, 'road', {
+                        color: d.color, height: d.height,
+                        nameData: d.nameData ? { ...d.nameData } : null
+                    });
+                }
+            });
+        }
+
+        function clearAllCells() {
+            const keys = Array.from(state.mapData.keys());
+            state.mapData.clear();
+            keys.forEach(k => removeCellNoRefresh(k));
+        }
+
+        function createOrUpdateCellNoRefresh(key, type, params) {
+            const old = state.mapData.get(key);
+            if (old && old.nameData && !params.nameData) params.nameData = old.nameData;
+            removeCellNoRefresh(key);
+
+            const [x, z] = key.split(',').map(Number);
+            // 仅支持固定旋转角度（0/45/90/135），旧存档角度吸附修正
+            if (type === 'building' && params.rotation) params.rotation = snapRot(params.rotation);
+            let mesh;
+            if (type === 'building') mesh = buildBuildingMesh(key, params);
+            else if (type === 'plot') {
+                mesh = buildPlotMesh(key, params);
+                // 水面禁止路人出现：放置/改色为水面时清除该格路人
+                if (params.color && params.color.toLowerCase() === WATER_COLOR) clearPedestriansOnGrid(x, z);
+            }
+            else if (type === 'road') { mesh = buildRoadMesh(key, params); clearPedestriansOnGrid(x, z); }
+
+            setUserData(mesh, { gridKey: key, type, ...params });
+            if (params.nameData) attachLabel(mesh, params.nameData);
+            scene.add(mesh);
+            const record = { type, mesh, ...params };
+            state.mapData.set(key, record);
+
+            // 建筑：生成软投影阴影（与视角光照角度联动，稳定无闪烁）
+            if (type === 'building') {
+                record.shadowBlob = createBlobShadow(x * CONFIG.gridSize, z * CONFIG.gridSize, params.height || 1);
+                mesh.userData.shadowBlob = record.shadowBlob;
+            }
+            return record;
+        }
+
+        function createOrUpdateCell(key, type, params) {
+            createOrUpdateCellNoRefresh(key, type, params);
+            refreshRoadsAround(key);
+        }
+
+        // --- 建造弹窗逻辑 ---
         window.openBuildModal = () => {
+            const modal = document.getElementById('build-modal');
+            if (!modal) return;
             const firstKey = state.selection.values().next().value;
             const data = state.mapData.get(firstKey);
             if (data) {
@@ -903,16 +1523,21 @@
                     document.getElementById('h-val').innerText = data.height;
                     document.getElementById('custom-building-color').value = data.color;
                     selectShape(data.shape || 'square');
+                    selectStyle(data.style || 'office');
+                    setRotInput(data.rotation || 0);
                 } else if (data.type === 'plot') {
                     document.getElementById('custom-plot-color').value = data.color;
+                    document.getElementById('plot-veg').checked = !!data.vegetation;
                 }
             } else {
                 selectBuildType('building');
                 document.getElementById('building-height').value = 5;
                 document.getElementById('h-val').innerText = 5;
                 selectShape('square');
+                selectStyle('office');
+                setRotInput(0);
             }
-            document.getElementById('build-modal').classList.add('open');
+            modal.classList.add('open');
         };
 
         window.closeModals = () => document.querySelectorAll('.modal-overlay').forEach(m => m.classList.remove('open'));
@@ -920,8 +1545,41 @@
         window.selectBuildType = (type) => {
             state.currentBuildType = type;
             document.querySelectorAll('#build-modal .type-btn').forEach(b => b.classList.remove('selected'));
-            document.getElementById('type-' + type).classList.add('selected');
-            ['building', 'plot', 'road'].forEach(t => document.getElementById('settings-' + t).style.display = (t === type ? 'block' : 'none'));
+            const btn = document.getElementById('type-' + type);
+            if (btn) btn.classList.add('selected');
+            ['building', 'plot', 'road'].forEach(t => {
+                const el = document.getElementById('settings-' + t);
+                if (el) el.style.display = (t === type ? 'block' : 'none');
+            });
+        };
+
+        const FIXED_ROTS = [0, 45, 90, 135];
+
+        // 吸附到最近的固定角度（考虑 360° 环形距离）
+        function snapRot(v) {
+            let best = FIXED_ROTS[0], bd = Infinity;
+            FIXED_ROTS.forEach(a => {
+                const d = Math.min(Math.abs(v - a), 360 - Math.abs(v - a));
+                if (d < bd) { bd = d; best = a; }
+            });
+            return best;
+        }
+
+        function setRotInput(v) {
+            v = snapRot(v);
+            state.currentRotation = v;
+            document.getElementById('rot-val').innerText = v + '°';
+            document.querySelectorAll('#rot-selector .type-btn').forEach(b => b.classList.remove('selected'));
+            const idx = FIXED_ROTS.indexOf(v);
+            if (idx >= 0) document.querySelectorAll('#rot-selector .type-btn')[idx].classList.add('selected');
+        }
+
+        window.selectRot = (deg) => {
+            state.currentRotation = deg;
+            document.getElementById('rot-val').innerText = deg + '°';
+            document.querySelectorAll('#rot-selector .type-btn').forEach(b => b.classList.remove('selected'));
+            const idx = FIXED_ROTS.indexOf(deg);
+            if (idx >= 0) document.querySelectorAll('#rot-selector .type-btn')[idx].classList.add('selected');
         };
 
         window.selectShape = (shape) => {
@@ -929,90 +1587,104 @@
             document.querySelectorAll('#shape-selector .type-btn').forEach(b => b.classList.remove('selected'));
             const index = ['square', 'diamond', 'hexagon', 'rectH', 'rectV'].indexOf(shape);
             if (index >= 0) document.querySelectorAll('#shape-selector .type-btn')[index].classList.add('selected');
+            // 菱形默认旋转45° 以获得菱形外观
+            if (shape === 'diamond' && state.currentRotation === 0) setRotInput(45);
         };
 
-        window.setPlotPreset = (c) => document.getElementById('custom-plot-color').value = c;
+        window.selectStyle = (style) => {
+            state.currentStyle = style;
+            document.querySelectorAll('#style-selector .type-btn').forEach(b => b.classList.remove('selected'));
+            const keys = Object.keys(BUILDING_STYLES);
+            const idx = keys.indexOf(style);
+            if (idx >= 0) document.querySelectorAll('#style-selector .type-btn')[idx].classList.add('selected');
+        };
+
+        window.setPlotPreset = (c, veg) => {
+            const colorEl = document.getElementById('custom-plot-color');
+            if (colorEl) colorEl.value = c;
+            const vegEl = document.getElementById('plot-veg');
+            if (vegEl) vegEl.checked = !!veg;
+        };
 
         window.confirmBuild = () => {
+            if (state.selection.size === 0) return alert("请先选择格子");
             const type = state.currentBuildType;
             const params = {};
             if (type === 'building') {
                 params.height = parseInt(document.getElementById('building-height').value);
                 params.color = document.getElementById('custom-building-color').value;
                 params.shape = state.currentShape;
+                params.style = state.currentStyle;
+                params.rotation = state.currentRotation;
             } else if (type === 'plot') {
                 params.color = document.getElementById('custom-plot-color').value;
                 params.height = 0;
+                params.vegetation = document.getElementById('plot-veg').checked;
             } else if (type === 'road') {
                 params.color = CONFIG.roadColor;
                 params.height = 0;
             }
 
+            pushHistory();
             state.selection.forEach(key => createOrUpdateCell(key, type, params));
             closeModals();
             updatePopulation();
         };
 
-        function createOrUpdateCell(key, type, params) {
-            const oldData = state.mapData.get(key);
-            if (oldData) {
-                scene.remove(oldData.mesh);
-                if (oldData.labelObj && oldData.labelObj.element.parentNode) {
-                    oldData.labelObj.element.parentNode.removeChild(oldData.labelObj.element);
+        // --- 命名 ---
+        window.openNameModal = () => {
+            const modal = document.getElementById('name-modal');
+            if (!modal) return;
+            if (state.selection.size !== 1) return alert("请选择一个格子进行命名");
+            const data = state.mapData.get(Array.from(state.selection)[0]);
+            const input = document.getElementById('area-name-input');
+            if (input) input.value = (data && data.nameData) ? data.nameData.text : "";
+            modal.classList.add('open');
+        };
+
+        window.selectNameType = (el, type, emoji, color, typeLabel) => {
+            state.currentNameType = { type, emoji, color, typeLabel };
+            document.querySelectorAll('#name-types .type-btn').forEach(b => b.classList.remove('selected'));
+            el.classList.add('selected');
+        };
+
+        window.confirmName = () => {
+            const text = document.getElementById('area-name-input').value;
+            if (text) {
+                const key = Array.from(state.selection)[0];
+                const data = state.mapData.get(key);
+                if (data) {
+                    pushHistory();
+                    const nameData = { text, ...state.currentNameType };
+                    data.nameData = nameData;
+                    attachLabel(data.mesh, nameData);
                 }
-                if (oldData.nameData && !params.nameData) params.nameData = oldData.nameData;
             }
+            closeModals();
+        };
 
-            const [x, z] = key.split(',').map(Number);
-            const posX = x * CONFIG.gridSize;
-            const posZ = z * CONFIG.gridSize;
-            let mesh, geo, mat;
+        function attachLabel(mesh, nameData) {
+            removeLabelFromObject(mesh);
 
-            if (type === 'building') {
-                const h = params.height * 3;
-                const s = CONFIG.gridSize - 1.5;
-                if (params.shape === 'diamond') {
-                    geo = new THREE.BoxGeometry(s * 0.75, h, s * 0.75);
-                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
-                    mesh.rotation.y = Math.PI / 4;
-                } else if (params.shape === 'hexagon') {
-                    geo = new THREE.CylinderGeometry(s / 2, s / 2, h, 6);
-                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
-                } else if (params.shape === 'rectH') {
-                    geo = new THREE.BoxGeometry(s, h, s * 0.5);
-                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
-                } else if (params.shape === 'rectV') {
-                    geo = new THREE.BoxGeometry(s * 0.5, h, s);
-                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
-                } else {
-                    geo = new THREE.BoxGeometry(s, h, s);
-                    mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
-                }
-                mesh.position.set(posX, h / 2, posZ);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
+            const div = document.createElement('div');
+            div.className = 'label-container';
+            div.style.color = nameData.color;
+            div.innerHTML = `<span>${nameData.emoji}</span><span>${nameData.text}</span>`;
 
-            } else if (type === 'plot') {
-                geo = new THREE.BoxGeometry(CONFIG.gridSize, 0.2, CONFIG.gridSize);
-                mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
-                mesh.position.set(posX, 0.1, posZ);
-                mesh.receiveShadow = true;
+            const label = new CSS2DObject(div);
+            let y = 1.5;
+            // 标签显示在建筑顶部（N 层 → 顶部高度 N*3，向上留出偏移）
+            if (mesh.userData.type === 'building') y = (mesh.userData.height * 3) + 1.2;
+            label.position.set(0, y, 0);
 
-            } else if (type === 'road') {
-                geo = new THREE.BoxGeometry(CONFIG.gridSize, 0.15, CONFIG.gridSize);
-                mesh = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: params.color }));
-                mesh.position.set(posX, 0.08, posZ);
-                mesh.receiveShadow = true;
-                clearPedestriansOnGrid(x, z);
-            }
+            mesh.add(label);
+            mesh.userData.labelObj = label;
+            mesh.userData.nameData = nameData;
 
-            mesh.userData = { gridKey: key, type, ...params };
-            if (params.nameData) attachLabel(mesh, params.nameData);
-            scene.add(mesh);
-            state.mapData.set(key, { type, mesh, ...params });
+            div.style.display = state.visibility.labels ? 'flex' : 'none';
         }
 
-        // --- 移动 & 命名 (Fix) ---
+        // --- 移动 (稳定性修复: 彻底移除旧格 & 命名) ---
         window.toggleMoveMode = () => {
             const btn = document.getElementById('btn-move');
             if (state.subMode === 'moving') {
@@ -1036,6 +1708,15 @@
                 const [kx, kz] = k.split(',').map(Number);
                 const nk = `${kx + dx},${kz + dz}`;
                 newKeysSet.add(nk);
+                const d = state.mapData.get(k);
+                if (d) moves.push({
+                    oldKey: k, newKey: nk,
+                    params: {
+                        type: d.type, height: d.height, color: d.color, shape: d.shape,
+                        style: d.style, rotation: d.rotation || 0, vegetation: !!d.vegetation,
+                        nameData: d.nameData ? { ...d.nameData } : null
+                    }
+                });
             }
 
             // 碰撞检测: 目标不可被占用 (除非目标也是选区的一部分)
@@ -1047,128 +1728,304 @@
                 }
             }
 
-            keys.forEach(k => {
-                const d = state.mapData.get(k);
-                if (d) {
-                    const [kx, kz] = k.split(',').map(Number);
-                    moves.push({
-                        oldKey: k, newKey: `${kx + dx},${kz + dz}`, params: {
-                            type: d.type, height: d.height, color: d.color, shape: d.shape,
-                            nameData: d.nameData ? { ...d.nameData } : null
-                        }
-                    });
-                }
-            });
-
-            // 1. 彻底移除旧对象 + DOM
-            moves.forEach(m => {
-                const exist = state.mapData.get(m.oldKey);
-                if (exist) {
-                    if (exist.mesh) {
-                        // 强制移除 Label 的 DOM
-                        if (exist.mesh.userData.labelObj) {
-                            exist.mesh.remove(exist.mesh.userData.labelObj);
-                            if (exist.mesh.userData.labelObj.element.parentNode) {
-                                exist.mesh.userData.labelObj.element.parentNode.removeChild(exist.mesh.userData.labelObj.element);
-                            }
-                        }
-                        scene.remove(exist.mesh);
-                    }
-                    state.mapData.delete(m.oldKey);
-                }
-            });
-
-            // 2. 清理新位置 (虽然检测过碰撞，但清理自身移动产生的重叠)
-            moves.forEach(m => {
-                const conflict = state.mapData.get(m.newKey);
-                if (conflict) {
-                    if (conflict.mesh) {
-                        if (conflict.mesh.userData.labelObj && conflict.mesh.userData.labelObj.element.parentNode) {
-                            conflict.mesh.userData.labelObj.element.parentNode.removeChild(conflict.mesh.userData.labelObj.element);
-                        }
-                        scene.remove(conflict.mesh);
-                    }
-                    state.mapData.delete(m.newKey);
-                }
-            });
-
-            // 3. 重建
+            pushHistory();
+            moves.forEach(m => removeCell(m.oldKey));
             moves.forEach(m => createOrUpdateCell(m.newKey, m.params.type, m.params));
 
             state.selection.clear();
             moves.forEach(m => state.selection.add(m.newKey));
             toggleMoveMode();
             renderSelection();
+            updatePopulation();
         }
 
-        window.openNameModal = () => {
-            if (state.selection.size !== 1) return alert("请选择一个格子进行命名");
-            const data = state.mapData.get(Array.from(state.selection)[0]);
-            document.getElementById('area-name-input').value = (data && data.nameData) ? data.nameData.text : "";
-            document.getElementById('name-modal').classList.add('open');
+        // --- 旋转 & 拆除 ---
+        window.rotateSelected = () => {
+            if (state.selection.size === 0) return alert("请先选择格子");
+            pushHistory();
+            state.selection.forEach(k => {
+                const d = state.mapData.get(k);
+                if (!d || d.type !== 'building') return;
+                // 仅按固定角度旋转：0° → 45° → 90° → 135° → 0°
+                const rot = ((snapRot(d.rotation || 0)) + 45) % 180;
+                d.rotation = rot;
+                d.mesh.rotation.y = rot * Math.PI / 180;
+            });
         };
 
-        window.selectNameType = (el, type, emoji, color, typeLabel) => {
-            state.currentNameType = { type, emoji, color, typeLabel };
-            document.querySelectorAll('#name-types .type-btn').forEach(b => b.classList.remove('selected'));
-            el.classList.add('selected');
+        window.deleteSelected = () => {
+            if (state.selection.size === 0) return alert("请先选择格子");
+            if (!confirm(`确定拆除选中的 ${state.selection.size} 个格子吗？`)) return;
+            pushHistory();
+            state.selection.forEach(k => removeCell(k));
+            state.selection.clear();
+            renderSelection();
+            updatePopulation();
         };
 
-        window.confirmName = () => {
-            const text = document.getElementById('area-name-input').value;
-            if (text) {
-                const key = Array.from(state.selection)[0];
-                const data = state.mapData.get(key);
-                if (data) {
-                    const nameData = { text, ...state.currentNameType };
-                    data.nameData = nameData;
-                    attachLabel(data.mesh, nameData);
-                }
-            }
-            closeModals();
-        };
-
-        function attachLabel(mesh, nameData) {
-            if (mesh.userData.labelObj) {
-                if (mesh.userData.labelObj.element.parentNode) {
-                    mesh.userData.labelObj.element.parentNode.removeChild(mesh.userData.labelObj.element);
-                }
-                mesh.remove(mesh.userData.labelObj);
-            }
-
-            const div = document.createElement('div');
-            div.className = 'label-container';
-            div.style.color = nameData.color;
-            div.innerHTML = `<span>${nameData.emoji}</span><span>${nameData.text}</span>`;
-
-            const label = new CSS2DObject(div);
-            let y = 1.5;
-            if (mesh.userData.type === 'building') y = (mesh.userData.height * 3) / 2 + 1.5;
-            label.position.set(0, y, 0);
-
-            mesh.add(label);
-            mesh.userData.labelObj = label;
-            mesh.userData.nameData = nameData;
-
-            div.style.display = state.visibility.labels ? 'flex' : 'none';
+        // --- 撤销 / 重做 ---
+        function snapshot() {
+            return {
+                map: Array.from(state.mapData).map(([k, d]) => ({
+                    key: k, type: d.type, height: d.height, color: d.color,
+                    shape: d.shape, style: d.style, rotation: d.rotation || 0,
+                    vegetation: !!d.vegetation,
+                    nameData: d.nameData ? { ...d.nameData } : null
+                })),
+                ground: currentGround,
+                bg: currentBg,
+                lightAngle
+            };
         }
+
+        function pushHistory() {
+            history.stack = history.stack.slice(0, history.index + 1);
+            history.stack.push(snapshot());
+            if (history.stack.length > history.MAX) history.stack.shift();
+            history.index = history.stack.length - 1;
+        }
+
+        function clearPedestrians() {
+            state.pedestrians.forEach(p => pedestrianGroup.remove(p));
+            state.pedestrians = [];
+        }
+
+        function applySnapshot(snap) {
+            clearAllCells();
+            clearPedestrians();
+            (snap.map || []).forEach(rec => {
+                const params = {
+                    type: rec.type, height: rec.height, color: rec.color, shape: rec.shape,
+                    style: rec.style, rotation: rec.rotation || 0, vegetation: rec.vegetation,
+                    nameData: rec.nameData ? { ...rec.nameData } : null
+                };
+                createOrUpdateCell(rec.key, rec.type, params);
+            });
+            if (snap.ground) setGroundColor(snap.ground);
+            if (snap.bg) setBgColor(snap.bg);
+            if (typeof snap.lightAngle === 'number') applyLightAngle(snap.lightAngle);
+            updatePopulation();
+        }
+
+        window.undo = () => {
+            if (history.index <= 0) return;
+            history.index--;
+            applySnapshot(history.stack[history.index]);
+        };
+
+        window.redo = () => {
+            if (history.index >= history.stack.length - 1) return;
+            history.index++;
+            applySnapshot(history.stack[history.index]);
+        };
 
         // --- 设置 ---
-        window.openSettings = () => document.getElementById('settings-modal').classList.add('open');
+        window.openSettings = () => {
+            const m = document.getElementById('settings-modal');
+            if (m) m.classList.add('open');
+        };
+
         window.setGroundColor = (c) => {
-            document.getElementById('custom-ground-color').value = c;
+            currentGround = c;
+            const el = document.getElementById('custom-ground-color');
+            if (el) el.value = c;
             groundColorMesh.material.color.set(c);
         };
+
         window.setBgColor = (c) => {
+            currentBg = c;
             scene.background = new THREE.Color(c);
             scene.fog.color = new THREE.Color(c);
-            document.getElementById('custom-bg-color').value = c;
+            const el = document.getElementById('custom-bg-color');
+            if (el) el.value = c;
         };
-        window.updateShadowAngle = (deg) => {
+
+        window.applyLightAngle = (deg) => {
+            lightAngle = deg;
             const rad = deg * Math.PI / 180;
             const r = 150;
             dirLight.position.x = Math.sin(rad) * r;
             dirLight.position.z = Math.cos(rad) * r;
+            const s = document.getElementById('light-slider');
+            if (s) s.value = deg;
+            // 软投影随光照方向联动
+            shadowGroup.children.forEach(b => applyBlobOffset(b));
+        };
+
+        // --- 存档 ---
+        function toast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            clearTimeout(toast._t);
+            toast._t = setTimeout(() => t.classList.remove('show'), 1800);
+        }
+
+        window.saveGame = (silent) => {
+            try {
+                localStorage.setItem(CONFIG.saveKey, JSON.stringify({ version: 1, ...snapshot() }));
+                if (!silent) toast('💾 已保存');
+            } catch (e) {
+                toast('保存失败：存储空间不足');
+            }
+        };
+
+        window.loadGame = () => {
+            const raw = localStorage.getItem(CONFIG.saveKey);
+            if (!raw) return toast('没有找到存档');
+            try {
+                const d = JSON.parse(raw);
+                pushHistory();
+                applySnapshot(d);
+                toast('📂 已载入存档');
+            } catch (e) {
+                toast('存档读取失败');
+            }
+        };
+
+        window.clearMap = () => {
+            if (!confirm('确定清空整个城市吗？此操作将删除所有建筑、地块、道路与命名，且无法撤销。')) return;
+            pushHistory();
+            clearAllCells();
+            clearPedestrians();
+            updatePopulation();
+            renderSelection();
+            toast('🗑️ 已清空全部内容');
+        };
+
+        // --- 随机城市 (调试) ---
+        window.randomCity = () => {
+            if (!confirm('确定生成随机城市吗？将先完全清空当前画布，再在 8×8 范围内生成新城市。')) return;
+            pushHistory();
+            // 先完全清空当前画布（含建筑/地块/道路/命名/阴影/路人），确保无残留
+            clearAllCells();
+            clearPedestrians();
+
+            const rand = (a, b) => a + Math.floor(Math.random() * (b - a + 1));
+            const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+            const shapes = ['square', 'diamond', 'hexagon', 'rectH', 'rectV'];
+            const styles = Object.keys(BUILDING_STYLES);
+            const rots = [0, 45, 90, 135];
+
+            // 严格 8×8 边界（含边缘），城市范围不超出设定边界
+            const half = 4, x0 = -half, x1 = half - 1, z0 = -half, z1 = half - 1;
+            const cells = [];
+            for (let gx = x0; gx <= x1; gx++)
+                for (let gz = z0; gz <= z1; gz++) cells.push(`${gx},${gz}`);
+            const isBorder = k => {
+                const [gx, gz] = k.split(',').map(Number);
+                return gx === x0 || gx === x1 || gz === z0 || gz === z1;
+            };
+            const occupied = new Set();
+
+            // 1. 环城道路（8×8 边缘一圈）
+            cells.forEach(k => {
+                if (isBorder(k)) {
+                    createOrUpdateCell(k, 'road', { color: CONFIG.roadColor, height: 0 });
+                    occupied.add(k);
+                }
+            });
+
+            const interior = cells.filter(k => !isBorder(k));
+            // 洗牌
+            for (let i = interior.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [interior[i], interior[j]] = [interior[j], interior[i]];
+            }
+            const used = new Set();
+
+            // 2. 聚居分布：由种子格向外生长成簇，同类元素聚集
+            const clusterGrow = (seedKey, maxCount) => {
+                const queue = [seedKey];
+                const picked = [];
+                let count = 0;
+                while (queue.length && count < maxCount) {
+                    const k = queue.shift();
+                    if (used.has(k) || occupied.has(k)) continue;
+                    used.add(k); occupied.add(k);
+                    picked.push(k); count++;
+                    const [gx, gz] = k.split(',').map(Number);
+                    const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]];
+                    for (let d = dirs.length - 1; d > 0; d--) {
+                        const j = Math.floor(Math.random() * (d + 1));
+                        [dirs[d], dirs[j]] = [dirs[j], dirs[d]];
+                    }
+                    for (const [dx, dz] of dirs) {
+                        const nk = `${gx + dx},${gz + dz}`;
+                        if (used.has(nk) || occupied.has(nk)) continue;
+                        if (Math.random() < 0.7) queue.push(nk); // 70% 延续簇，形成聚居
+                    }
+                }
+                return picked;
+            };
+
+            // 草地簇
+            const grassTarget = Math.round(interior.length * 0.35);
+            const grassSeeds = Math.max(1, Math.min(3, Math.floor(grassTarget / 6)));
+            const grassCells = [];
+            for (let s = 0; s < grassSeeds && grassCells.length < grassTarget; s++) {
+                const free = interior.filter(k => !used.has(k));
+                if (!free.length) break;
+                grassCells.push(...clusterGrow(pick(free), Math.ceil(grassTarget / grassSeeds)));
+            }
+            grassCells.slice(0, grassTarget).forEach(k => {
+                createOrUpdateCell(k, 'plot', { color: '#2ecc71', height: 0, vegetation: Math.random() < 0.6 });
+            });
+
+            // 建筑簇
+            const buildCount = Math.min(26, Math.max(10, rand(12, 24)));
+            const buildSeeds = Math.max(1, Math.min(4, Math.floor(buildCount / 8)));
+            const buildCells = [];
+            for (let s = 0; s < buildSeeds && buildCells.length < buildCount; s++) {
+                const free = interior.filter(k => !used.has(k));
+                if (!free.length) break;
+                buildCells.push(...clusterGrow(pick(free), Math.ceil(buildCount / buildSeeds)));
+            }
+            buildCells.slice(0, buildCount).forEach(k => {
+                createOrUpdateCell(k, 'building', {
+                    height: rand(2, 14),
+                    color: pick(CONFIG.colors),
+                    shape: pick(shapes),
+                    style: pick(styles),
+                    rotation: pick(rots)
+                });
+            });
+
+            // 3. 剩余内部格填充为草地，保证城市内无残留空隙
+            interior.filter(k => !used.has(k)).forEach(k => {
+                createOrUpdateCell(k, 'plot', { color: '#2ecc71', height: 0, vegetation: Math.random() < 0.5 });
+            });
+
+            updatePopulation();
+            renderSelection();
+            toast('🎲 已生成随机城市 (8×8)');
+        };
+
+        // 自动保存
+        const autoSaveEl = document.getElementById('autosave-toggle');
+        if (autoSaveEl) autoSaveEl.addEventListener('change', e => { autosaveOn = e.target.checked; });
+        let autosaveOn = autoSaveEl ? autoSaveEl.checked : false;
+        setInterval(() => { if (autosaveOn && state.mapData.size > 0) saveGame(true); }, CONFIG.autoSaveInterval);
+
+        // --- 统计 ---
+        window.openStats = () => {
+            const modal = document.getElementById('stats-modal');
+            if (!modal) return;
+            let b = 0, p = 0, r = 0, n = 0;
+            state.mapData.forEach(d => {
+                if (d.type === 'building') b++;
+                else if (d.type === 'plot') p++;
+                else if (d.type === 'road') r++;
+                if (d.nameData) n++;
+            });
+            const body = document.getElementById('stats-body');
+            if (body) body.innerHTML = `
+                <div class="stats-row"><span>🏢 楼宇数量</span><b>${b}</b></div>
+                <div class="stats-row"><span>🟩 地块数量</span><b>${p}</b></div>
+                <div class="stats-row"><span>🛣️ 道路数量</span><b>${r}</b></div>
+                <div class="stats-row"><span>🏷️ 已命名</span><b>${n}</b></div>
+                <div class="stats-row"><span>👥 当前人口</span><b>${state.population}</b></div>`;
+            modal.classList.add('open');
         };
 
         // --- 人口 ---
@@ -1177,7 +2034,7 @@
             state.mapData.forEach(d => { if (d.type === 'building') pop += d.height * CONFIG.maxPedestrians / 100 * 5; });
             state.population = Math.floor(pop);
             updatePopDisplay();
-            adjustPedestrians();
+            maintainPedestrians();
         }
 
         function updatePopDisplay() {
@@ -1192,8 +2049,36 @@
             }
         }, 3000);
 
-        function adjustPedestrians() {
-            const target = Math.min(Math.floor(state.population * 0.1), CONFIG.maxPedestrians);
+        // --- 路人系统：绕建筑慢走/进楼移除、草地慢走、人行道行走、斑马线过街、禁止水面 ---
+        const PED_SPEED = 2.2;                    // 慢速（世界单位/秒）
+        const PED_EDGE = CONFIG.gridSize / 2 - 0.65; // 人行道边缘偏移
+        const WATER_COLOR = '#48dbfb';            // 水面预设色
+
+        function isWaterCell(gx, gz) {
+            const d = state.mapData.get(`${gx},${gz}`);
+            return !!(d && d.type === 'plot' && d.color && d.color.toLowerCase() === WATER_COLOR);
+        }
+        function isRoadCell(gx, gz) {
+            const d = state.mapData.get(`${gx},${gz}`);
+            return !!d && d.type === 'road';
+        }
+        function isGrassCell(gx, gz) {
+            const d = state.mapData.get(`${gx},${gz}`);
+            return !!(d && d.type === 'plot' && d.color && d.color.toLowerCase() !== WATER_COLOR);
+        }
+
+        function killPedestrian(p) {
+            pedestrianGroup.remove(p);
+            const i = state.pedestrians.indexOf(p);
+            if (i >= 0) state.pedestrians.splice(i, 1);
+        }
+
+        // 恒定数量：按人口比例维持，随机生成/移除
+        function pedTarget() {
+            return Math.min(Math.floor(state.population * CONFIG.pedestrianRatio), CONFIG.maxPedestrians);
+        }
+        function maintainPedestrians() {
+            const target = pedTarget();
             while (state.pedestrians.length < target) createPedestrian();
             while (state.pedestrians.length > target) {
                 const p = state.pedestrians.pop();
@@ -1201,25 +2086,216 @@
             }
         }
 
+        // 选择合法出生格（禁止水面）
+        function pickPedSpawnCell() {
+            const keys = Array.from(state.mapData.keys());
+            const ok = keys.filter(k => {
+                const d = state.mapData.get(k);
+                if (d.type === 'building') return false;
+                if (d.type === 'plot' && d.color && d.color.toLowerCase() === WATER_COLOR) return false;
+                return true;
+            });
+            return ok.length ? ok[Math.floor(Math.random() * ok.length)] : null;
+        }
+
+        // 附近建筑（半径 3.5 格）
+        function nearestBuilding(gx, gz) {
+            let best = null, bd = 3.5;
+            state.mapData.forEach((d, k) => {
+                if (d.type !== 'building') return;
+                const [bx, bz] = k.split(',').map(Number);
+                const dd = Math.hypot(bx - gx, bz - gz);
+                if (dd < bd) { bd = dd; best = { x: bx, z: bz, key: k }; }
+            });
+            return best;
+        }
+
+        // 人行道/过街目标点
+        function nextSidewalkPoint(gx, gz, pos) {
+            const gs = CONFIG.gridSize;
+            const edge = PED_EDGE;
+            const hasN = isRoadCell(gx, gz - 1), hasS = isRoadCell(gx, gz + 1);
+            const hasE = isRoadCell(gx + 1, gz), hasW = isRoadCell(gx - 1, gz);
+            const vertical = hasN || hasS, horizontal = hasE || hasW;
+            const inter = vertical && horizontal;
+            const cx = gx * gs, cz = gz * gs;
+
+            // 路口：走斑马线横穿过街
+            if (inter) {
+                const dirs = [];
+                if (hasN) dirs.push(['n', cx + Math.max(-4, Math.min(4, pos.x - cx)), cz - gs / 2]);
+                if (hasS) dirs.push(['s', cx + Math.max(-4, Math.min(4, pos.x - cx)), cz + gs / 2]);
+                if (hasE) dirs.push(['e', cx + gs / 2, cz + Math.max(-4, Math.min(4, pos.z - cz))]);
+                if (hasW) dirs.push(['w', cx - gs / 2, cz + Math.max(-4, Math.min(4, pos.z - cz))]);
+                const d = dirs[Math.floor(Math.random() * dirs.length)];
+                return new THREE.Vector3(d[1], 0.25, d[2]);
+            }
+
+            // 沿人行道走（道路两侧边缘）
+            const cands = [];
+            if (vertical) {
+                const sideX = cx + (Math.abs(pos.x - (cx - edge)) < Math.abs(pos.x - (cx + edge)) ? -edge : edge);
+                if (hasN) cands.push(new THREE.Vector3(sideX, 0.25, cz - edge));
+                if (hasS) cands.push(new THREE.Vector3(sideX, 0.25, cz + edge));
+            } else if (horizontal) {
+                const sideZ = cz + (Math.abs(pos.z - (cz - edge)) < Math.abs(pos.z - (cz + edge)) ? -edge : edge);
+                if (hasE) cands.push(new THREE.Vector3(cx + edge, 0.25, sideZ));
+                if (hasW) cands.push(new THREE.Vector3(cx - edge, 0.25, sideZ));
+            }
+            if (!cands.length) cands.push(new THREE.Vector3(cx + (Math.random() - 0.5) * 6, 0.25, cz + (Math.random() - 0.5) * 6));
+            return cands[Math.floor(Math.random() * cands.length)];
+        }
+
+        // 草地慢走目标点
+        function nextGrassPoint(gx, gz) {
+            const gs = CONFIG.gridSize;
+            const pool = [`${gx},${gz}`, `${gx + 1},${gz}`, `${gx - 1},${gz}`, `${gx},${gz + 1}`, `${gx},${gz - 1}`];
+            const grass = pool.filter(k => isGrassCell(...k.split(',').map(Number)));
+            const k = grass.length ? grass[Math.floor(Math.random() * grass.length)] : `${gx},${gz}`;
+            const [tx, tz] = k.split(',').map(Number);
+            return new THREE.Vector3(tx * gs + (Math.random() - 0.5) * 7, 0.25, tz * gs + (Math.random() - 0.5) * 7);
+        }
+
+        // 绕建筑走动 / 走入建筑中心（进入后移除）
+        function nextBuildingPoint(p) {
+            const gs = CONFIG.gridSize;
+            const u = p.userData;
+            const gx = Math.round(p.position.x / gs), gz = Math.round(p.position.z / gs);
+            const b = nearestBuilding(gx, gz);
+            if (!b) {
+                // 附近无建筑：向旁边格子慢走
+                const [tx, tz] = `${gx + (Math.random() < 0.5 ? 1 : -1)},${gz}`.split(',').map(Number);
+                return new THREE.Vector3(tx * gs + (Math.random() - 0.5) * 5, 0.25, tz * gs + (Math.random() - 0.5) * 5);
+            }
+            const cx = b.x * gs, cz = b.z * gs;
+            const corners = [
+                [cx - gs / 2 + 0.4, cz - gs / 2 + 0.4],
+                [cx + gs / 2 - 0.4, cz - gs / 2 + 0.4],
+                [cx + gs / 2 - 0.4, cz + gs / 2 - 0.4],
+                [cx - gs / 2 + 0.4, cz + gs / 2 - 0.4]
+            ];
+            // 换目标建筑时重置周边行走状态
+            if (u.bid !== b.key) {
+                u.bid = b.key;
+                u.perimCount = 0;
+                u.enterChance = Math.random() < 0.35;
+            }
+            u.perimCount++;
+            // 绕行数圈后有机会走入建筑中心（进入即移除）
+            if (u.enterChance && u.perimCount >= 3 && Math.random() < 0.5) {
+                return new THREE.Vector3(cx, 0.25, cz);
+            }
+            const c = corners[u.perimCount % 4];
+            return new THREE.Vector3(c[0], 0.25, c[1]);
+        }
+
+        function computeNextWaypoint(p) {
+            const gs = CONFIG.gridSize;
+            const u = p.userData;
+            const gx = Math.round(p.position.x / gs), gz = Math.round(p.position.z / gs);
+            if (u.mode === 'road') u.wp = nextSidewalkPoint(gx, gz, p.position);
+            else if (u.mode === 'grass') {
+                // 草地慢走；若已走到道路则改为沿人行道行走
+                const cell = state.mapData.get(`${gx},${gz}`);
+                if (cell && cell.type === 'road') u.wp = nextSidewalkPoint(gx, gz, p.position);
+                else u.wp = nextGrassPoint(gx, gz);
+            }
+            else u.wp = nextBuildingPoint(p);
+        }
+
+        // 路人每帧移动（目标点寻路 + 建筑绕行/进楼移除 + 水面防御）
+        function stepPedestrian(p, dt) {
+            const gs = CONFIG.gridSize;
+            const u = p.userData;
+            const pos = p.position;
+            const gx = Math.round(pos.x / gs), gz = Math.round(pos.z / gs);
+
+            u.life = (u.life || 0) + dt;
+            if (u.life > 45) { killPedestrian(p); return; } // 存活上限，保证持续更新
+
+            // 水面 → 立即移除
+            if (isWaterCell(gx, gz)) { killPedestrian(p); return; }
+
+            // 走进建筑中心 → 移除（进入建筑）
+            const cell = state.mapData.get(`${gx},${gz}`);
+            if (cell && cell.type === 'building') {
+                const bx = gx * gs, bz = gz * gs;
+                if (Math.hypot(pos.x - bx, pos.z - bz) < 1.6) { killPedestrian(p); return; }
+            }
+
+            const wp = u.wp;
+            if (!wp || pos.distanceTo(wp) < 0.5) { computeNextWaypoint(p); return; }
+
+            const dir = wp.clone().sub(pos);
+            if (dir.length() < 0.01) { computeNextWaypoint(p); return; }
+            dir.normalize();
+            if (!u.dir) u.dir = dir.clone();
+            u.dir.lerp(dir, 0.15).normalize();
+
+            const step = u.speed * dt;
+            const nx = pos.x + u.dir.x * step;
+            const nz = pos.z + u.dir.z * step;
+            const ngx = Math.round(nx / gs), ngz = Math.round(nz / gs);
+
+            // 前方为建筑：仅在进入建筑实体范围（半宽约3.5）内时绕行，避免穿模；
+            // 若正走向建筑中心（进入建筑）则允许通行，靠近中心后会被移除
+            const ncell = state.mapData.get(`${ngx},${ngz}`);
+            if (ncell && ncell.type === 'building') {
+                const bcx = ngx * gs, bcz = ngz * gs;
+                const distC = Math.hypot(nx - bcx, nz - bcz);
+                const headingCenter = u.wp && Math.abs(u.wp.x - bcx) < 1.5 && Math.abs(u.wp.z - bcz) < 1.5;
+                if (distC < 3.5 && !headingCenter) {
+                    u.blocked = (u.blocked || 0) + 1;
+                    if (u.blocked > 20) { killPedestrian(p); return; }
+                    computeNextWaypoint(p);
+                    return;
+                }
+            }
+
+            pos.set(nx, 0.25, nz);
+            u.blocked = 0;
+        }
+
         function createPedestrian() {
+            const key = pickPedSpawnCell();
+            if (!key) return;
+            const [x, z] = key.split(',').map(Number);
+            const gs = CONFIG.gridSize;
+            const cell = state.mapData.get(key);
+
+            let sx, sz;
+            if (cell.type === 'road') {
+                // 出生在人行道上
+                const hasN = isRoadCell(x, z - 1), hasS = isRoadCell(x, z + 1);
+                const hasE = isRoadCell(x + 1, z), hasW = isRoadCell(x - 1, z);
+                const vertical = hasN || hasS, horizontal = hasE || hasW;
+                let lx, lz;
+                if (vertical && !horizontal) { lx = (Math.random() < 0.5 ? -1 : 1) * PED_EDGE; lz = (Math.random() - 0.5) * 6; }
+                else if (horizontal && !vertical) { lz = (Math.random() < 0.5 ? -1 : 1) * PED_EDGE; lx = (Math.random() - 0.5) * 6; }
+                else { lx = (Math.random() < 0.5 ? -1 : 1) * PED_EDGE; lz = (Math.random() < 0.5 ? -1 : 1) * PED_EDGE; }
+                sx = x * gs + lx; sz = z * gs + lz;
+            } else {
+                sx = x * gs + (Math.random() - 0.5) * 6;
+                sz = z * gs + (Math.random() - 0.5) * 6;
+            }
+
             const geo = new THREE.CircleGeometry(0.35, 12);
-            const mat = new THREE.MeshBasicMaterial({ color: CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)], side: THREE.DoubleSide });
+            const mat = new THREE.MeshBasicMaterial({
+                color: CONFIG.colors[Math.floor(Math.random() * CONFIG.colors.length)],
+                side: THREE.DoubleSide
+            });
             const mesh = new THREE.Mesh(geo, mat);
             mesh.rotation.x = -Math.PI / 2;
+            mesh.position.set(sx, 0.25, sz);
 
-            const keys = Array.from(state.mapData.keys());
-            if (keys.length === 0) return;
-            const key = keys[Math.floor(Math.random() * keys.length)];
-            if (state.mapData.get(key).type === 'road') return;
-
-            const [x, z] = key.split(',').map(Number);
-            // 记录出生点
-            const startX = x * CONFIG.gridSize + (Math.random() - 0.5) * 5;
-            const startZ = z * CONFIG.gridSize + (Math.random() - 0.5) * 5;
-
-            mesh.position.set(startX, 0.25, startZ);
-            mesh.userData.spawnPos = new THREE.Vector3(startX, 0.25, startZ);
-            mesh.userData.velocity = new THREE.Vector3((Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.1);
+            // 行为模式：道路→人行道行走；草地→草地慢走；其余→绕建筑走动
+            const mode = cell.type === 'road' ? 'road' : (Math.random() < 0.5 ? 'grass' : 'building');
+            mesh.userData.mode = mode;
+            mesh.userData.speed = PED_SPEED * (0.85 + Math.random() * 0.3);
+            mesh.userData.wp = null;
+            mesh.userData.life = 0;
+            mesh.userData.bid = null;
+            computeNextWaypoint(mesh);
 
             pedestrianGroup.add(mesh);
             state.pedestrians.push(mesh);
@@ -1237,46 +2313,113 @@
             }
         }
 
+        // --- 性能优化：建筑可见范围（以镜头为中心，远处建筑自动隐藏）---
+        const clock = new THREE.Clock();
+        let cullFrame = 0;
+        let pedFrame = 0;
+
+        window.setVisRange = (n) => {
+            state.visRange = n;
+            document.querySelectorAll('#visrange-selector .type-btn').forEach(b => b.classList.remove('selected'));
+            const idx = [15, 20, 30, 50].indexOf(n);
+            if (idx >= 0) document.querySelectorAll('#visrange-selector .type-btn')[idx].classList.add('selected');
+        };
+
+        function forEachMeshMaterial(obj, fn) {
+            obj.traverse(o => {
+                if (o.isMesh) {
+                    const mats = Array.isArray(o.material) ? o.material : [o.material];
+                    mats.forEach(fn);
+                }
+            });
+        }
+
+        function setBuildingOpacity(rec, op) {
+            forEachMeshMaterial(rec.mesh, m => { m.transparent = true; m.opacity = op; });
+        }
+
+        // 监测建筑位置：以镜头（视角中心）为原点，超出可见范围的建筑隐藏（含过渡效果）
+        function updateCulling() {
+            const half = state.visRange / 2; // 半个边长（格）
+            const camPos = controls.target;
+            const cgx = camPos.x / CONFIG.gridSize;
+            const cgz = camPos.z / CONFIG.gridSize;
+            const culled = new Set();
+            state.mapData.forEach((rec, key) => {
+                if (rec.type !== 'building') return;
+                const bgx = rec.mesh.position.x / CONFIG.gridSize;
+                const bgz = rec.mesh.position.z / CONFIG.gridSize;
+                const out = Math.abs(bgx - cgx) > half || Math.abs(bgz - cgz) > half;
+                if (!rec.cull) rec.cull = { opacity: 1, target: 1 };
+                rec.cull.target = out ? 0 : 1;
+                // 需要淡入淡出的建筑加入处理集合
+                if (out || rec.cull.opacity !== rec.cull.target) culled.add(rec);
+            });
+            state._culled = culled;
+        }
+
+        // 隐藏过渡：淡出淡入，避免建筑突然消失的突兀感，并同步隐藏标签
+        function fadeCulling(dt) {
+            if (!state._culled) return;
+            const step = Math.min(1, 4 * (dt || 0.016));
+            state._culled.forEach(rec => {
+                const c = rec.cull;
+                if (!c) return;
+                // 已删除的建筑不再处理
+                if (!state.mapData.has(rec.mesh.userData.gridKey)) return;
+                if (c.opacity === c.target) {
+                    if (c.target === 0 && !c.hidden) {
+                        c.hidden = true;
+                        rec.mesh.visible = false;
+                        if (rec.mesh.userData.labelObj) rec.mesh.userData.labelObj.visible = false;
+                        forEachMeshMaterial(rec.mesh, m => { m.transparent = false; m.opacity = 1; });
+                    }
+                    return;
+                }
+                // 淡出/淡入：保证网格可见以便过渡，标签同步（隐藏时同步隐藏，避免悬浮标签）
+                if (!rec.mesh.visible) rec.mesh.visible = true;
+                if (rec.mesh.userData.labelObj) rec.mesh.userData.labelObj.visible = (c.target === 1);
+                c.opacity += (c.target - c.opacity) * step;
+                if (Math.abs(c.opacity - c.target) < 0.02) c.opacity = c.target;
+                setBuildingOpacity(rec, c.opacity);
+                if (c.opacity === c.target) {
+                    c.hidden = c.target === 0;
+                    if (c.target === 0) {
+                        rec.mesh.visible = false;
+                        forEachMeshMaterial(rec.mesh, m => { m.transparent = false; m.opacity = 1; });
+                    } else {
+                        // 淡入完成：恢复不透明渲染
+                        forEachMeshMaterial(rec.mesh, m => { if (m.transparent) m.transparent = false; });
+                    }
+                }
+            });
+        }
+
         // --- 循环 ---
         function animate() {
             requestAnimationFrame(animate);
+            const dt = clock.getDelta();
             controls.update();
 
-            const cx = Math.round(controls.target.x / CONFIG.gridSize) * CONFIG.gridSize;
-            const cz = Math.round(controls.target.z / CONFIG.gridSize) * CONFIG.gridSize;
-            gridMesh.position.x = cx;
-            gridMesh.position.z = cz;
+            // 性能：以镜头为中心的可见范围监测，远处建筑淡出隐藏（含过渡效果）
+            if (++cullFrame % 30 === 0) updateCulling();
+            fadeCulling(dt);
 
             if (state.visibility.pedestrians) {
+                // 路人寻路行走（绕建筑/草地/人行道/过街/进楼移除/水面防御）
                 for (let i = state.pedestrians.length - 1; i >= 0; i--) {
-                    const p = state.pedestrians[i];
-
-                    // 距离检测 (走太远则移除)
-                    if (p.userData.spawnPos && p.position.distanceTo(p.userData.spawnPos) > 35) {
-                        pedestrianGroup.remove(p);
-                        state.pedestrians.splice(i, 1);
-                        createPedestrian(); // 重生
-                        continue;
-                    }
-
-                    const nextPos = p.position.clone().add(p.userData.velocity);
-                    const gx = Math.round(nextPos.x / CONFIG.gridSize);
-                    const gz = Math.round(nextPos.z / CONFIG.gridSize);
-                    const cell = state.mapData.get(`${gx},${gz}`);
-
-                    if (cell && cell.type === 'road') {
-                        // 撞墙(路)，反弹或重生
-                        p.userData.velocity.negate();
-                    } else {
-                        p.position.add(p.userData.velocity);
-                    }
-
-                    if (Math.random() < 0.02) p.userData.velocity.set((Math.random() - 0.5) * 0.1, 0, (Math.random() - 0.5) * 0.1);
+                    stepPedestrian(state.pedestrians[i], dt);
                 }
+                // 周期性维持恒定数量（随机生成或移除）
+                if (++pedFrame % 90 === 0) maintainPedestrians();
             }
+
             renderer.render(scene, camera);
             labelRenderer.render(scene, camera);
         }
+
+        // 初始应用光照角度
+        applyLightAngle(45);
         animate();
 
     </script>
