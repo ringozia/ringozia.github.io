@@ -1,0 +1,1542 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>网格城市</title>
+<style>
+  :root {
+    --bg: #131418;
+    --panel: #16213e;
+    --panel2: #1a1a2e;
+    --line: #0f3460;
+    --line2: #1a4a7a;
+    --accent: #e94560;
+    --accent2: #ff6b81;
+    --text: #eee;
+    --muted: #9aa;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    user-select: none;
+  }
+
+  /* ===== 标题栏 ===== */
+  #titleBar {
+    display: flex; align-items: center; gap: 10px;
+    height: 46px; padding: 0 14px;
+    background: var(--panel);
+    border-bottom: 2px solid var(--line);
+    flex-shrink: 0;
+  }
+  #titleBar h1 {
+    font-size: 17px; font-weight: 700; letter-spacing: 2px;
+    margin-right: auto; white-space: nowrap;
+  }
+  #titleBar h1 .sub { font-size: 11px; color: var(--muted); font-weight: 400; letter-spacing: 1px; margin-left: 8px; }
+  .icon-btn {
+    width: 34px; height: 34px; border: none; border-radius: 8px;
+    background: var(--panel2); color: var(--text); font-size: 17px;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: background .2s;
+  }
+  .icon-btn:hover { background: var(--line); }
+
+  /* ===== 工具栏 ===== */
+  #toolbar {
+    display: flex; align-items: center; gap: 10px;
+    height: 46px; padding: 0 14px;
+    background: #10162b;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  #modeSwitch { display: flex; gap: 4px; background: var(--panel2); padding: 3px; border-radius: 9px; }
+  #modeSwitch button {
+    border: none; background: transparent; color: var(--muted);
+    padding: 7px 18px; border-radius: 7px; cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: all .2s;
+  }
+  #modeSwitch button.active { background: var(--accent); color: #fff; box-shadow: 0 2px 8px rgba(233,69,96,.4); }
+  #controlsHint { font-size: 12px; color: #667; margin-left: 6px; white-space: nowrap; }
+  #clockDisplay { margin-left: auto; font-size: 13px; color: var(--muted); white-space: nowrap; padding: 5px 10px; background: var(--panel2); border-radius: 7px; }
+
+  /* ===== 视口 ===== */
+  #viewport { flex: 1; position: relative; overflow: hidden; }
+  #canvas3d { width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+  #canvas3d.dragging { cursor: grabbing; }
+  #coordTip {
+    position: absolute; left: 12px; bottom: 12px;
+    font-size: 12px; color: var(--muted);
+    background: rgba(15,20,40,.65); padding: 4px 10px; border-radius: 6px;
+    pointer-events: none; display: none;
+  }
+  #hoverInfo {
+    position: fixed; z-index: 90; pointer-events: none; display: none;
+    background: rgba(13,16,30,.94); border: 1px solid var(--line2);
+    border-radius: 8px; padding: 8px 12px; font-size: 12.5px;
+    box-shadow: 0 6px 20px rgba(0,0,0,.5); min-width: 120px;
+  }
+  #hoverInfo .hi-name { color: #fff; font-weight: 600; }
+  #hoverInfo .hi-coord { color: var(--muted); margin-top: 3px; }
+
+  /* ===== 底部操作栏 ===== */
+  #bottomBar {
+    position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+    display: none; align-items: center; gap: 8px;
+    background: rgba(22,33,62,.96); border: 1px solid var(--line2);
+    border-radius: 12px; padding: 10px 14px;
+    box-shadow: 0 10px 36px rgba(0,0,0,.55); z-index: 60;
+    animation: pop .18s ease;
+  }
+  @keyframes pop { from { transform: translateX(-50%) translateY(10px); opacity: 0; } to { transform: translateX(-50%); opacity: 1; } }
+  #bottomBar .bb-title { font-size: 13px; color: var(--muted); margin-right: 6px; white-space: nowrap; }
+
+  /* ===== 按钮 ===== */
+  .btn {
+    padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 13px; font-weight: 600; transition: all .2s; white-space: nowrap;
+  }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  .btn-primary { background: var(--line); color: var(--text); }
+  .btn-primary:hover:not(:disabled) { background: var(--line2); }
+  .btn-accent { background: var(--accent); color: #fff; }
+  .btn-accent:hover:not(:disabled) { background: var(--accent2); }
+  .btn-danger { background: #7a1f1f; color: #fff; }
+  .btn-danger:hover:not(:disabled) { background: #a12b2b; }
+  .btn-ghost { background: var(--panel2); color: var(--muted); border: 1px solid var(--line); }
+  .btn-ghost:hover:not(:disabled) { color: var(--text); background: var(--line); }
+
+  /* ===== 弹窗 ===== */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; z-index: 200;
+    background: rgba(5,7,15,.72);
+    justify-content: center; align-items: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 14px; padding: 20px 22px;
+    width: 560px; max-width: 94vw; max-height: 90vh; overflow-y: auto;
+    box-shadow: 0 16px 60px rgba(0,0,0,.6);
+    animation: popup .18s ease;
+  }
+  @keyframes popup { from { transform: translateY(12px) scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal.small { width: 380px; }
+  .modal h2 { font-size: 16px; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .modal h2 .dim { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+  /* 页签 */
+  .modal-tabs { display: flex; gap: 6px; margin-bottom: 16px; border-bottom: 1px solid var(--line); padding-bottom: 10px; }
+  .modal-tabs button {
+    border: none; background: var(--panel2); color: var(--muted);
+    padding: 8px 20px; border-radius: 8px; cursor: pointer; font-size: 13px; font-weight: 600;
+    transition: all .2s;
+  }
+  .modal-tabs button.active { background: var(--line); color: #fff; }
+
+  .cfg-row { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .cfg-row > label { font-size: 13px; color: var(--muted); min-width: 62px; }
+  .cfg-row .val { font-size: 13px; color: #fff; min-width: 44px; }
+
+  /* 贴图选择（单层水平滚动） */
+  .tex-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 6px; width: 100%; }
+  .tex-scroll::-webkit-scrollbar { height: 6px; }
+  .tex-scroll::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+  .tex-opt {
+    flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 5px;
+    padding: 7px 8px; background: var(--panel2); border: 2px solid transparent;
+    border-radius: 9px; cursor: pointer; transition: all .15s;
+  }
+  .tex-opt:hover { border-color: var(--line2); }
+  .tex-opt.active { border-color: var(--accent); background: #232a44; }
+  .tex-opt img { width: 64px; height: 16px; image-rendering: pixelated; }
+  .tex-opt span { font-size: 11px; color: var(--muted); }
+
+  /* 长宽选择 */
+  .dim-group { display: flex; gap: 6px; }
+  .dim-btn {
+    width: 42px; height: 34px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--muted); cursor: pointer; font-size: 14px; font-weight: 600;
+    transition: all .15s;
+  }
+  .dim-btn.active { background: var(--line2); color: #fff; border-color: #2a6aa0; }
+  .dim-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+  /* 楼层滑块 */
+  input[type="range"] { accent-color: var(--accent); cursor: pointer; flex: 1; min-width: 90px; }
+
+  /* 颜色 */
+  .color-swatch {
+    width: 34px; height: 34px; border-radius: 8px; border: 2px solid var(--line2);
+    background: #fff; position: relative; overflow: hidden;
+  }
+  .color-swatch.default::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px;
+    background: repeating-linear-gradient(45deg,#f44 0 4px,#fff 4px 8px);
+  }
+
+  /* 类型选择 */
+  .type-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; width: 100%; }
+  .type-btn {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 9px 6px; border-radius: 8px; border: 1px solid var(--line);
+    background: var(--panel2); color: var(--muted); cursor: pointer; font-size: 13px;
+    transition: all .15s;
+  }
+  .type-btn:hover { border-color: var(--line2); }
+  .type-btn.active { background: var(--line2); color: #fff; border-color: #2a6aa0; }
+  .type-btn .emo { font-size: 16px; }
+
+  .cfg-row input[type="text"] {
+    flex: 1; padding: 9px 12px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--panel2); color: var(--text); font-size: 14px; outline: none; min-width: 120px;
+  }
+  .cfg-row input[type="text"]:focus { border-color: var(--accent); }
+  .hint { font-size: 12px; color: #667; margin: -4px 0 12px; }
+
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; align-items: center; }
+  .modal-actions .spacer { flex: 1; }
+
+  /* 设置弹窗 */
+  .set-row { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+  .set-row > label { font-size: 13px; color: var(--muted); min-width: 68px; }
+  .set-row .val { font-size: 13px; color: #fff; min-width: 44px; }
+  .set-row.actions { justify-content: flex-start; }
+  .set-note { font-size: 11.5px; color: #667; margin-top: 4px; }
+
+  /* 开关 */
+  .switch { position: relative; display: inline-block; width: 44px; height: 24px; flex-shrink: 0; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .switch .knob {
+    position: absolute; inset: 0; border-radius: 12px; background: #3a4160;
+    transition: background .2s; cursor: pointer;
+  }
+  .switch .knob::before {
+    content: ""; position: absolute; width: 18px; height: 18px; left: 3px; top: 3px;
+    border-radius: 50%; background: #fff; transition: transform .2s;
+  }
+  .switch input:checked + .knob { background: var(--accent); }
+  .switch input:checked + .knob::before { transform: translateX(20px); }
+
+  /* 颜色选择弹窗 */
+  .color-big { display: flex; justify-content: center; padding: 8px 0 4px; }
+  .color-big input[type="color"] {
+    width: 170px; height: 54px; border: 1px solid var(--line2); border-radius: 10px;
+    background: none; padding: 0; cursor: pointer;
+  }
+  .color-big input[type="color"]::-webkit-color-swatch-wrapper { padding: 4px; }
+  .color-big input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 26px; transform: translateX(-50%) translateY(10px);
+    background: rgba(22,33,62,.97); border: 1px solid var(--line2); color: var(--text);
+    padding: 9px 20px; border-radius: 20px; font-size: 13px; z-index: 300;
+    opacity: 0; pointer-events: none; transition: all .25s;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 720px) {
+    #controlsHint { display: none; }
+    #titleBar h1 .sub { display: none; }
+    #toolbar { padding: 0 8px; }
+    .modal { padding: 16px 14px; }
+    .type-grid { grid-template-columns: repeat(3, 1fr); }
+    #bottomBar { width: 94vw; justify-content: center; flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- 标题栏 -->
+  <header id="titleBar">
+    <h1>🏙 网格城市<span class="sub">GRID CITY</span></h1>
+    <button class="icon-btn" id="btnSettings" title="系统设置">⚙</button>
+  </header>
+
+  <!-- 工具栏 -->
+  <div id="toolbar">
+    <div id="modeSwitch">
+      <button data-mode="view" class="active">观赏模式</button>
+      <button data-mode="edit">编辑模式</button>
+    </div>
+    <span id="controlsHint">滚轮缩放 · 中键拖拽旋转 · 左键拖拽平移 · WASD 平移</span>
+    <span id="clockDisplay">🌤 12:00</span>
+  </div>
+
+  <!-- 游戏视口 -->
+  <div id="viewport">
+    <canvas id="canvas3d"></canvas>
+    <div id="coordTip"></div>
+    <div id="hoverInfo">
+      <div class="hi-name"></div>
+      <div class="hi-coord"></div>
+    </div>
+
+    <!-- 底部操作栏 -->
+    <div id="bottomBar">
+      <span class="bb-title" id="bbTitle">格子 (0, 0)</span>
+      <button class="btn btn-accent" id="btnNewBuilding">新建 楼栋</button>
+      <button class="btn btn-primary" disabled title="暂未开放">道路</button>
+      <button class="btn btn-primary" disabled title="暂未开放">地块</button>
+      <button class="btn btn-ghost" id="btnDeselect">取消</button>
+    </div>
+  </div>
+
+  <!-- 楼栋配置弹窗 -->
+  <div class="modal-overlay" id="configModal">
+    <div class="modal">
+      <h2 id="configTitle"><span id="configTitleText">新建楼栋</span> <span class="dim" id="configCell"></span></h2>
+      <div class="modal-tabs">
+        <button class="active" data-tab="basic">基础配置</button>
+        <button data-tab="info">信息配置</button>
+      </div>
+
+      <div class="tab-page" id="tabBasic">
+        <div class="cfg-row">
+          <label>立面纹理</label>
+          <div class="tex-scroll" id="texScroll"></div>
+        </div>
+        <div class="cfg-row">
+          <label>平面长宽</label>
+          <span class="val" style="min-width:14px">长</span>
+          <div class="dim-group" id="wBtns"></div>
+          <span class="val" style="min-width:14px">宽</span>
+          <div class="dim-group" id="dBtns"></div>
+        </div>
+        <div class="cfg-row">
+          <label>楼层数</label>
+          <input type="range" id="floorsSlider" min="1" max="40" value="12">
+          <span class="val" id="floorsVal">12 层</span>
+        </div>
+        <div class="cfg-row">
+          <label>建筑颜色</label>
+          <div class="color-swatch" id="colorSwatch"></div>
+          <button class="btn btn-ghost" id="btnPickColor">自选颜色</button>
+          <button class="btn btn-ghost" id="btnResetColor">默认</button>
+        </div>
+      </div>
+
+      <div class="tab-page" id="tabInfo" style="display:none">
+        <div class="cfg-row">
+          <label>建筑类型</label>
+          <div class="type-grid" id="typeGrid"></div>
+        </div>
+        <div class="cfg-row">
+          <label>建筑名称</label>
+          <input type="text" id="nameInput" maxlength="24" placeholder="例如：中心大厦（选填）">
+        </div>
+        <div class="hint">同时填写类型与名称后，楼顶将显示「emoji + 名称」的悬浮命名标签</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-danger" id="btnRemoveBuilding" style="display:none">移除建筑</button>
+        <span class="spacer"></span>
+        <button class="btn btn-primary" id="btnConfigCancel">取消</button>
+        <button class="btn btn-accent" id="btnConfigConfirm">放置楼栋</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 颜色选择弹窗 -->
+  <div class="modal-overlay" id="colorModal">
+    <div class="modal small">
+      <h2>选择建筑颜色</h2>
+      <div class="color-big"><input type="color" id="colorInput" value="#ffffff"></div>
+      <div class="cfg-row" style="justify-content:center">
+        <span class="val" id="colorHex">#ffffff</span>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="btnColorCancel">取消</button>
+        <button class="btn btn-accent" id="btnColorOk">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 系统设置弹窗 -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal">
+      <h2>系统设置</h2>
+      <div class="set-row">
+        <label>时间</label>
+        <input type="range" id="setTimeSlider" min="0" max="24" step="1" value="12">
+        <span class="val" id="setTimeVal">12:00</span>
+      </div>
+      <div class="set-row">
+        <label>命名标签</label>
+        <label class="switch"><input type="checkbox" id="setLabels" checked><span class="knob"></span></label>
+      </div>
+      <div class="set-row">
+        <label>悬停信息</label>
+        <label class="switch"><input type="checkbox" id="setHoverInfo"><span class="knob"></span></label>
+      </div>
+      <div class="set-row actions">
+        <button class="btn btn-primary" id="btnManualSave">手动保存</button>
+        <button class="btn btn-danger" id="btnClearCity">清空城市</button>
+      </div>
+      <div class="set-note">已放置的建筑配置每 1 分钟自动保存至浏览器，刷新页面自动恢复</div>
+    </div>
+  </div>
+
+  <!-- 通用确认弹窗 -->
+  <div class="modal-overlay" id="confirmModal">
+    <div class="modal small">
+      <h2 id="confirmTitle">确认</h2>
+      <p id="confirmMsg" style="font-size:13px;color:var(--muted);line-height:1.6"></p>
+      <div class="modal-actions">
+        <button class="btn btn-primary" id="btnConfirmNo">取消</button>
+        <button class="btn btn-danger" id="btnConfirmYes">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script src="three.min.js"></script>
+  <script src="res_wall.js"></script>
+  <script>
+  // ============================================================
+  //  网格城市 · 主程序
+  // ============================================================
+  'use strict';
+
+  // 版本标记（用于检测浏览器缓存了旧版文件）
+  window.__VC__ = 'v20260906-final';
+
+  const CELL = 4;                 // 一个格子 = 4 x 4 单位（贴图 64px 宽 = 4 单位）
+  const FOG_COLOR = new THREE.Color(0x87b8e8);
+  const BKG_COLOR = 0x87b8e8;
+
+  // ---- 建筑类型（每个类型有对应 emoji） ----
+  const BUILDING_TYPES = [
+    { name: '住宅', emoji: '🏠' },
+    { name: '商业', emoji: '🏬' },
+    { name: '办公', emoji: '🏢' },
+    { name: '工业', emoji: '🏭' },
+    { name: '农业', emoji: '🌾' },
+    { name: '公园', emoji: '🌳' },
+    { name: '公共', emoji: '🏛️' },
+    { name: '娱乐', emoji: '🎪' },
+    { name: '地标', emoji: '🗼' },
+  ];
+
+  // ---- 全局状态 ----
+  const settings = { time: 12, labels: true, hoverInfo: false };
+  let mode = 'view';                 // 'view' | 'edit'
+  let selectedCell = null;           // {x, z}
+  let hoverCell = null;              // {x, z}
+  const buildings = new Map();       // key 'x,z' -> building
+
+  const cellKey = (x, z) => x + ',' + z;
+  const getBuilding = (cell) => buildings.get(cellKey(cell.x, cell.z));
+  const hasBuilding = (cell) => buildings.has(cellKey(cell.x, cell.z));
+
+  // ============================================================
+  //  Three.js 场景
+  // ============================================================
+  let canvas = document.getElementById('canvas3d');
+  let renderer = null;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  } catch (err) {
+    // 画布已被占用其他类型的 context（无法创建 WebGL）时，换一张新画布重试，保证场景可用
+    console.warn('WebGL 初始化失败，切换新画布重试：', err && err.message);
+    const fresh = document.createElement('canvas');
+    fresh.id = 'canvas3d';
+    if (canvas && canvas.parentNode) canvas.parentNode.replaceChild(fresh, canvas);
+    canvas = fresh;
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.setClearColor(BKG_COLOR, 1);
+  renderer.setAnimationLoop(animate);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(50, 1, 0.5, 2000);
+  camera.position.set(20, 18, 20);
+
+  // ---- 共享 uniform（时间/雾色 全局生效） ----
+  const envUniforms = {
+    uSunIntensity: { value: 1.0 },
+    uFogColor: { value: FOG_COLOR },
+  };
+
+  // ---- 贴图资源（init 时从 res_wall.js 加载） ----
+  let textures = [];
+
+  // ============================================================
+  //  Shader（复刻 Show 项目的窗户亮化 / 时间明度逻辑）
+  // ============================================================
+  const vertShader = `
+    varying vec2 vUV;
+    varying vec3 vNormal;
+    varying float vDist;
+    void main() {
+      vUV = uv;
+      vNormal = normalMatrix * normal;
+      vec4 mv = modelViewMatrix * vec4(position, 1.0);
+      vDist = -mv.z;
+      gl_Position = projectionMatrix * mv;
+    }
+  `;
+
+  const fragShader = `
+    uniform sampler2D uTex;
+    uniform sampler2D uMaskTex;
+    uniform float uUseTex;          // 1.0 墙面 / 0.0 顶底面 / -1.0 地面
+    uniform vec3 uBuildingColor;
+    uniform vec3 uDominantColor;
+    uniform float uSeed;
+    uniform float uSunIntensity;
+    uniform vec3 uFogColor;
+
+    varying vec2 vUV;
+    varying vec3 vNormal;
+    varying float vDist;
+
+    float hash(vec2 cell) {
+      return fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453 + uSeed);
+    }
+
+    void main() {
+      vec3 color;
+
+      if (uUseTex > 0.5) {
+        // ===== 墙面 =====
+        vec4 texColor = texture2D(uTex, vUV);
+        color = texColor.rgb * uBuildingColor;
+        float facadeBrightness = mix(0.35, 1.0, uSunIntensity);
+        color *= facadeBrightness;
+
+        // 窗户亮化（独立图层，不覆盖窗户效果）
+        float mask = texture2D(uMaskTex, vUV).r;
+        if (mask > 0.5) {
+          vec2 cellId = vec2(floor(vUV.x * 4.0), floor(vUV.y));
+          float hashVal = hash(cellId);
+          vec3 glow = vec3(0.0);
+          float glowIntensity = 0.0;
+          if (hashVal < 0.64) {
+            color *= 0.75;                                   // 暗窗
+          } else if (hashVal < 0.82) {
+            glow = vec3(1.0, 0.80, 0.35);                    // 中亮窗
+            glowIntensity = 0.55;
+          } else {
+            glow = vec3(1.0, 0.90, 0.50);                    // 亮窗
+            glowIntensity = 0.85;
+          }
+          float windowVisibility = 1.0 - uSunIntensity * 0.88;
+          color += glow * glowIntensity * windowVisibility;
+        }
+      } else if (uUseTex < -0.5) {
+        // ===== 地面 =====
+        color = vec3(0.8, 0.8, 0.8);
+        color *= mix(0.5, 1.0, uSunIntensity);
+      } else {
+        // ===== 顶面 / 底面 =====
+        color = uDominantColor * uBuildingColor;
+        color *= mix(0.35, 1.0, uSunIntensity);
+      }
+
+      // 方向光（随时间减弱）
+      vec3 lightDir = normalize(vec3(0.4, 0.8, 0.6));
+      float diff = max(dot(vNormal, lightDir), 0.0);
+      float ambient = mix(0.25, 0.55, uSunIntensity);
+      float lightStrength = mix(0.3, 0.7, uSunIntensity);
+      color *= (ambient + diff * lightStrength);
+
+      // 远景淡出（无限城市感）
+      float fade = smoothstep(180.0, 420.0, vDist);
+      color = mix(color, uFogColor, fade);
+      gl_FragColor = vec4(color, 1.0);
+    }
+  `;
+
+  function makeBuildingMaterial(b, useTex) {
+    const t = textures[b.tex];
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uTex: { value: t.tex },
+        uMaskTex: { value: t.mask },
+        uUseTex: { value: useTex },
+        uBuildingColor: { value: new THREE.Color(b.color || '#ffffff') },
+        uDominantColor: { value: new THREE.Vector3(t.dominantColor[0], t.dominantColor[1], t.dominantColor[2]) },
+        uSeed: { value: b.seed },
+        uSunIntensity: envUniforms.uSunIntensity,
+        uFogColor: envUniforms.uFogColor,
+      },
+      vertexShader: vertShader,
+      fragmentShader: fragShader,
+      side: THREE.FrontSide,
+    });
+  }
+
+  function makeGroundMaterial() {
+    const t = textures && textures.length ? textures[0] : null;
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        uTex: { value: t ? t.tex : null },
+        uMaskTex: { value: t ? t.mask : null },
+        uUseTex: { value: -1.0 },
+        uBuildingColor: { value: new THREE.Color('#ffffff') },
+        uDominantColor: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
+        uSeed: { value: 0 },
+        uSunIntensity: envUniforms.uSunIntensity,
+        uFogColor: envUniforms.uFogColor,
+      },
+      vertexShader: vertShader,
+      fragmentShader: fragShader,
+      side: THREE.DoubleSide,
+    });
+  }
+
+  // ============================================================
+  //  几何体构建（贴图 UV 按长宽裁切：4 单位 = 64px 全图）
+  // ============================================================
+  function makeBoxGeometry(W, D, floors) {
+    const H = floors;
+    const positions = [], normals = [], uvs = [], indices = [];
+    let vi = 0;
+    function face(p0, p1, p2, p3, n, u0, u1, v1, v0) {
+      positions.push(...p0, ...p1, ...p2, ...p3);
+      for (let i = 0; i < 4; i++) normals.push(...n);
+      uvs.push(u0, v1, u1, v1, u1, v0, u0, v0);
+      indices.push(vi, vi + 1, vi + 2, vi, vi + 2, vi + 3);
+      vi += 4;
+    }
+    const uF = W / 4.0;   // 正面贴图宽度（4 单位 = 全图 64px）
+    const uS = D / 4.0;   // 侧面贴图宽度（裁切：从左到右）
+    // 前面 z = D/2
+    face([-W/2, 0, D/2], [W/2, 0, D/2], [W/2, H, D/2], [-W/2, H, D/2], [0,0,1], 0, uF, floors, 0);
+    // 后面 z = -D/2
+    face([W/2, 0, -D/2], [-W/2, 0, -D/2], [-W/2, H, -D/2], [W/2, H, -D/2], [0,0,-1], 0, uF, floors, 0);
+    // 右面 x = W/2
+    face([W/2, 0, D/2], [W/2, 0, -D/2], [W/2, H, -D/2], [W/2, H, D/2], [1,0,0], 0, uS, floors, 0);
+    // 左面 x = -W/2
+    face([-W/2, 0, -D/2], [-W/2, 0, D/2], [-W/2, H, D/2], [-W/2, H, -D/2], [-1,0,0], 0, uS, floors, 0);
+    // 顶面 y = H
+    face([-W/2, H, D/2], [W/2, H, D/2], [W/2, H, -D/2], [-W/2, H, -D/2], [0,1,0], 0, 1, 1, 0);
+    // 底面 y = 0
+    face([-W/2, 0, -D/2], [W/2, 0, -D/2], [W/2, 0, D/2], [-W/2, 0, D/2], [0,-1,0], 0, 1, 1, 0);
+
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(positions), 3));
+    geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(normals), 3));
+    geo.setAttribute('uv', new THREE.BufferAttribute(new Float32Array(uvs), 2));
+    geo.setIndex(indices);
+    geo.addGroup(0, 24, 0);   // 四面墙
+    geo.addGroup(24, 12, 1);  // 顶面 + 底面
+    return geo;
+  }
+
+  // ============================================================
+  //  地面（跟随相机，视觉上无限）
+  // ============================================================
+  const groundGeo = new THREE.PlaneGeometry(4000, 4000);
+  groundGeo.rotateX(-Math.PI / 2);
+  const ground = new THREE.Mesh(groundGeo, null);
+  ground.material = makeGroundMaterial();
+  ground.position.y = -0.02;
+  scene.add(ground);
+
+  // ============================================================
+  //  格子高亮
+  // ============================================================
+  const highlightGeo = new THREE.PlaneGeometry(CELL, CELL);
+  highlightGeo.rotateX(-Math.PI / 2);
+  const fillMat = new THREE.MeshBasicMaterial({ color: 0x66c0ff, transparent: true, opacity: 0.16, depthWrite: false });
+  const fillMesh = new THREE.Mesh(highlightGeo, fillMat);
+  fillMesh.position.y = 0.03;
+  fillMesh.visible = false;
+  scene.add(fillMesh);
+
+  function makeBorderLine(color) {
+    const pts = [new THREE.Vector3(0, 0, 0), new THREE.Vector3(CELL, 0, 0), new THREE.Vector3(CELL, 0, CELL), new THREE.Vector3(0, 0, CELL)];
+    const g = new THREE.BufferGeometry().setFromPoints(pts);
+    const line = new THREE.LineLoop(g, new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.9, depthWrite: false }));
+    line.position.y = 0.04;
+    line.visible = false;
+    scene.add(line);
+    return line;
+  }
+  const hoverBorder = makeBorderLine(0x66c0ff);
+  const selectedBorder = makeBorderLine(0xe94560);
+
+  function updateHighlights() {
+    // 悬停高亮
+    if (hoverCell) {
+      const occ = hasBuilding(hoverCell);
+      fillMat.color.setHex(occ ? 0xff9a4d : 0x66c0ff);
+      fillMat.opacity = occ ? 0.14 : 0.16;
+      hoverBorder.material.color.setHex(occ ? 0xff9a4d : 0x66c0ff);
+      fillMesh.position.set(hoverCell.x * CELL + 2, 0.03, hoverCell.z * CELL + 2);
+      hoverBorder.position.set(hoverCell.x * CELL, 0.04, hoverCell.z * CELL);
+      fillMesh.visible = true;
+      hoverBorder.visible = true;
+    } else {
+      fillMesh.visible = false;
+      hoverBorder.visible = false;
+    }
+    // 选中高亮
+    if (selectedCell) {
+      selectedBorder.position.set(selectedCell.x * CELL, 0.05, selectedCell.z * CELL);
+      selectedBorder.visible = true;
+    } else {
+      selectedBorder.visible = false;
+    }
+  }
+
+  // ============================================================
+  //  贴图资源（res_wall.js 自动读取 → 生成窗户遮罩/主色调）
+  // ============================================================
+  function loadImage(src) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = reject;
+      img.src = src;
+    });
+  }
+
+  // 提取贴图中面积最大的颜色
+  function extractDominantColor(img) {
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    c.width = 64; c.height = 16;
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, 64, 16).data;
+    const counts = {};
+    for (let i = 0; i < px.length; i += 4) {
+      let r = Math.min(255, Math.max(0, Math.round(px[i] / 16) * 16));
+      let g = Math.min(255, Math.max(0, Math.round(px[i+1] / 16) * 16));
+      let b = Math.min(255, Math.max(0, Math.round(px[i+2] / 16) * 16));
+      const key = r + ',' + g + ',' + b;
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    let maxCount = 0, dominant = '128,128,128';
+    for (const k in counts) if (counts[k] > maxCount) { maxCount = counts[k]; dominant = k; }
+    return dominant.split(',').map(n => parseInt(n) / 255);
+  }
+
+  // 识别贴图最暗的两种颜色 → 窗户遮罩
+  function generateWindowMask(img) {
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    c.width = 64; c.height = 16;
+    ctx.drawImage(img, 0, 0);
+    const px = ctx.getImageData(0, 0, 64, 16).data;
+
+    const counts = {};
+    for (let i = 0; i < px.length; i += 4) {
+      let r = Math.min(255, Math.max(0, Math.round(px[i] / 16) * 16));
+      let g = Math.min(255, Math.max(0, Math.round(px[i+1] / 16) * 16));
+      let b = Math.min(255, Math.max(0, Math.round(px[i+2] / 16) * 16));
+      const key = r + ',' + g + ',' + b;
+      counts[key] = (counts[key] || 0) + 1;
+    }
+    const list = [];
+    for (const k in counts) {
+      const p = k.split(',');
+      list.push({ key: k, brightness: (parseInt(p[0]) + parseInt(p[1]) + parseInt(p[2])) / 3, count: counts[k] });
+    }
+    list.sort((a, b) => a.brightness - b.brightness);
+    const darkest = new Set();
+    for (let i = 0; i < Math.min(2, list.length); i++) darkest.add(list[i].key);
+
+    const mask = new Uint8Array(64 * 16 * 4);
+    for (let y = 0; y < 16; y++) {
+      for (let x = 0; x < 64; x++) {
+        const idx = (y * 64 + x) * 4;
+        let r = Math.min(255, Math.max(0, Math.round(px[idx] / 16) * 16));
+        let g = Math.min(255, Math.max(0, Math.round(px[idx+1] / 16) * 16));
+        let b = Math.min(255, Math.max(0, Math.round(px[idx+2] / 16) * 16));
+        const isWindow = darkest.has(r + ',' + g + ',' + b) ? 255 : 0;
+        mask[idx] = mask[idx+1] = mask[idx+2] = isWindow;
+        mask[idx+3] = 255;
+      }
+    }
+    return mask;
+  }
+
+  async function initTextures() {
+    if (!IMAGES || !IMAGES.length) return;
+    const list = [];
+    for (const item of IMAGES) {
+      try {
+        const img = await loadImage(item.data);
+        const tex = new THREE.Texture(img);
+        tex.minFilter = tex.magFilter = THREE.NearestFilter;
+        tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+        tex.generateMipmaps = false;
+        tex.needsUpdate = true;
+
+        const mask = new THREE.DataTexture(generateWindowMask(img), 64, 16, THREE.RGBAFormat);
+        mask.minFilter = mask.magFilter = THREE.NearestFilter;
+        mask.wrapS = mask.wrapT = THREE.RepeatWrapping;
+        mask.needsUpdate = true;
+
+        list.push({ tex, mask, dominantColor: extractDominantColor(img) });
+      } catch (e) {
+        console.warn('贴图加载失败', item.name, e);
+      }
+    }
+    textures = list;
+  }
+
+  // ============================================================
+  //  命名标签（胶囊 Sprite，始终朝向玩家、不被遮挡）
+  // ============================================================
+  function buildLabelSprite(b) {
+    if (!b.type || !b.name) return null;
+    const emoji = BUILDING_TYPES.find(t => t.name === b.type);
+    const text = (emoji ? emoji.emoji + ' ' : '') + b.name;
+
+    const dpr = 2;
+    const fontPx = 26;
+    const font = '700 ' + fontPx + 'px system-ui, "Segoe UI", "PingFang SC", sans-serif';
+    const tmp = document.createElement('canvas').getContext('2d');
+    tmp.font = font;
+    const textW = tmp.measureText(text).width;
+    const padX = 28, h = 46;
+    const w = Math.ceil(textW + padX * 2);
+
+    const c = document.createElement('canvas');
+    c.width = w * dpr; c.height = h * dpr;
+    const ctx = c.getContext('2d');
+    ctx.scale(dpr, dpr);
+
+    const r = h / 2;
+    const grad = ctx.createLinearGradient(0, 0, 0, h);
+    grad.addColorStop(0, 'rgba(30,38,66,0.95)');
+    grad.addColorStop(1, 'rgba(15,19,38,0.96)');
+    roundRectPath(ctx, 0, 0, w, h, r);
+    ctx.fillStyle = grad;
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = 'rgba(233,69,96,0.92)';
+    roundRectPath(ctx, 1.5, 1.5, w - 3, h - 3, r - 1.5);
+    ctx.stroke();
+
+    ctx.fillStyle = '#fff';
+    ctx.font = font;
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, padX, h / 2 + 1);
+
+    const tex = new THREE.CanvasTexture(c);
+    tex.minFilter = tex.magFilter = THREE.LinearFilter;
+    tex.needsUpdate = true;
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, depthWrite: false, sizeAttenuation: true });
+    const sprite = new THREE.Sprite(mat);
+    const scaleY = 1.3;
+    sprite.scale.set((w / h) * scaleY, scaleY, 1);
+    sprite.renderOrder = 999;
+    return sprite;
+  }
+
+  function roundRectPath(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // ============================================================
+  //  建筑对象的创建 / 更新 / 删除
+  // ============================================================
+  function addBuilding(data) {
+    const b = Object.assign({ color: null, type: null, name: '' }, data);
+    if (b.tex == null || b.tex < 0 || b.tex >= textures.length) b.tex = 0; // 贴图丢失 → 第一张贴图
+    b.w = Math.max(1, Math.min(4, b.w));
+    b.d = Math.max(1, Math.min(4, b.d));
+    b.floors = Math.max(1, Math.min(40, b.floors));
+    if (b.seed == null) b.seed = Math.random();
+
+    const key = cellKey(b.cx, b.cz);
+    const geo = makeBoxGeometry(b.w, b.d, b.floors);
+    const wallsMat = makeBuildingMaterial(b, 1.0);
+    const topMat = makeBuildingMaterial(b, 0.0);
+    const mesh = new THREE.Mesh(geo, [wallsMat, topMat]);
+    mesh.position.set(b.cx * CELL + 2, 0, b.cz * CELL + 2);
+    scene.add(mesh);
+
+    const label = buildLabelSprite(b);
+    if (label) {
+      label.position.set(b.cx * CELL + 2, b.floors + 1.3, b.cz * CELL + 2);
+      label.visible = settings.labels;
+      scene.add(label);
+    }
+
+    const obj = { geo, wallsMat, topMat, mesh, label };
+    b.obj = obj;
+    buildings.set(key, b);
+    return b;
+  }
+
+  function updateBuilding(b, draft) {
+    b.tex = draft.tex;
+    b.w = draft.w;
+    b.d = draft.d;
+    b.floors = draft.floors;
+    b.color = draft.color;
+    b.type = draft.type;
+    b.name = draft.name;
+
+    // 重建几何与材质
+    const obj = b.obj;
+    scene.remove(obj.mesh);
+    obj.geo.dispose();
+    obj.wallsMat.dispose();
+    obj.topMat.dispose();
+
+    const geo = makeBoxGeometry(b.w, b.d, b.floors);
+    const wallsMat = makeBuildingMaterial(b, 1.0);
+    const topMat = makeBuildingMaterial(b, 0.0);
+    const mesh = new THREE.Mesh(geo, [wallsMat, topMat]);
+    mesh.position.set(b.cx * CELL + 2, 0, b.cz * CELL + 2);
+    scene.add(mesh);
+
+    // 重建命名标签
+    if (obj.label) { scene.remove(obj.label); obj.label.material.map.dispose(); obj.label.material.dispose(); }
+    const label = buildLabelSprite(b);
+    if (label) {
+      label.position.set(b.cx * CELL + 2, b.floors + 1.3, b.cz * CELL + 2);
+      label.visible = settings.labels;
+      scene.add(label);
+    }
+
+    b.obj = { geo, wallsMat, topMat, mesh, label };
+  }
+
+  function removeBuilding(b) {
+    const obj = b.obj;
+    scene.remove(obj.mesh);
+    obj.geo.dispose();
+    obj.wallsMat.dispose();
+    obj.topMat.dispose();
+    if (obj.label) {
+      scene.remove(obj.label);
+      if (obj.label.material.map) obj.label.material.map.dispose();
+      obj.label.material.dispose();
+    }
+    buildings.delete(cellKey(b.cx, b.cz));
+  }
+
+  function clearAllBuildings() {
+    for (const b of [...buildings.values()]) removeBuilding(b);
+    clearSelection();
+    updateHighlights();
+  }
+
+  function updateLabelsVisibility() {
+    for (const b of buildings.values()) {
+      if (b.obj.label) b.obj.label.visible = settings.labels;
+    }
+  }
+
+  // ============================================================
+  //  相机控制：滚轮缩放 / 中键旋转 / 左键平移 / WASD
+  // ============================================================
+  const target = new THREE.Vector3(0, 0, 0);
+  let theta = Math.PI / 4;
+  let phi = 0.85;
+  let radius = 26;
+  const up = new THREE.Vector3(0, 1, 0);
+  const keys = new Set();
+
+  function clampPhi() { phi = Math.max(0.12, Math.min(1.45, phi)); }
+  function clampRadius() { radius = Math.max(7, Math.min(400, radius)); }
+
+  function cameraDir() {
+    const dir = new THREE.Vector3();
+    camera.getWorldDirection(dir);
+    const fwd = new THREE.Vector3(dir.x, 0, dir.z);
+    if (fwd.lengthSq() < 1e-6) fwd.set(0, 0, -1);
+    fwd.normalize();
+    const right = new THREE.Vector3().crossVectors(fwd, up).normalize();
+    return { fwd, right };
+  }
+
+  function updateCamera(dt) {
+    const { fwd, right } = cameraDir();
+    const spd = radius * 3.2 * dt;
+    if (keys.has('KeyW') || keys.has('ArrowUp')) target.addScaledVector(fwd, spd);
+    if (keys.has('KeyS') || keys.has('ArrowDown')) target.addScaledVector(fwd, -spd);
+    if (keys.has('KeyD') || keys.has('ArrowRight')) target.addScaledVector(right, spd);
+    if (keys.has('KeyA') || keys.has('ArrowLeft')) target.addScaledVector(right, -spd);
+
+    camera.position.set(
+      target.x + radius * Math.cos(phi) * Math.sin(theta),
+      target.y + radius * Math.sin(phi),
+      target.z + radius * Math.cos(phi) * Math.cos(theta)
+    );
+    camera.lookAt(target);
+  }
+
+  function panBy(dx, dy) {
+    const { fwd, right } = cameraDir();
+    const wpp = 2 * radius * Math.tan(camera.fov * Math.PI / 360) / Math.max(1, canvas.clientHeight);
+    target.addScaledVector(right, -dx * wpp);
+    target.addScaledVector(fwd, dy * wpp);
+  }
+
+  // ---- 指针事件 ----
+  const pointers = new Map();
+  let pState = { x: 0, y: 0, moved: false, mode: 'pan', t: 0 };
+  let lastPinchDist = 0;
+
+  canvas.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1) {
+      pState = { x: e.clientX, y: e.clientY, moved: false, mode: (e.pointerType === 'mouse' && e.button === 1) ? 'rotate' : 'pan', t: performance.now() };
+      canvas.classList.add('dragging');
+    }
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      lastPinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+    }
+    try { canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId); } catch (err) { /* 忽略无活动指针的捕获失败 */ }
+  });
+
+  canvas.addEventListener('pointermove', (e) => {
+    const p = pointers.get(e.pointerId);
+    if (!p) { handleHover(e); return; }
+    const dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (Math.abs(e.clientX - pState.x) + Math.abs(e.clientY - pState.y) > 5) pState.moved = true;
+
+    if (pointers.size === 1) {
+      if (pState.mode === 'rotate') { theta -= dx * 0.008; phi += dy * 0.008; clampPhi(); }
+      else panBy(dx, dy);
+    } else if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const dist = Math.hypot(a.x - b.x, a.y - b.y);
+      if (lastPinchDist > 0) {
+        radius *= lastPinchDist / dist;
+        clampRadius();
+      }
+      lastPinchDist = dist;
+    }
+  });
+
+  function endPointer(e) {
+    const wasClick = pointers.size === 1 && !pState.moved && performance.now() - pState.t < 600;
+    pointers.delete(e.pointerId);
+    if (pointers.size === 0) {
+      canvas.classList.remove('dragging');
+      if (wasClick) handleClick(e);
+    }
+    if (pointers.size < 2) lastPinchDist = 0;
+  }
+  canvas.addEventListener('pointerup', endPointer);
+  canvas.addEventListener('pointercancel', endPointer);
+  canvas.addEventListener('pointerleave', () => {
+    if (pointers.size === 0) {
+      hoverCell = null;
+      updateHighlights();
+      hideHoverInfo();
+      document.getElementById('coordTip').style.display = 'none';
+    }
+  });
+  canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+  // 中键自动滚动阻止
+  canvas.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
+
+  canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    radius *= Math.exp(e.deltaY * 0.0015);
+    clampRadius();
+  }, { passive: false });
+
+  window.addEventListener('keydown', (e) => keys.add(e.code));
+  window.addEventListener('keyup', (e) => keys.delete(e.code));
+
+  // ============================================================
+  //  拾取格子 / 悬停 / 点击
+  // ============================================================
+  const raycaster = new THREE.Raycaster();
+  const yPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+  const _hit = new THREE.Vector3();
+  const _ndc = new THREE.Vector2();
+
+  function pickCell(clientX, clientY) {
+    const rect = canvas.getBoundingClientRect();
+    _ndc.set(((clientX - rect.left) / rect.width) * 2 - 1, -((clientY - rect.top) / rect.height) * 2 + 1);
+    raycaster.setFromCamera(_ndc, camera);
+    if (!raycaster.ray.intersectPlane(yPlane, _hit)) return null;
+    return { x: Math.floor(_hit.x / CELL), z: Math.floor(_hit.z / CELL) };
+  }
+
+  function handleHover(e) {
+    const cell = pickCell(e.clientX, e.clientY);
+    hoverCell = cell;
+    updateHighlights();
+    const tip = document.getElementById('coordTip');
+    if (cell) { tip.textContent = `格子 (${cell.x}, ${cell.z})`; tip.style.display = 'block'; }
+    else tip.style.display = 'none';
+    updateHoverInfo(cell, e.clientX, e.clientY);
+  }
+
+  function handleClick(e) {
+    if (mode !== 'edit') return;
+    const cell = pickCell(e.clientX, e.clientY);
+    if (!cell) return;
+    if (hasBuilding(cell)) {
+      openConfigModal(getBuilding(cell));
+    } else {
+      if (selectedCell && selectedCell.x === cell.x && selectedCell.z === cell.z) clearSelection();
+      else selectCell(cell);
+    }
+  }
+
+  function selectCell(cell) {
+    selectedCell = { x: cell.x, z: cell.z };
+    const bar = document.getElementById('bottomBar');
+    document.getElementById('bbTitle').textContent = `格子 (${cell.x}, ${cell.z})`;
+    bar.style.display = 'flex';
+    updateHighlights();
+  }
+  function clearSelection() {
+    selectedCell = null;
+    document.getElementById('bottomBar').style.display = 'none';
+    updateHighlights();
+  }
+
+  // ============================================================
+  //  悬停信息（0.5s 后显示，鼠标移出立即隐藏）
+  // ============================================================
+  const hoverInfoEl = document.getElementById('hoverInfo');
+  let hoverKey = null, hoverTimer = null;
+
+  function updateHoverInfo(cell, x, y) {
+    if (!settings.hoverInfo || !cell) { resetHoverInfo(); return; }
+    const b = getBuilding(cell);
+    const named = b && b.type && b.name;
+    const key = named ? cellKey(cell.x, cell.z) : null;
+    if (key !== hoverKey) {
+      clearTimeout(hoverTimer);
+      hoverKey = key;
+      hideHoverInfo();
+      if (key) {
+        hoverTimer = setTimeout(() => {
+          const bb = getBuilding(cell);
+          if (bb && hoverKey === key) showHoverInfo(bb, x, y);
+        }, 500);
+      }
+    } else if (hoverInfoEl.style.display === 'block') {
+      positionHoverInfo(x, y);
+    }
+  }
+  function resetHoverInfo() { clearTimeout(hoverTimer); hoverKey = null; hideHoverInfo(); }
+  function hideHoverInfo() {
+    hoverInfoEl.style.display = 'none';
+    hoverInfoEl.querySelector('.hi-name').textContent = '';
+    hoverInfoEl.querySelector('.hi-coord').textContent = '';
+  }
+  function showHoverInfo(b, x, y) {
+    hoverInfoEl.querySelector('.hi-name').textContent = `${b.type} ${b.name}`;
+    hoverInfoEl.querySelector('.hi-coord').textContent = `坐标 (${b.cx}, ${b.cz})`;
+    positionHoverInfo(x, y);
+  }
+  function positionHoverInfo(x, y) {
+    hoverInfoEl.style.display = 'block';
+    let left = x + 16, top = y + 16;
+    const r = hoverInfoEl.getBoundingClientRect();
+    if (left + r.width > window.innerWidth - 8) left = x - r.width - 16;
+    if (top + r.height > window.innerHeight - 8) top = y - r.height - 16;
+    hoverInfoEl.style.left = left + 'px';
+    hoverInfoEl.style.top = top + 'px';
+  }
+
+  // ============================================================
+  //  楼栋配置弹窗
+  // ============================================================
+  const configModal = document.getElementById('configModal');
+  const editing = { mode: 'create', cell: null, building: null, draft: null };
+
+  // 渲染贴图缩略图（单层水平滚动）
+  const texScroll = document.getElementById('texScroll');
+  function renderTexList() {
+    texScroll.innerHTML = '';
+    if (!IMAGES || !IMAGES.length) { texScroll.innerHTML = '<span style="color:#667;font-size:12px">未找到贴图资源</span>'; return; }
+    IMAGES.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'tex-opt';
+      div.dataset.idx = idx;
+      div.innerHTML = `<img src="${item.data}" alt="${item.name}"><span>${item.name}</span>`;
+      div.addEventListener('click', () => {
+        editing.draft.tex = idx;
+        refreshModal();
+      });
+      texScroll.appendChild(div);
+    });
+  }
+
+  // 渲染长/宽按钮
+  const wBtns = document.getElementById('wBtns');
+  const dBtns = document.getElementById('dBtns');
+  function makeDimBtns(container, axis) {
+    for (let v = 1; v <= 4; v++) {
+      const btn = document.createElement('button');
+      btn.className = 'dim-btn';
+      btn.textContent = v;
+      btn.addEventListener('click', () => {
+        if (axis === 'w') editing.draft.w = v; else editing.draft.d = v;
+        refreshModal();
+      });
+      container.appendChild(btn);
+    }
+  }
+  makeDimBtns(wBtns, 'w');
+  makeDimBtns(dBtns, 'd');
+
+  // 渲染类型按钮
+  const typeGrid = document.getElementById('typeGrid');
+  BUILDING_TYPES.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'type-btn';
+    btn.dataset.name = t.name;
+    btn.innerHTML = `<span class="emo">${t.emoji}</span>${t.name}`;
+    btn.addEventListener('click', () => {
+      editing.draft.type = (editing.draft.type === t.name) ? null : t.name;
+      refreshModal();
+    });
+    typeGrid.appendChild(btn);
+  });
+
+  const floorsSlider = document.getElementById('floorsSlider');
+  const floorsVal = document.getElementById('floorsVal');
+  floorsSlider.addEventListener('input', () => {
+    editing.draft.floors = parseInt(floorsSlider.value);
+    floorsVal.textContent = floorsSlider.value + ' 层';
+  });
+
+  const nameInput = document.getElementById('nameInput');
+  nameInput.addEventListener('input', () => {
+    if (editing.draft) editing.draft.name = nameInput.value;
+  });
+
+  // 页签切换
+  document.querySelectorAll('.modal-tabs button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.modal-tabs button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tabBasic').style.display = btn.dataset.tab === 'basic' ? '' : 'none';
+      document.getElementById('tabInfo').style.display = btn.dataset.tab === 'info' ? '' : 'none';
+    });
+  });
+
+  function openConfigModal(buildingOrNull) {
+    const isEdit = !!buildingOrNull;
+    if (!isEdit && !selectedCell) { toast('请先选择一个空格子'); return; }
+    editing.mode = isEdit ? 'edit' : 'create';
+    editing.building = buildingOrNull || null;
+    editing.cell = isEdit ? { x: buildingOrNull.cx, z: buildingOrNull.cz } : selectedCell;
+
+    if (isEdit) {
+      editing.draft = {
+        tex: buildingOrNull.tex,
+        w: buildingOrNull.w, d: buildingOrNull.d, floors: buildingOrNull.floors,
+        color: buildingOrNull.color, type: buildingOrNull.type, name: buildingOrNull.name || '',
+      };
+    } else {
+      editing.draft = { tex: 0, w: 4, d: 4, floors: 12, color: null, type: null, name: '' };
+    }
+
+    document.getElementById('configTitleText').textContent = isEdit ? '修改楼栋' : '新建楼栋';
+    document.getElementById('configCell').textContent = `格子 (${editing.cell.x}, ${editing.cell.z})`;
+    document.getElementById('btnRemoveBuilding').style.display = isEdit ? '' : 'none';
+    document.getElementById('btnConfigConfirm').textContent = isEdit ? '确定更新' : '放置楼栋';
+    configModal.classList.add('active');
+    refreshModal();
+  }
+
+  function refreshModal() {
+    const d = editing.draft;
+    // 贴图
+    texScroll.querySelectorAll('.tex-opt').forEach(el => el.classList.toggle('active', parseInt(el.dataset.idx) === d.tex));
+    // 长宽
+    wBtns.querySelectorAll('.dim-btn').forEach((b, i) => {
+      b.classList.toggle('active', d.w === i + 1);
+      b.disabled = (i === 0 && d.d === 1);   // 长宽不能同时为 1
+    });
+    dBtns.querySelectorAll('.dim-btn').forEach((b, i) => {
+      b.classList.toggle('active', d.d === i + 1);
+      b.disabled = (i === 0 && d.w === 1);
+    });
+    // 楼层
+    floorsSlider.value = d.floors;
+    floorsVal.textContent = d.floors + ' 层';
+    // 颜色
+    const swatch = document.getElementById('colorSwatch');
+    swatch.classList.toggle('default', !d.color);
+    swatch.style.background = d.color || '#ffffff';
+    // 类型
+    typeGrid.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.name === d.type));
+    // 名称
+    document.getElementById('nameInput').value = d.name;
+  }
+
+  function onConfigConfirm() {
+    const d = editing.draft;
+    if (d.w === 1 && d.d === 1) { toast('平面长宽不能同时为 1'); return; }
+    if (editing.mode === 'create') {
+      const b = addBuilding({
+        cx: editing.cell.x, cz: editing.cell.z,
+        tex: d.tex, w: d.w, d: d.d, floors: d.floors,
+        color: d.color, type: d.type, name: d.name.trim(),
+        seed: Math.random(),
+      });
+      radius = Math.max(radius, b.floors * 1.5 + 8);
+      toast('楼栋已放置');
+    } else {
+      updateBuilding(editing.building, { ...d, name: d.name.trim() });
+      toast('楼栋已更新');
+    }
+    saveGame(false);
+    configModal.classList.remove('active');
+    clearSelection();
+  }
+
+  document.getElementById('btnConfigConfirm').addEventListener('click', onConfigConfirm);
+  document.getElementById('btnConfigCancel').addEventListener('click', () => configModal.classList.remove('active'));
+  document.getElementById('btnRemoveBuilding').addEventListener('click', () => {
+    if (editing.building) {
+      removeBuilding(editing.building);
+      saveGame(false);
+      toast('已移除该建筑');
+    }
+    configModal.classList.remove('active');
+    clearSelection();
+  });
+  // 用 pointerdown 而非 click 关闭背景：避免 pointerup 打开弹窗后紧随的兼容 click 事件误关
+  configModal.addEventListener('pointerdown', (e) => { if (e.target === configModal) configModal.classList.remove('active'); });
+
+  // ============================================================
+  //  颜色选择弹窗
+  // ============================================================
+  const colorModal = document.getElementById('colorModal');
+  const colorInput = document.getElementById('colorInput');
+  const colorHex = document.getElementById('colorHex');
+  colorInput.addEventListener('input', () => { colorHex.textContent = colorInput.value; });
+
+  document.getElementById('btnPickColor').addEventListener('click', () => {
+    colorInput.value = editing.draft.color || '#ffffff';
+    colorHex.textContent = colorInput.value;
+    colorModal.classList.add('active');
+  });
+  document.getElementById('btnResetColor').addEventListener('click', () => {
+    editing.draft.color = null;
+    refreshModal();
+  });
+  document.getElementById('btnColorOk').addEventListener('click', () => {
+    editing.draft.color = colorInput.value.toLowerCase();
+    colorModal.classList.remove('active');
+    refreshModal();
+  });
+  document.getElementById('btnColorCancel').addEventListener('click', () => colorModal.classList.remove('active'));
+  colorModal.addEventListener('click', (e) => { if (e.target === colorModal) colorModal.classList.remove('active'); });
+
+  // ============================================================
+  //  模式切换 / 底部操作栏
+  // ============================================================
+  document.querySelectorAll('#modeSwitch button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#modeSwitch button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      mode = btn.dataset.mode;
+      clearSelection();
+    });
+  });
+
+  document.getElementById('btnNewBuilding').addEventListener('click', () => {
+    if (!selectedCell) return;
+    openConfigModal(null);
+  });
+  document.getElementById('btnDeselect').addEventListener('click', clearSelection);
+
+  // ============================================================
+  //  系统设置
+  // ============================================================
+  const settingsModal = document.getElementById('settingsModal');
+  const setTimeSlider = document.getElementById('setTimeSlider');
+  const setTimeVal = document.getElementById('setTimeVal');
+  const clockDisplay = document.getElementById('clockDisplay');
+
+  function applyTime() {
+    envUniforms.uSunIntensity.value = Math.sin(settings.time * Math.PI / 24);
+    const h = String(Math.floor(settings.time)).padStart(2, '0');
+    const txt = h + ':00';
+    setTimeVal.textContent = txt;
+    clockDisplay.textContent = settings.time >= 5 && settings.time < 18 ? '🌤 ' : '🌙 ';
+    clockDisplay.textContent += txt;
+  }
+
+  setTimeSlider.addEventListener('input', (e) => {
+    settings.time = parseInt(e.target.value);
+    applyTime();
+    saveGame(false);
+  });
+
+  document.getElementById('setLabels').addEventListener('change', (e) => {
+    settings.labels = e.target.checked;
+    updateLabelsVisibility();
+    saveGame(false);
+  });
+  document.getElementById('setHoverInfo').addEventListener('change', (e) => {
+    settings.hoverInfo = e.target.checked;
+    if (!settings.hoverInfo) resetHoverInfo();
+    saveGame(false);
+  });
+
+  document.getElementById('btnManualSave').addEventListener('click', () => saveGame(true));
+  document.getElementById('btnClearCity').addEventListener('click', () => {
+    showConfirm('清空城市', '将删除当前存档中所有已放置的建筑，且不可恢复。确定要清空整座城市吗？', () => {
+      clearAllBuildings();
+      saveGame(false);
+      toast('城市已清空');
+    });
+  });
+  document.getElementById('btnSettings').addEventListener('click', () => {
+    setTimeSlider.value = settings.time;
+    document.getElementById('setLabels').checked = settings.labels;
+    document.getElementById('setHoverInfo').checked = settings.hoverInfo;
+    settingsModal.classList.add('active');
+  });
+  settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.remove('active'); });
+
+  // ============================================================
+  //  通用确认弹窗
+  // ============================================================
+  const confirmModal = document.getElementById('confirmModal');
+  let confirmCallback = null;
+  function showConfirm(title, msg, cb) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmMsg').textContent = msg;
+    confirmCallback = cb;
+    confirmModal.classList.add('active');
+  }
+  document.getElementById('btnConfirmYes').addEventListener('click', () => {
+    confirmModal.classList.remove('active');
+    if (confirmCallback) { confirmCallback(); confirmCallback = null; }
+  });
+  document.getElementById('btnConfirmNo').addEventListener('click', () => {
+    confirmModal.classList.remove('active');
+    confirmCallback = null;
+  });
+  confirmModal.addEventListener('click', (e) => {
+    if (e.target === confirmModal) { confirmModal.classList.remove('active'); confirmCallback = null; }
+  });
+
+  // ============================================================
+  //  存档（每 1 分钟自动保存 + 手动保存 + 启动恢复）
+  // ============================================================
+  const SAVE_KEY = 'grid-city-save-v1';
+
+  function collectData() {
+    const arr = [];
+    for (const b of buildings.values()) {
+      arr.push({ x: b.cx, z: b.cz, tex: b.tex, w: b.w, d: b.d, floors: b.floors, color: b.color, type: b.type, name: b.name, seed: b.seed });
+    }
+    return { v: 1, settings: { time: settings.time, labels: settings.labels, hoverInfo: settings.hoverInfo }, buildings: arr };
+  }
+
+  function saveGame(showToastMsg) {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(collectData())); }
+    catch (e) { console.warn('保存失败', e); return; }
+    if (showToastMsg) toast('已保存');
+  }
+
+  function loadGame() {
+    let raw = null;
+    try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { return; }
+    if (!raw) return;
+    let data;
+    try { data = JSON.parse(raw); } catch (e) { return; }
+    if (!data || data.v !== 1) return;
+
+    if (data.settings) {
+      if (typeof data.settings.time === 'number') settings.time = Math.max(0, Math.min(24, data.settings.time));
+      if (typeof data.settings.labels === 'boolean') settings.labels = data.settings.labels;
+      if (typeof data.settings.hoverInfo === 'boolean') settings.hoverInfo = data.settings.hoverInfo;
+    }
+    if (Array.isArray(data.buildings)) {
+      for (const item of data.buildings) {
+        const tex = (typeof item.tex === 'number' && item.tex >= 0 && item.tex < IMAGES.length) ? item.tex : 0;
+        addBuilding({
+          cx: Math.round(item.x) || 0, cz: Math.round(item.z) || 0,
+          tex,
+          w: item.w, d: item.d, floors: item.floors,
+          color: typeof item.color === 'string' ? item.color : null,
+          type: typeof item.type === 'string' ? item.type : null,
+          name: typeof item.name === 'string' ? item.name : '',
+          seed: typeof item.seed === 'number' ? item.seed : Math.random(),
+        });
+      }
+    }
+    applyTime();
+    updateLabelsVisibility();
+  }
+
+  // ============================================================
+  //  Toast
+  // ============================================================
+  const toastEl = document.getElementById('toast');
+  let toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toastEl.classList.remove('show'), 2000);
+  }
+
+  // ============================================================
+  //  初始化与渲染循环
+  // ============================================================
+  function resize() {
+    const w = canvas.clientWidth, h = canvas.clientHeight;
+    if (w === 0 || h === 0) return;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+
+  let lastT = performance.now();
+  function animate() {
+    const now = performance.now();
+    const dt = Math.min(0.05, (now - lastT) / 1000);
+    lastT = now;
+    updateCamera(dt);
+    ground.position.x = camera.position.x;
+    ground.position.z = camera.position.z;
+    renderer.render(scene, camera);
+  }
+
+  async function init() {
+    resize();
+    await initTextures();
+    if (textures.length === 0) toast('未找到可用贴图资源');
+    renderTexList();
+    ground.material = makeGroundMaterial();
+    loadGame();
+    applyTime();
+    // 自动保存（每 1 分钟）
+    setInterval(() => saveGame(false), 60000);
+    resize();
+  }
+
+  init();
+  </script>
+</body>
+</html>
