@@ -963,6 +963,12 @@
       <div class="cfg-row" style="justify-content:center">
         <span class="val" id="colorHex">#ffffff</span>
       </div>
+      <div class="cfg-row" style="justify-content:center; gap:14px; margin-bottom:6px;">
+        <div id="lastColorSwatch"
+          style="width:32px;height:32px;border-radius:8px;border:2px solid var(--line2);cursor:pointer;"
+          title="点击复用上次选色">
+        </div>
+      </div>
       <div class="modal-actions">
         <button class="btn btn-primary" id="btnColorCancel">取消</button>
         <button class="btn btn-accent" id="btnColorOk">确定</button>
@@ -1017,6 +1023,7 @@
   <script src="res_wall.js"></script>
   <script src="res_road.js"></script>
   <script src="res_floor.js"></script>
+  <script src="res_hdr.js"></script>
   <script>
     // ============================================================
     //  网格城市 · 主程序
@@ -1024,7 +1031,7 @@
     'use strict';
 
     // 版本标记（用于检测浏览器缓存了旧版文件）
-    window.__VC__ = 'v20260907-boxshadow-sky';
+    window.__VC__ = 'v20260908-color-ux';
 
     const CELL = 4;                 // 一个格子 = 4 x 4 单位（贴图 64px 宽 = 4 单位）
     const FOG_COLOR = new THREE.Color(0x87b8e8);
@@ -1094,6 +1101,8 @@
 
     // ---- 贴图资源（init 时从 res_wall.js 加载） ----
     let textures = [];
+    // ---- HDR 环境贴图（res_hdr.js 加载，用于窗户玻璃反射） ----
+    let hdrTexture = null;
 
     // ============================================================
     //  Shader（复刻 Show 项目的窗户亮化 / 时间明度逻辑）
@@ -1101,10 +1110,15 @@
     const vertShader = `
     varying vec2 vUV;
     varying vec3 vNormal;
+    varying vec3 vWorldNormal;
+    varying vec3 vWorldPos;
     varying float vDist;
     void main() {
       vUV = uv;
       vNormal = normalMatrix * normal;
+      vWorldNormal = normalize(mat3(modelMatrix) * normal);
+      vec4 worldPos = modelMatrix * vec4(position, 1.0);
+      vWorldPos = worldPos.xyz;
       vec4 mv = modelViewMatrix * vec4(position, 1.0);
       vDist = -mv.z;
       gl_Position = projectionMatrix * mv;
@@ -1114,6 +1128,7 @@
     const fragShader = `
     uniform sampler2D uTex;
     uniform sampler2D uMaskTex;
+    uniform sampler2D uHdrTex;
     uniform float uUseTex;          // 1.0 墙面 / 0.0 顶底面 / -1.0 地面
     uniform vec3 uBuildingColor;
     uniform vec3 uDominantColor;
@@ -1123,10 +1138,22 @@
 
     varying vec2 vUV;
     varying vec3 vNormal;
+    varying vec3 vWorldNormal;
+    varying vec3 vWorldPos;
     varying float vDist;
+
+    const float PI = 3.141592653589793;
 
     float hash(vec2 cell) {
       return fract(sin(dot(cell, vec2(12.9898, 78.233))) * 43758.5453 + uSeed);
+    }
+
+    // 等距柱状投影（2:1）数学采样：方向 -> HDR 颜色
+    vec3 sampleHDR(vec3 dir) {
+      vec3 d = normalize(dir);
+      float u = 0.5 + atan(d.z, d.x) / (2.0 * PI);
+      float v = 0.5 - asin(clamp(d.y, -1.0, 1.0)) / PI;
+      return texture2D(uHdrTex, vec2(u, v)).rgb;
     }
 
     void main() {
@@ -1136,34 +1163,48 @@
         // ===== 墙面 =====
         vec4 texColor = texture2D(uTex, vUV);
         // 70% 原贴图 + 30% 乘法混合结果，保留纹理对比度
-        float attachIntensity = 0.50;
+        float attachIntensity = 0.70;
         color = mix(texColor.rgb, texColor.rgb * uBuildingColor, attachIntensity);
         float facadeBrightness = mix(0.50, 1.0, uSunIntensity);
         color *= facadeBrightness;
 
-        // 窗户亮化（独立图层，不覆盖窗户效果）
+        // 窗户亮化（独立图层）+ 玻璃反射
         float mask = texture2D(uMaskTex, vUV).r;
         if (mask > 0.5) {
           vec2 cellId = vec2(floor(vUV.x * 4.0), floor(vUV.y));
           float hashVal = hash(cellId);
           vec3 glow = vec3(0.0);
           float glowIntensity = 0.0;
+          vec3 indoorBase = color;
           if (hashVal < 0.64) {
             // 暗窗：附着色越暗，窗户底色越深，增强立体感
-            color *= uBuildingColor * 0.75;
+            indoorBase *= uBuildingColor * 0.75;
         } else if (hashVal < 0.82) {
             glow = vec3(1.0, 0.80, 0.35);                    // 中亮窗
             glowIntensity = 0.90;
-            // 中亮窗底色也受附着色影响，让亮窗在深色底上更突出
-            color *= mix(vec3(1.0), uBuildingColor, 0.35);
+            indoorBase *= mix(vec3(1.0), uBuildingColor, 0.35);
         } else {
             glow = vec3(1.0, 0.90, 0.50);                    // 亮窗
             glowIntensity = 2.0;
-            // 亮窗底色也受附着色影响
-            color *= mix(vec3(1.0), uBuildingColor, 0.35);
+            indoorBase *= mix(vec3(1.0), uBuildingColor, 0.35);
         }
         float windowVisibility = max(0.0, 1.0 - uSunIntensity * 1.2);
-        color += glow * glowIntensity * windowVisibility;
+
+        // ==== 玻璃反射（数学采样 HDR 环境 / 2:1） ====
+        // 反射方向 = 视线关于表面法线反射
+        vec3 viewDir = normalize(cameraPosition - vWorldPos);
+        vec3 reflectDir = reflect(-viewDir, normalize(vWorldNormal));
+        vec3 hdrCol = sampleHDR(reflectDir);
+        // fresnel：掠射角反射更强
+        float nv = max(dot(normalize(vWorldNormal), viewDir), 0.0);
+        float fresnel = pow(1.0 - nv, 2.0);
+        // 夜间环境光变弱，反射随之变暗
+        float envDim = mix(0.78, 1.0, uSunIntensity);
+        float reflectBlend = clamp(mix(0.60, 1.0, fresnel) * envDim, 0.0, 1.0);
+        vec3 glass = mix(indoorBase, hdrCol * 1.3, reflectBlend);
+
+        // ==== 室内灯光在最外层与反射叠加 ====
+        color = glass + glow * glowIntensity * windowVisibility;
         }
       } else if (uUseTex < -0.5) {
         // ===== 地面 =====
@@ -1171,13 +1212,13 @@
         color *= mix(0.5, 1.0, uSunIntensity);
       } else {
         // ===== 顶面 / 底面 =====
-        float attachIntensity = 0.25;
+        float attachIntensity = 0.55;
         color = mix(uDominantColor, uDominantColor * uBuildingColor, attachIntensity);
         color *= mix(0.35, 1.0, uSunIntensity);
       }
 
       // 方向光（随时间减弱）
-      vec3 lightDir = normalize(vec3(0.4, 0.8, 0.6));
+      vec3 lightDir = normalize(vec3(0.4, 1.0, 0.6));
       float diff = max(dot(vNormal, lightDir), 0.0);
       float ambient = mix(0.25, 0.55, uSunIntensity);
       float lightStrength = mix(0.3, 0.7, uSunIntensity);
@@ -1196,6 +1237,7 @@
         uniforms: {
           uTex: { value: t.tex },
           uMaskTex: { value: t.mask },
+          uHdrTex: { value: hdrTexture },
           uUseTex: { value: useTex },
           uBuildingColor: { // 修改后 — 强制低饱和处理
             value: (() => {
@@ -1227,6 +1269,7 @@
         uniforms: {
           uTex: { value: t ? t.tex : null },
           uMaskTex: { value: t ? t.mask : null },
+          uHdrTex: { value: hdrTexture },
           uUseTex: { value: -1.0 },
           uBuildingColor: { value: new THREE.Color('#ffffff') },
           uDominantColor: { value: new THREE.Vector3(0.5, 0.5, 0.5) },
@@ -1797,7 +1840,7 @@
     const shadowMat = new THREE.MeshBasicMaterial({
       color: 0x101a2e,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.85,
       depthWrite: false,
       side: THREE.DoubleSide,
     });
@@ -1853,7 +1896,7 @@
       const sh = new THREE.Mesh(undefined, shadowMat);
       placeBuildingShadow(sh, b);
       scene.add(sh);
-      sh.renderOrder = 2;   
+      sh.renderOrder = 2;
       return sh;
     }
 
@@ -1978,7 +2021,7 @@
     const up = new THREE.Vector3(0, 1, 0);
     const keys = new Set();
 
-    function clampPhi() { phi = Math.max(0.12, Math.min(1.45, phi)); }
+    function clampPhi() { phi = Math.max(0.06, Math.min(1.45, phi)); }
     function clampRadius() { radius = Math.max(7, Math.min(400, radius)); }
 
     function cameraDir() {
@@ -2340,7 +2383,12 @@
           color: buildingOrNull.color, type: buildingOrNull.type, name: buildingOrNull.name || '',
         };
       } else {
-        editing.draft = { tex: 0, w: 4, d: 4, floors: 12, color: null, type: null, name: '' };
+        if (!editing.draft) {
+          editing.draft = { tex: 0, w: 4, d: 4, floors: 12, color: null, type: null, name: '' };
+        } else {
+          editing.draft.name = '';  // 名称清空
+          editing.draft.type = null;  // 建筑类型清空，其他保留
+        }
       }
 
       document.getElementById('configTitleText').textContent = isEdit ? '修改楼栋' : '新建楼栋';
@@ -2418,11 +2466,17 @@
     const colorModal = document.getElementById('colorModal');
     const colorInput = document.getElementById('colorInput');
     const colorHex = document.getElementById('colorHex');
+    const lastColorSwatch = document.getElementById('lastColorSwatch');
+    let lastPickedColor = null;   // 上次确认使用的建筑颜色（用于“上次选色”快捷复用）
+
     colorInput.addEventListener('input', () => { colorHex.textContent = colorInput.value; });
 
     document.getElementById('btnPickColor').addEventListener('click', () => {
       colorInput.value = editing.draft.color || '#ffffff';
       colorHex.textContent = colorInput.value;
+      // 刷新“上次选色”色块
+      lastColorSwatch.style.background = lastPickedColor || 'transparent';
+      lastColorSwatch.title = lastPickedColor ? `点击复用上次选色：${lastPickedColor}` : '尚无上次选色';
       colorModal.classList.add('active');
     });
     document.getElementById('btnResetColor').addEventListener('click', () => {
@@ -2431,11 +2485,40 @@
     });
     document.getElementById('btnColorOk').addEventListener('click', () => {
       editing.draft.color = colorInput.value.toLowerCase();
+      lastPickedColor = editing.draft.color;   // 记录为“上次选色”
       colorModal.classList.remove('active');
       refreshModal();
     });
     document.getElementById('btnColorCancel').addEventListener('click', () => colorModal.classList.remove('active'));
     colorModal.addEventListener('click', (e) => { if (e.target === colorModal) colorModal.classList.remove('active'); });
+
+    // 上次选色：点击后直接应用该颜色到当前建筑
+    lastColorSwatch.addEventListener('click', () => {
+      if (!lastPickedColor) { toast('尚无上次选色'); return; }
+      editing.draft.color = lastPickedColor;
+      colorModal.classList.remove('active');
+      refreshModal();
+      toast(`已应用上次选色 ${lastPickedColor}`);
+    });
+
+
+
+    // 剪贴板兜底方案（非安全上下文 / 权限被拒时）
+    function fallbackCopy(text) {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.style.cssText = 'position:fixed;opacity:0;left:-9999px;';
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        return true;
+      } catch (e) {
+        toast('复制失败，请手动复制');
+        return false;
+      }
+    }
 
     // ============================================================
     //  模式切换 / 底部操作栏
@@ -2455,6 +2538,7 @@
       if (!selectedCell) return;
       if (roads.has(cellKey(selectedCell.x, selectedCell.z))) { toast('该格子已有道路，请先移除道路再新建建筑'); return; }
       if (floors.has(cellKey(selectedCell.x, selectedCell.z))) { toast('该格子已有地块，请先移除地块再新建建筑'); return; }
+      if (buildings.has(cellKey(selectedCell.x, selectedCell.z))) { toast('该格子已有建筑'); return; }
       openConfigModal(null);
     });
     document.getElementById('btnDeselect').addEventListener('click', clearSelection);
@@ -2773,6 +2857,26 @@
       shadowMat.opacity = shadowOpacity;
     }
 
+    async function initHdrTexture() {
+      if (!(typeof HDR_IMAGES !== 'undefined' && HDR_IMAGES && HDR_IMAGES.length)) return;
+      try {
+        const img = await loadImage(HDR_IMAGES[0].data);
+        const tex = new THREE.Texture(img);
+        // 环境反射需要平滑插值；2:1 等距柱状投影，横向重复、纵向裁剪
+        tex.minFilter = THREE.LinearMipMapLinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.ClampToEdgeWrapping;
+        tex.generateMipmaps = true;
+        tex.flipY = false;   // v=0 对应贴图顶部（天顶），与采样公式一致
+        tex.needsUpdate = true;
+        hdrTexture = tex;
+        console.log('HDR 环境贴图加载成功', img.width + 'x' + img.height);
+      } catch (e) {
+        console.warn('HDR 环境贴图加载失败', e);
+      }
+    }
+
     async function init() {
       resize();
       await initTextures();
@@ -2782,6 +2886,7 @@
       renderRoadTypeList();
       await initFloorTextures();
       renderFloorTypeList();
+      await initHdrTexture();
       ground.material = makeGroundMaterial();
       loadGame();
       applyTime();
