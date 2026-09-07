@@ -236,7 +236,8 @@
     }
 
     /* ===== 道路建设面板（底部浮层） ===== */
-    #roadPanel, #floorPanel {
+    #roadPanel,
+    #floorPanel {
       position: absolute;
       left: 50%;
       bottom: 16px;
@@ -253,7 +254,8 @@
       animation: pop .18s ease;
     }
 
-    #roadPanel.active, #floorPanel.active {
+    #roadPanel.active,
+    #floorPanel.active {
       display: block;
     }
 
@@ -985,6 +987,10 @@
         <label>悬停信息</label>
         <label class="switch"><input type="checkbox" id="setHoverInfo"><span class="knob"></span></label>
       </div>
+      <div class="set-row">
+        <label>楼栋投影</label>
+        <label class="switch"><input type="checkbox" id="setShadows" checked><span class="knob"></span></label>
+      </div>
       <div class="set-row actions">
         <button class="btn btn-primary" id="btnManualSave">手动保存</button>
         <button class="btn btn-danger" id="btnClearCity">清空城市</button>
@@ -1018,7 +1024,7 @@
     'use strict';
 
     // 版本标记（用于检测浏览器缓存了旧版文件）
-    window.__VC__ = 'v20260907-road';
+    window.__VC__ = 'v20260907-boxshadow-sky';
 
     const CELL = 4;                 // 一个格子 = 4 x 4 单位（贴图 64px 宽 = 4 单位）
     const FOG_COLOR = new THREE.Color(0x87b8e8);
@@ -1038,7 +1044,7 @@
     ];
 
     // ---- 全局状态 ----
-    const settings = { time: 12, labels: true, hoverInfo: false };
+    const settings = { time: 12, labels: true, hoverInfo: false, shadows: true };
     let mode = 'view';                 // 'view' | 'edit'
     let selectedCell = null;           // {x, z}
     let hoverCell = null;              // {x, z}
@@ -1147,16 +1153,16 @@
             color *= uBuildingColor * 0.75;
         } else if (hashVal < 0.82) {
             glow = vec3(1.0, 0.80, 0.35);                    // 中亮窗
-            glowIntensity = 0.55;
+            glowIntensity = 0.90;
             // 中亮窗底色也受附着色影响，让亮窗在深色底上更突出
             color *= mix(vec3(1.0), uBuildingColor, 0.35);
         } else {
             glow = vec3(1.0, 0.90, 0.50);                    // 亮窗
-            glowIntensity = 0.85;
+            glowIntensity = 2.0;
             // 亮窗底色也受附着色影响
             color *= mix(vec3(1.0), uBuildingColor, 0.35);
         }
-        float windowVisibility = 1.0 - uSunIntensity * 0.88;
+        float windowVisibility = max(0.0, 1.0 - uSunIntensity * 1.2);
         color += glow * glowIntensity * windowVisibility;
         }
       } else if (uUseTex < -0.5) {
@@ -1402,12 +1408,13 @@
           tex.minFilter = tex.magFilter = THREE.NearestFilter;
           tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
           tex.generateMipmaps = false;
+          tex.flipY = false;       // ← 添加：修复建筑贴图上下颠倒
           tex.needsUpdate = true;
 
           const mask = new THREE.DataTexture(generateWindowMask(img), 64, 16, THREE.RGBAFormat);
           mask.minFilter = mask.magFilter = THREE.NearestFilter;
           mask.wrapS = mask.wrapT = THREE.RepeatWrapping;
-          //mask.flipY = false;       // 与建筑贴图的 flipY 保持一致
+          mask.flipY = false;       // 与建筑贴图的 flipY 保持一致
           mask.needsUpdate = true;
 
           list.push({ tex, mask, dominantColor: extractDominantColor(img) });
@@ -1495,7 +1502,7 @@
         // 转角：默认左+上，顺时针匹配 Math.PI / 2
         if (has('left') && has('up')) return { tile: 3, rot: -Math.PI / 2 };
         if (has('down') && has('left')) return { tile: 3, rot: 0 };
-        if (has('right') && has('down')) return { tile: 3, rot: Math.PI /2 };
+        if (has('right') && has('down')) return { tile: 3, rot: Math.PI / 2 };
         if (has('up') && has('right')) return { tile: 3, rot: Math.PI };
       }
       if (n === 1) {                                                  // 死胡同：按连接方向朝向
@@ -1774,6 +1781,88 @@
     groundPadGeo.rotateX(-Math.PI / 2);
     const groundPadMat = new THREE.MeshBasicMaterial({ color: 0x777777 });
 
+    // ---- 楼栋地面投影（低开销：半透明柔和投影片，仅楼栋拥有）----
+    // 楼栋盒子几何投影：
+    // 把楼栋顶面四角沿投影方向平移到地面，与底面四角取凸包，得到随楼栋
+    // 高度/底面形状变化的清晰多边形阴影。仅投射到地面（含道路、地块），
+    // 因投影片平铺于地面高度，其它楼栋表面会将其遮挡，不会在该表面显示，
+    // 从而避免对楼栋表面做投影，降低开销。
+    //
+    // 投影方向与强度预制为全局变量，便于后续通过设置调整投影角度/强度。
+    let shadowDirX = 1.5, shadowDirZ = 1.0;   // 投影水平方向（XZ 平面，未归一）
+    let shadowK = 0.95;                           // 投影偏移系数（每层高度 → 地面投影位移）
+    const SHADOW_Y = 0.1;                        // 投影片高度（高于地面/道路/地块，低于建筑底部）
+
+    // 共享投影材质（无贴图、纯色半透明、边缘清晰）
+    const shadowMat = new THREE.MeshBasicMaterial({
+      color: 0x101a2e,
+      transparent: true,
+      opacity: 0.45,
+      depthWrite: false,
+      side: THREE.DoubleSide,
+    });
+
+    // 2D 凸包（Andrew 单调链），返回按逆时针 z 点数组
+    function convexHull2D(pts) {
+      const p = pts.concat().sort((a, b) => a.x - b.x || a.y - b.y);
+      const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+      const lower = [];
+      for (const pt of p) {
+        while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], pt) <= 0) lower.pop();
+        lower.push(pt);
+      }
+      const upper = [];
+      for (let i = p.length - 1; i >= 0; i--) {
+        const pt = p[i];
+        while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], pt) <= 0) upper.pop();
+        upper.push(pt);
+      }
+      lower.pop(); upper.pop();
+      return lower.concat(upper);
+    }
+
+    // 根据楼栋尺寸/楼层生成盒子投影的凸多边形几何
+    function buildShadowGeometry(b) {
+      const hw = b.w / 2, hd = b.d / 2;
+      const H = b.floors;
+      const len = Math.hypot(shadowDirX, shadowDirZ) || 1;
+      const dx = shadowDirX / len, dz = shadowDirZ / len;
+      const off = H * shadowK;
+      const ox = dx * off, oz = dz * off;
+      const base = [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]];
+      const pts = [];
+      for (const [px, py] of base) pts.push({ x: px, y: py });            // 底面四角
+      for (const [px, py] of base) pts.push({ x: ox + px, y: oz + py });   // 顶面四角平移到地面
+      const hull = convexHull2D(pts);
+      // 凸多边形三角扇化（以 hull[0] 为扇心）
+      const shape = new THREE.Shape(hull.map(p => new THREE.Vector2(p.x, p.y)));
+      const geo = new THREE.ShapeGeometry(shape, 1);
+      geo.rotateX(-Math.PI / 2); // 转到 XZ 平面
+      return geo;
+    }
+
+    // 根据楼栋摆放/重建投影 mesh
+    function placeBuildingShadow(sh, b) {
+      if (sh.geometry) sh.geometry.dispose();
+      sh.geometry = buildShadowGeometry(b);
+      sh.position.set(b.cx * CELL + 2, SHADOW_Y, b.cz * CELL + 2);
+      sh.visible = settings.shadows;
+    }
+
+    function createBuildingShadow(b) {
+      const sh = new THREE.Mesh(undefined, shadowMat);
+      placeBuildingShadow(sh, b);
+      scene.add(sh);
+      sh.renderOrder = 2;   
+      return sh;
+    }
+
+    function applyShadowsVisibility() {
+      for (const b of buildings.values()) {
+        if (b.obj.shadow) b.obj.shadow.visible = settings.shadows;
+      }
+    }
+
     function addBuilding(data) {
       const b = Object.assign({ color: null, type: null, name: '' }, data);
       if (b.tex == null || b.tex < 0 || b.tex >= textures.length) b.tex = 0; // 贴图丢失 → 第一张贴图
@@ -1802,7 +1891,9 @@
         scene.add(label);
       }
 
-      const obj = { geo, wallsMat, topMat, mesh, label, ground };
+      const shadow = createBuildingShadow(b);
+
+      const obj = { geo, wallsMat, topMat, mesh, label, ground, shadow };
       b.obj = obj;
       mesh.userData.building = b;
       buildingMeshList.push(mesh);
@@ -1843,7 +1934,10 @@
         scene.add(label);
       }
 
-      b.obj = { geo, wallsMat, topMat, mesh, label, ground: obj.ground };
+      // 更新投影（楼层/尺寸变化时重调）
+      placeBuildingShadow(obj.shadow, b);
+
+      b.obj = { geo, wallsMat, topMat, mesh, label, ground: obj.ground, shadow: obj.shadow };
     }
 
     function removeBuilding(b) {
@@ -1853,6 +1947,7 @@
       obj.wallsMat.dispose();
       obj.topMat.dispose();
       if (obj.ground) scene.remove(obj.ground);   // 恢复空地
+      if (obj.shadow) { scene.remove(obj.shadow); if (obj.shadow.geometry) obj.shadow.geometry.dispose(); }   // 移除投影
       if (obj.label) {
         scene.remove(obj.label);
         if (obj.label.material.map) obj.label.material.map.dispose();
@@ -1923,6 +2018,7 @@
     const pointers = new Map();
     let pState = { x: 0, y: 0, moved: false, mode: 'pan', t: 0 };
     let lastPinchDist = 0;
+    let lastTwoCenter = null;    // 双指中心上次坐标（用于触屏双指滑动旋转）
 
     canvas.addEventListener('pointerdown', (e) => {
       e.preventDefault();
@@ -1934,6 +2030,7 @@
       if (pointers.size === 2) {
         const [a, b] = [...pointers.values()];
         lastPinchDist = Math.hypot(a.x - b.x, a.y - b.y);
+        lastTwoCenter = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
       }
       try { canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId); } catch (err) { /* 忽略无活动指针的捕获失败 */ }
     });
@@ -1956,6 +2053,14 @@
           clampRadius();
         }
         lastPinchDist = dist;
+        // 双指滑动旋转镜头（触屏）：以两指中心位移旋转，缩放仍由双指张合控制
+        const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
+        if (lastTwoCenter) {
+          theta -= (cx - lastTwoCenter.x) * 0.008;
+          phi += (cy - lastTwoCenter.y) * 0.008;
+          clampPhi();
+        }
+        lastTwoCenter = { x: cx, y: cy };
       }
     });
 
@@ -1966,7 +2071,7 @@
         canvas.classList.remove('dragging');
         if (wasClick) handleClick(e);
       }
-      if (pointers.size < 2) lastPinchDist = 0;
+      if (pointers.size < 2) { lastPinchDist = 0; lastTwoCenter = null; }
     }
     canvas.addEventListener('pointerup', endPointer);
     canvas.addEventListener('pointercancel', endPointer);
@@ -2436,13 +2541,29 @@
     const setTimeVal = document.getElementById('setTimeVal');
     const clockDisplay = document.getElementById('clockDisplay');
 
+    // ---------- 天色明暗（随 uSunIntensity 变化） ----------
+    const SKY_DAY = new THREE.Color(0x8fb8e8);
+    const SKY_NIGHT = new THREE.Color(0x050a18);
+    // 预渲染场景背景与雾色（夜间更深更暗，白天更亮）
+    // 因建筑/地面 ShaderMaterial 用 envUniforms.uFogColor 做雾，需同步更新以保持融合一致。
+
     function applyTime() {
-      envUniforms.uSunIntensity.value = Math.sin(settings.time * Math.PI / 24);
+      const sun = Math.sin(settings.time * Math.PI / 24);
+      envUniforms.uSunIntensity.value = sun;
       const h = String(Math.floor(settings.time)).padStart(2, '0');
       const txt = h + ':00';
       setTimeVal.textContent = txt;
       clockDisplay.textContent = settings.time >= 5 && settings.time < 18 ? '🌤 ' : '🌙 ';
       clockDisplay.textContent += txt;
+      // 天色：独立于建筑光照，使用完整 0~1 范围（不影响建筑亮度）
+      const skySun = Math.sin((settings.time - 6) * Math.PI / 12);  // -1 ~ 1
+      const skyT = (skySun + 1) / 2;  // 0 ~ 1
+      const sky = SKY_NIGHT.clone().lerp(SKY_DAY, skyT);
+      if (scene) {
+        renderer.setClearColor(sky, 1);
+        if (scene.fog) scene.fog.color.copy(sky);
+        envUniforms.uFogColor.value.copy(sky);
+      }
     }
 
     setTimeSlider.addEventListener('input', (e) => {
@@ -2459,6 +2580,11 @@
     document.getElementById('setHoverInfo').addEventListener('change', (e) => {
       settings.hoverInfo = e.target.checked;
       if (!settings.hoverInfo) resetHoverInfo();
+      saveGame(false);
+    });
+    document.getElementById('setShadows').addEventListener('change', (e) => {
+      settings.shadows = e.target.checked;
+      applyShadowsVisibility();
       saveGame(false);
     });
 
@@ -2478,6 +2604,7 @@
       setTimeSlider.value = settings.time;
       document.getElementById('setLabels').checked = settings.labels;
       document.getElementById('setHoverInfo').checked = settings.hoverInfo;
+      document.getElementById('setShadows').checked = settings.shadows;
       settingsModal.classList.add('active');
     });
     settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.remove('active'); });
@@ -2523,7 +2650,7 @@
       for (const f of floors.values()) {
         floorsArr.push({ x: f.cx, z: f.cz, type: f.type, tile: f.tile, rot: f.rot });
       }
-      return { v: 1, settings: { time: settings.time, labels: settings.labels, hoverInfo: settings.hoverInfo }, buildings: arr, roads: roadsArr, floors: floorsArr };
+      return { v: 1, settings: { time: settings.time, labels: settings.labels, hoverInfo: settings.hoverInfo, shadows: settings.shadows }, buildings: arr, roads: roadsArr, floors: floorsArr };
     }
 
     function saveGame(showToastMsg) {
@@ -2544,6 +2671,7 @@
         if (typeof data.settings.time === 'number') settings.time = Math.max(0, Math.min(24, data.settings.time));
         if (typeof data.settings.labels === 'boolean') settings.labels = data.settings.labels;
         if (typeof data.settings.hoverInfo === 'boolean') settings.hoverInfo = data.settings.hoverInfo;
+        if (typeof data.settings.shadows === 'boolean') settings.shadows = data.settings.shadows;
       }
       if (Array.isArray(data.buildings)) {
         for (const item of data.buildings) {
@@ -2586,6 +2714,7 @@
       }
       applyTime();
       updateLabelsVisibility();
+      applyShadowsVisibility();
     }
 
     // ============================================================
@@ -2624,19 +2753,24 @@
 
 
       // 新增：道路随时间变化明暗（与着色器中 mix(0.5, 1.0, uSunIntensity) 一致）
-      const brightness = THREE.MathUtils.lerp(0.15, 1.0, envUniforms.uSunIntensity.value);
+      const nightT = (Math.sin((settings.time - 6) * Math.PI / 12) + 1) / 2;
+      const brightness = THREE.MathUtils.lerp(0.03, 0.85, nightT);
       for (const road of roadObjs.values()) {
         road.mesh.material.color.setRGB(brightness, brightness, brightness);
       }
 
-      // 地块：夜间0.40 → 白天0.95（比道路稍暗，有层次区分）
-      const floorB = THREE.MathUtils.lerp(0.05, 0.99, envUniforms.uSunIntensity.value);
+      // 地块：夜间 → 白天（比道路稍暗，有层次区分）
+      const floorB = THREE.MathUtils.lerp(0.02, 0.90, nightT);
       for (const floor of floorObjs.values()) {
         floor.mesh.material.color.setRGB(floorB, floorB, floorB);
       }
-      // 楼栋格子地面：夜间0.35 → 白天0.88（比地块再暗一点）
-      const padB = THREE.MathUtils.lerp(0.05, 0.50, envUniforms.uSunIntensity.value);
+      // 楼栋格子地面：夜间 → 白天（比地块再暗一点）
+      const padB = THREE.MathUtils.lerp(0.02, 0.40, nightT);
       groundPadMat.color.setRGB(padB, padB, padB);
+
+      // 建筑投影：夜间变暗/几乎消失，白天正常
+      const shadowOpacity = THREE.MathUtils.lerp(0.02, 0.60, envUniforms.uSunIntensity.value);
+      shadowMat.opacity = shadowOpacity;
     }
 
     async function init() {
