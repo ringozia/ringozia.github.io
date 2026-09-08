@@ -509,6 +509,56 @@
       min-width: 44px;
     }
 
+    /* ---- 建筑微调分页 ---- */
+    .adjust-wrap {
+      display: flex;
+      gap: 18px;
+      align-items: flex-start;
+    }
+
+    .adjust-left {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+
+    .adjust-left .cfg-row {
+      margin-bottom: 8px;
+    }
+
+    .adj-btn {
+      min-width: 36px;
+      padding: 3px 10px;
+      font-size: 16px;
+      line-height: 1.1;
+    }
+
+    .adj-val {
+      min-width: 38px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .adjust-left input[type="range"] {
+      flex: 1;
+      min-width: 90px;
+    }
+
+    .adjust-right {
+      flex: 0 0 auto;
+    }
+
+    #adjustPreview {
+      display: block;
+      width: 160px;
+      height: 160px;
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid var(--line2);
+      border-radius: 10px;
+    }
+
     /* 贴图选择（单层水平滚动） */
     .tex-scroll {
       display: flex;
@@ -907,6 +957,7 @@
       <div class="modal-tabs">
         <button class="active" data-tab="basic">基础配置</button>
         <button data-tab="info">信息配置</button>
+        <button data-tab="adjust">建筑微调</button>
       </div>
 
       <div class="tab-page" id="tabBasic">
@@ -944,6 +995,34 @@
           <input type="text" id="nameInput" maxlength="24" placeholder="例如：中心大厦（选填）">
         </div>
         <div class="hint">同时填写类型与名称后，楼顶将显示「emoji + 名称」的悬浮命名标签</div>
+      </div>
+
+      <div class="tab-page" id="tabAdjust" style="display:none">
+        <div class="adjust-wrap">
+          <div class="adjust-left">
+            <div class="cfg-row adj-row">
+              <label>X 轴偏移</label>
+              <button class="btn btn-ghost adj-btn" id="offXMinus">−</button>
+              <span class="val adj-val" id="offXVal">0</span>
+              <button class="btn btn-ghost adj-btn" id="offXPlus">+</button>
+            </div>
+            <div class="cfg-row adj-row">
+              <label>Z 轴偏移</label>
+              <button class="btn btn-ghost adj-btn" id="offZMinus">−</button>
+              <span class="val adj-val" id="offZVal">0</span>
+              <button class="btn btn-ghost adj-btn" id="offZPlus">+</button>
+            </div>
+            <div class="cfg-row adj-row">
+              <label>旋转角度</label>
+              <input type="range" id="rotSlider" min="0" max="23" step="1" value="0">
+              <span class="val adj-val" id="rotVal">0°</span>
+            </div>
+          </div>
+          <div class="adjust-right">
+            <canvas id="adjustPreview" width="160" height="160"></canvas>
+          </div>
+        </div>
+        <div class="hint">偏移单位：像素（1 格 = 16 像素，最大 ±8 = 半个格子）；旋转以建筑中心为原点，每 15° 一档，共 24 档</div>
       </div>
 
       <div class="modal-actions">
@@ -1031,7 +1110,7 @@
     'use strict';
 
     // 版本标记（用于检测浏览器缓存了旧版文件）
-    window.__VC__ = 'v20260908-color-ux';
+    window.__VC__ = 'v20260909-building-adjust';
 
     const CELL = 4;                 // 一个格子 = 4 x 4 单位（贴图 64px 宽 = 4 单位）
     const FOG_COLOR = new THREE.Color(0x87b8e8);
@@ -1864,7 +1943,7 @@
       return lower.concat(upper);
     }
 
-    // 根据楼栋尺寸/楼层生成盒子投影的凸多边形几何
+    // 根据楼栋尺寸/楼层生成盒子投影的凸多边形几何（随建筑旋转）
     function buildShadowGeometry(b) {
       const hw = b.w / 2, hd = b.d / 2;
       const H = b.floors;
@@ -1872,10 +1951,13 @@
       const dx = shadowDirX / len, dz = shadowDirZ / len;
       const off = H * shadowK;
       const ox = dx * off, oz = dz * off;
+      const a = THREE.MathUtils.degToRad(b.rot || 0);
+      const cosa = Math.cos(a), sina = Math.sin(a);
+      const rot = (px, py) => [px * cosa - py * sina, px * sina + py * cosa];   // 绕建筑中心旋转
       const base = [[-hw, -hd], [hw, -hd], [hw, hd], [-hw, hd]];
       const pts = [];
-      for (const [px, py] of base) pts.push({ x: px, y: py });            // 底面四角
-      for (const [px, py] of base) pts.push({ x: ox + px, y: oz + py });   // 顶面四角平移到地面
+      for (const [px, py] of base) pts.push({ x: px, y: py });                  // 底面四角
+      for (const [px, py] of base) { const [rx, ry] = rot(px, py); pts.push({ x: ox + rx, y: oz + ry }); }   // 顶面四角平移到地面
       const hull = convexHull2D(pts);
       // 凸多边形三角扇化（以 hull[0] 为扇心）
       const shape = new THREE.Shape(hull.map(p => new THREE.Vector2(p.x, p.y)));
@@ -1888,7 +1970,11 @@
     function placeBuildingShadow(sh, b) {
       if (sh.geometry) sh.geometry.dispose();
       sh.geometry = buildShadowGeometry(b);
-      sh.position.set(b.cx * CELL + 2, SHADOW_Y, b.cz * CELL + 2);
+      sh.position.set(
+        b.cx * CELL + 2 + (b.offX || 0) * PX_TO_UNIT,
+        SHADOW_Y,
+        b.cz * CELL + 2 + (b.offZ || 0) * PX_TO_UNIT
+      );
       sh.visible = settings.shadows;
     }
 
@@ -1906,20 +1992,34 @@
       }
     }
 
+    // 应用建筑微调：像素偏移换算为场景单位（1 格 = 16 像素，1 像素 = CELL/16），旋转绕建筑中心
+    const PX_TO_UNIT = CELL / 16;
+    function applyBuildingTransform(mesh, b) {
+      mesh.position.set(
+        b.cx * CELL + 2 + (b.offX || 0) * PX_TO_UNIT,
+        0,
+        b.cz * CELL + 2 + (b.offZ || 0) * PX_TO_UNIT
+      );
+      mesh.rotation.y = THREE.MathUtils.degToRad(b.rot || 0);
+    }
+
     function addBuilding(data) {
-      const b = Object.assign({ color: null, type: null, name: '' }, data);
+      const b = Object.assign({ color: null, type: null, name: '', offX: 0, offZ: 0, rot: 0 }, data);
       if (b.tex == null || b.tex < 0 || b.tex >= textures.length) b.tex = 0; // 贴图丢失 → 第一张贴图
       b.w = Math.max(1, Math.min(4, b.w));
       b.d = Math.max(1, Math.min(4, b.d));
       b.floors = Math.max(1, Math.min(40, b.floors));
       if (b.seed == null) b.seed = Math.random();
+      b.offX = Math.max(-8, Math.min(8, b.offX || 0));   // 建筑微调：像素偏移（1 格 = 16 像素 = 半个格子）
+      b.offZ = Math.max(-8, Math.min(8, b.offZ || 0));
+      b.rot = (b.rot || 0) % 360;
 
       const key = cellKey(b.cx, b.cz);
       const geo = makeBoxGeometry(b.w, b.d, b.floors);
       const wallsMat = makeBuildingMaterial(b, 1.0);
       const topMat = makeBuildingMaterial(b, 0.0);
       const mesh = new THREE.Mesh(geo, [wallsMat, topMat]);
-      mesh.position.set(b.cx * CELL + 2, 0, b.cz * CELL + 2);
+      applyBuildingTransform(mesh, b);
       scene.add(mesh);
 
       // 建筑格子地面填充片
@@ -1929,7 +2029,7 @@
 
       const label = buildLabelSprite(b);
       if (label) {
-        label.position.set(b.cx * CELL + 2, b.floors + 1.3, b.cz * CELL + 2);
+        label.position.set(b.cx * CELL + 2 + (b.offX || 0) * PX_TO_UNIT, b.floors + 1.3, b.cz * CELL + 2 + (b.offZ || 0) * PX_TO_UNIT);
         label.visible = settings.labels;
         scene.add(label);
       }
@@ -1952,6 +2052,9 @@
       b.color = draft.color;
       b.type = draft.type;
       b.name = draft.name;
+      b.offX = Math.max(-8, Math.min(8, draft.offX || 0));
+      b.offZ = Math.max(-8, Math.min(8, draft.offZ || 0));
+      b.rot = (draft.rot || 0) % 360;
       b.seed = Math.random();    // 每次编辑后重新生成窗户布局种子
 
       // 重建几何与材质
@@ -1965,14 +2068,14 @@
       const wallsMat = makeBuildingMaterial(b, 1.0);
       const topMat = makeBuildingMaterial(b, 0.0);
       const mesh = new THREE.Mesh(geo, [wallsMat, topMat]);
-      mesh.position.set(b.cx * CELL + 2, 0, b.cz * CELL + 2);
+      applyBuildingTransform(mesh, b);
       scene.add(mesh);
 
       // 重建命名标签
       if (obj.label) { scene.remove(obj.label); obj.label.material.map.dispose(); obj.label.material.dispose(); }
       const label = buildLabelSprite(b);
       if (label) {
-        label.position.set(b.cx * CELL + 2, b.floors + 1.3, b.cz * CELL + 2);
+        label.position.set(b.cx * CELL + 2 + (b.offX || 0) * PX_TO_UNIT, b.floors + 1.3, b.cz * CELL + 2 + (b.offZ || 0) * PX_TO_UNIT);
         label.visible = settings.labels;
         scene.add(label);
       }
@@ -2366,6 +2469,8 @@
         btn.classList.add('active');
         document.getElementById('tabBasic').style.display = btn.dataset.tab === 'basic' ? '' : 'none';
         document.getElementById('tabInfo').style.display = btn.dataset.tab === 'info' ? '' : 'none';
+        document.getElementById('tabAdjust').style.display = btn.dataset.tab === 'adjust' ? '' : 'none';
+        if (btn.dataset.tab === 'adjust') drawAdjustPreview();
       });
     });
 
@@ -2381,10 +2486,11 @@
           tex: buildingOrNull.tex,
           w: buildingOrNull.w, d: buildingOrNull.d, floors: buildingOrNull.floors,
           color: buildingOrNull.color, type: buildingOrNull.type, name: buildingOrNull.name || '',
+          offX: buildingOrNull.offX || 0, offZ: buildingOrNull.offZ || 0, rot: buildingOrNull.rot || 0,
         };
       } else {
         if (!editing.draft) {
-          editing.draft = { tex: 0, w: 4, d: 4, floors: 12, color: null, type: null, name: '' };
+          editing.draft = { tex: 0, w: 4, d: 4, floors: 12, color: null, type: null, name: '', offX: 0, offZ: 0, rot: 0 };
         } else {
           editing.draft.name = '';  // 名称清空
           editing.draft.type = null;  // 建筑类型清空，其他保留
@@ -2423,6 +2529,74 @@
       typeGrid.querySelectorAll('.type-btn').forEach(b => b.classList.toggle('active', b.dataset.name === d.type));
       // 名称
       document.getElementById('nameInput').value = d.name;
+      // 建筑微调
+      syncAdjustControls();
+    }
+
+    // ---- 建筑微调（偏移 / 旋转） ----
+    const ADJ_MIN = -8, ADJ_MAX = 8;       // 偏移范围（像素单位，1 格 = 16 像素 = 半个格子）
+    const ROT_STEPS = 24;                  // 旋转档位（每 15° 一档，共 24 档）
+    const offXVal = document.getElementById('offXVal');
+    const offZVal = document.getElementById('offZVal');
+    const rotSlider = document.getElementById('rotSlider');
+    const rotVal = document.getElementById('rotVal');
+    const adjustPreview = document.getElementById('adjustPreview');
+
+    function clampAdj(v) { return Math.max(ADJ_MIN, Math.min(ADJ_MAX, v)); }
+
+    function syncAdjustControls() {
+      const d = editing.draft;
+      offXVal.textContent = clampAdj(d.offX || 0);
+      offZVal.textContent = clampAdj(d.offZ || 0);
+      rotSlider.value = Math.round(((d.rot || 0) % 360) / 15);
+      rotVal.textContent = (d.rot || 0) + '°';
+    }
+
+    document.getElementById('offXMinus').addEventListener('click', () => { editing.draft.offX = clampAdj((editing.draft.offX || 0) - 1); syncAdjustControls(); drawAdjustPreview(); });
+    document.getElementById('offXPlus').addEventListener('click', () => { editing.draft.offX = clampAdj((editing.draft.offX || 0) + 1); syncAdjustControls(); drawAdjustPreview(); });
+    document.getElementById('offZMinus').addEventListener('click', () => { editing.draft.offZ = clampAdj((editing.draft.offZ || 0) - 1); syncAdjustControls(); drawAdjustPreview(); });
+    document.getElementById('offZPlus').addEventListener('click', () => { editing.draft.offZ = clampAdj((editing.draft.offZ || 0) + 1); syncAdjustControls(); drawAdjustPreview(); });
+    rotSlider.addEventListener('input', () => {
+      editing.draft.rot = parseInt(rotSlider.value) * (360 / ROT_STEPS);
+      syncAdjustControls();
+      drawAdjustPreview();
+    });
+
+    // 预览：白色格子线框 + 黄色建筑轮廓（默认正北：北↑）
+    function drawAdjustPreview() {
+      const d = editing.draft;
+      if (!d || !adjustPreview) return;
+      const ctx = adjustPreview.getContext('2d');
+      const W = adjustPreview.width, H = adjustPreview.height;
+      ctx.clearRect(0, 0, W, H);
+
+      // 坐标映射：1 像素单位 = 6px；格子 16 像素单位 → 96px，居中（边距 32px）
+      const S = 6;
+      const cx = W / 2, cy = H / 2;
+      const gs = 16 * S;   // 格子边长
+
+      // 白色格子线框
+      ctx.strokeStyle = 'rgba(255,255,255,.9)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cx - gs / 2, cy - gs / 2, gs, gs);
+
+      // 正北标注（北 ↑，z 正方向为南 → canvas y 向下）
+      ctx.fillStyle = 'rgba(255,255,255,.75)';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('北 ↑', cx, cy - gs / 2 - 6);
+
+      // 建筑轮廓：中心随偏移（z 正方向在 canvas 中向下），旋转绕中心
+      const bw = d.w * 4 * S, bd = d.d * 4 * S;   // 建筑 1 单位 = 4 像素单位
+      const ox = (d.offX || 0) * S;
+      const oz = (d.offZ || 0) * S;
+      ctx.save();
+      ctx.translate(cx + ox, cy + oz);
+      ctx.rotate((d.rot || 0) * Math.PI / 180);
+      ctx.strokeStyle = '#ffd24a';
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(-bw / 2, -bd / 2, bw, bd);
+      ctx.restore();
     }
 
     function onConfigConfirm() {
@@ -2434,6 +2608,7 @@
           tex: d.tex, w: d.w, d: d.d, floors: d.floors,
           color: d.color, type: d.type, name: d.name.trim(),
           seed: Math.random(),
+          offX: d.offX, offZ: d.offZ, rot: d.rot,
         });
         radius = Math.max(radius, b.floors * 1.5 + 8);
         toast('楼栋已放置');
@@ -2724,7 +2899,7 @@
     function collectData() {
       const arr = [];
       for (const b of buildings.values()) {
-        arr.push({ x: b.cx, z: b.cz, tex: b.tex, w: b.w, d: b.d, floors: b.floors, color: b.color, type: b.type, name: b.name, seed: b.seed });
+        arr.push({ x: b.cx, z: b.cz, tex: b.tex, w: b.w, d: b.d, floors: b.floors, color: b.color, type: b.type, name: b.name, seed: b.seed, offX: b.offX || 0, offZ: b.offZ || 0, rot: b.rot || 0 });
       }
       const roadsArr = [];
       for (const r of roads.values()) {
@@ -2768,6 +2943,9 @@
             type: typeof item.type === 'string' ? item.type : null,
             name: typeof item.name === 'string' ? item.name : '',
             seed: typeof item.seed === 'number' ? item.seed : Math.random(),
+            offX: (typeof item.offX === 'number' && !isNaN(item.offX)) ? item.offX : 0,
+            offZ: (typeof item.offZ === 'number' && !isNaN(item.offZ)) ? item.offZ : 0,
+            rot: (typeof item.rot === 'number' && !isNaN(item.rot)) ? item.rot : 0,
           });
         }
       }
